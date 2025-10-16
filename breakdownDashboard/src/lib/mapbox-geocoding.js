@@ -1,5 +1,5 @@
 const MAPBOX_ACCESS_TOKEN =
-  'pk.eyJ1IjoicmVuZGFuaS1kZXYiLCJhIjoiY21kM2c3OXQ4MDJ6MjJqczlqbzNwcDZvaCJ9.6skTnPcXqD7h24o9mfuQnw'
+  'pk.eyJ1Ijoic29sZm8tYWRtaW4iLCJhIjoiY21nbmt0amY5MHZieTJsc2FjNTdwcDR1MCJ9.ksls0mQkEYmskyI_851Zxw'
 
 /**
  * Geocode an address to get coordinates using Mapbox Geocoding API

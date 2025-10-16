@@ -59,21 +59,16 @@ export function BasicInfoSection({
 
           <div className="space-y-2">
             <Label htmlFor="costCentre">Cost Centre *</Label>
-            <Select
-              value={formData.costCentre}
-              onValueChange={(value) => handleSelectChange('costCentre', value)}
-            >
-              <SelectTrigger id="costCentre" className=" w-full">
-                <SelectValue placeholder="Select cost centre" />
-              </SelectTrigger>
-              <SelectContent>
-                {costCentres?.map((centre) => (
-                  <SelectItem key={centre.id} value={centre.id}>
-                    {centre.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+
+            <input
+              placeholder="C-002"
+              value="c-001"
+              onChange={(e) => handleSelectChange('costCentre', e.target.value)}
+              id="costCentre"
+              name="costCentre"
+              list="costCentres"
+              readOnly
+            />
           </div>
 
           <div className="space-y-2">

@@ -9,7 +9,9 @@ import {
   DataTable,
   createActionsColumn,
 } from '../ui/data-table'
-import DetailActionBar from '@/components/layout/detail-action-bar'
+import { ArrowLeft } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { useRouter } from 'next/navigation'
 import DetailCard from '@/components/ui/detail-card'
 import {
   MapPin,
@@ -26,12 +28,15 @@ import DisplayMap from '../map/display-map'
 import { toast } from "sonner"
 
 export default function ClientDetails({ id }) {
+  const router = useRouter()
   const {
     trips,
-    onEdit,
-    onDelete,
     clients: { data },
   } = useGlobalContext()
+
+  const handleGoBack = () => {
+    router.back()
+  }
 
   const [client, setClient] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -170,14 +175,7 @@ export default function ClientDetails({ id }) {
         </div>
       ),
     },
-    {
-      id: 'actions',
-      header: 'Actions',
-      cell: ({ row }) => {
-        const trip = row.original
-        return createActionsColumn({ data: trip, onEdit, onDelete })
-      },
-    },
+
   ]
 
   const locationColumns = [
@@ -334,7 +332,16 @@ export default function ClientDetails({ id }) {
 
   return (
     <div className="space-y-6">
-      <DetailActionBar id={id} title={client?.name} />
+      <div className="flex items-center gap-4 mb-6">
+        <Button variant="outline" size="sm" onClick={handleGoBack}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold">{client?.name || 'Client Details'}</h1>
+          <p className="text-muted-foreground">Client ID: {id}</p>
+        </div>
+      </div>
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Client Information */}

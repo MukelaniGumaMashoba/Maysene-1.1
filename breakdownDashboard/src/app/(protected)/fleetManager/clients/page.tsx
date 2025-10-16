@@ -139,7 +139,7 @@ export default function ClientsPage() {
             filterPlaceholder={""}
             csv_headers={[]}
             csv_rows={[]}
-            href={null}
+            href="/fleetManager/clients"
             downloadCSV={[]}
           />
         </div>

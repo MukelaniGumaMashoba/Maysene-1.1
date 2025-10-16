@@ -459,11 +459,16 @@ export default function TripDetails({ id }) {
   return (
     <div className=" space-y-6">
       {/* Header */}
-      <DetailActionBar
-        id={id}
-        title={parsedTrip?.clientDetails?.name}
-        description={id}
-      />
+      <div className="flex items-center gap-4 mb-6">
+        <Button variant="outline" size="sm" onClick={handleGoBack}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold">{parsedTrip?.clientDetails?.name || 'Trip Details'}</h1>
+          <p className="text-muted-foreground">Trip ID: {id}</p>
+        </div>
+      </div>
 
       {/* Trip Progress */}
       <Card>
@@ -623,7 +628,7 @@ export default function TripDetails({ id }) {
       <Tabs defaultValue="waypoints" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="waypoints">Waypoints</TabsTrigger>
-          <TabsTrigger value="expenses">Expenses</TabsTrigger>
+          {/* <TabsTrigger value="expenses">Expenses</TabsTrigger> */}
           <TabsTrigger value="notes">Notes & Documents</TabsTrigger>
         </TabsList>
 

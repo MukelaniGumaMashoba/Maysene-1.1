@@ -234,7 +234,7 @@ export default function TripsPage() {
             filterColumn={[]}
             csv_headers={[]}
             csv_rows={[]}
-            href={null}
+            href="/fleetManager/trips"
             downloadCSV={() => {}}
           />
         </div>
