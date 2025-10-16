@@ -18,14 +18,11 @@ import { createClient } from "@/lib/supabase/client";
 
 export default function ClientsPage() {
   const [open, setOpen] = useState(false);
-  const { columns, screenStats } = initialClientState;
-  const [clients, setClients] = useState([]);
+  const [clients, setClients] = useState<any[]>([]);
   const supabase = createClient();
 
   useEffect(() => {
-    // Simulate fetching data from an API
     const fetchClients = async () => {
-      // Replace this with your actual data fetching logic
       const { data, error } = await supabase.from("clients").select("*");
       if (error) {
         console.error("Error fetching clients:", error);
@@ -36,20 +33,79 @@ export default function ClientsPage() {
     fetchClients();
   }, []);
 
+  // Calculate stats from actual data
+  const totalClients = clients.length;
+  const activeClients = clients.filter((client: any) => client.status === 'active').length;
+  const inactiveClients = clients.filter((client: any) => client.status === 'inactive').length;
+  const suspendedClients = clients.filter((client: any) => client.status === 'suspended').length;
+
+  const screenStats = [
+    { title: "Total Clients", value: totalClients, icon: "🏢" },
+    { title: "Active", value: activeClients, icon: "✅" },
+    { title: "Inactive", value: inactiveClients, icon: "⏸️" },
+    { title: "Suspended", value: suspendedClients, icon: "🚫" },
+  ];
+
+  // Define columns without edit functionality
+  const columns = () => [
+    {
+      accessorKey: "name",
+      header: "Company Name",
+      cell: ({ row }: any) => row.original.name || "-",
+    },
+    {
+      accessorKey: "contact_person",
+      header: "Contact Person",
+      cell: ({ row }: any) => row.original.contact_person || row.original.contactPerson || "-",
+    },
+    {
+      accessorKey: "email",
+      header: "Email",
+      cell: ({ row }: any) => row.original.email || "-",
+    },
+    {
+      accessorKey: "phone",
+      header: "Phone",
+      cell: ({ row }: any) => row.original.phone || "-",
+    },
+    {
+      accessorKey: "city",
+      header: "City",
+      cell: ({ row }: any) => row.original.city || "-",
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }: any) => {
+        const status = row.original.status;
+        const statusColors: { [key: string]: string } = {
+          active: "bg-green-100 text-green-800",
+          inactive: "bg-gray-100 text-gray-800",
+          suspended: "bg-red-100 text-red-800",
+        };
+        return (
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[status] || "bg-gray-100 text-gray-800"}`}>
+            {status || "Unknown"}
+          </span>
+        );
+      },
+    },
+  ];
+
   return (
     <div className="p-6 space-y-6 w-full">
       {/* Title Section */}
       <div className="flex justify-between items-center">
-        {/* <div>
-          <h1 className="text-2xl font-bold">{titleSection.title}</h1>
-          <p className="text-gray-500">{titleSection.description}</p>
-        </div> */}
+        <div>
+          <h1 className="text-2xl font-bold">Clients</h1>
+          <p className="text-gray-500">Manage your clients</p>
+        </div>
         <button
           onClick={() => setOpen(true)}
           className="flex items-center px-4 py-2 bg-primary text-white rounded-lg shadow hover:bg-primary/90"
         >
           <Plus className="mr-2 h-4 w-4" />
-          {/* {titleSection.button.text} */}
+          Add Client
         </button>
       </div>
 
@@ -58,20 +114,24 @@ export default function ClientsPage() {
         {screenStats.map((stat, i) => (
           <div
             key={i}
-            className="p-4 rounded-xl border bg-white shadow-sm flex items-center space-x-4"
+            className="p-6 rounded-xl border bg-white shadow-sm hover:shadow-md transition-shadow flex items-center space-x-4"
           >
-            <div>{stat.icon}</div>
+            <div className="text-2xl">{stat.icon}</div>
             <div>
-              <p className="text-sm text-gray-500">{stat.title}</p>
-              <p className="text-xl font-semibold">{stat.value}</p>
+              <p className="text-sm text-gray-500 font-medium">{stat.title}</p>
+              <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
             </div>
           </div>
         ))}
       </div>
 
       {/* Data Table */}
-      <div className="bg-white rounded-xl border shadow-sm">
-        <div className="p-4">
+      <div className="bg-white rounded-xl border shadow-sm hover:shadow-md transition-shadow">
+        <div className="p-6">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">All Clients</h3>
+            <p className="text-sm text-gray-500">View and manage all your clients</p>
+          </div>
           <DataTable
             columns={columns()}
             data={clients || []}
@@ -79,7 +139,7 @@ export default function ClientsPage() {
             filterPlaceholder={""}
             csv_headers={[]}
             csv_rows={[]}
-            href={`/fleetManager/clients/`}
+            href={null}
             downloadCSV={[]}
           />
         </div>

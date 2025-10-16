@@ -111,9 +111,10 @@ export function ClientForm({ id, onCancel }) {
       },
     ])
 
-    if (!error || clientData) {
-      console.log('Client upserted:', clientData[0])
-      setModalOpen(false);
+    if (!error) {
+      console.log('Client saved successfully')
+      onCancel(); // Close the modal
+      window.location.reload(); // Refresh the page to show updated data
     } else {
       console.error('Error upserting client:', error)
       alert('There was an error saving the client. Please try again.')
@@ -737,9 +738,29 @@ export function ClientForm({ id, onCancel }) {
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit">
-            <Save className="mr-2 h-4 w-4" /> Save Client
-          </Button>
+          <div className="flex gap-2">
+            {currentTab > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setCurrentTab(currentTab - 1)}
+              >
+                Previous
+              </Button>
+            )}
+            {currentTab < tabs.length - 1 ? (
+              <Button
+                type="button"
+                onClick={() => setCurrentTab(currentTab + 1)}
+              >
+                Next
+              </Button>
+            ) : (
+              <Button type="submit">
+                <Save className="mr-2 h-4 w-4" /> Save Client
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </form>

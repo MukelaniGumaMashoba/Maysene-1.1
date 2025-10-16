@@ -776,6 +776,7 @@ const TripForm = ({ onClose, id }) => {
       const { error } = await supabase.from('trips').upsert([tripData])
       if (error) throw error
       onClose()
+      window.location.reload(); // Refresh the page to show updated data
     } catch (err) {
       console.error('Error saving trip:', err)
       alert('Failed to save trip. Please try again.')
@@ -1120,7 +1121,7 @@ const TripForm = ({ onClose, id }) => {
         </Tabs>
 
         {/* Form Actions */}
-        <div className=" flex justify-between gap-4 mt-6">
+        <div className="flex justify-between gap-4 mt-6">
           <Button
             type="button"
             variant="outline"
@@ -1129,22 +1130,43 @@ const TripForm = ({ onClose, id }) => {
           >
             Cancel
           </Button>
-          <Button
-            type="submit"
-            disabled={loading}
-          //onClick={handleSubmit}
-          >
-            {loading ? (
-              <>
-                <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-b-transparent"></span>
-                Saving Trip...
-              </>
-            ) : (
-              <>
-                <Save className="mr-2 h-4 w-4" /> Save Trip
-              </>
+          <div className="flex gap-2">
+            {currentTab > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setCurrentTab(currentTab - 1)}
+                disabled={loading}
+              >
+                Previous
+              </Button>
             )}
-          </Button>
+            {currentTab < tabs.length - 1 ? (
+              <Button
+                type="button"
+                onClick={() => setCurrentTab(currentTab + 1)}
+                disabled={loading}
+              >
+                Next
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-b-transparent"></span>
+                    Saving Trip...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" /> Save Trip
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
         </div>
       </form>
     </div>

@@ -82,7 +82,6 @@ export default function TripsPage() {
       if (error) {
         console.error('Error fetching trips:', error);
       } else {
-        // Parse JSON fields for each trip
         const parsedTrips = (data || []).map((trip) => ({
           ...trip,
           vehicleAssignments: parseJsonField(trip.vehicleAssignments) || parseJsonField(trip.vehicle_assignments) || [],
@@ -101,53 +100,78 @@ export default function TripsPage() {
     fetchTrips();
   }, []);
 
-  // Use the state and columns from the context
-  const {
-    titleSection = { title: "Trips", description: "Manage your trips", button: { text: "Add Trip" } },
-    screenStats = [],
-    tableInfo = { tabs: [{ value: "all", title: "All Trips" }] },
-  } = initialTripsState;
+  // Calculate stats from actual data
+  const totalTrips = trips.length;
+  const activeTrips = trips.filter(trip => trip.status === 'in-progress').length;
+  const completedTrips = trips.filter(trip => trip.status === 'completed').length;
+  const pendingTrips = trips.filter(trip => trip.status === 'pending').length;
 
-  const { columns } = initialTripsState;
+  const screenStats = [
+    { title: "Total Trips", value: totalTrips, icon: "📊" },
+    { title: "Active Trips", value: activeTrips, icon: "🚛" },
+    { title: "Completed", value: completedTrips, icon: "✅" },
+    { title: "Pending", value: pendingTrips, icon: "⏳" },
+  ];
 
-  // Find the index for "Vehicles", "Drivers", and "Cost Centre" columns in the original columns
-  const baseColumns = columns ? columns() : [];
-  const vehiclesIdx = baseColumns.findIndex(
-    (col) => col.accessorKey?.toLowerCase() === "vehicles"
-  );
-  const driversIdx = baseColumns.findIndex(
-    (col) => col.accessorKey?.toLowerCase() === "drivers"
-  );
-  const costCentreIdx = baseColumns.findIndex(
-    (col) => col.accessorKey?.toLowerCase() === "costcentre"
-  );
+  const titleSection = { title: "Trips", description: "Manage your trips", button: { text: "Add Trip" } };
+  const tableInfo = { tabs: [{ value: "all", title: "All Trips" }] };
 
-  // Replace the Vehicles, Drivers, and Cost Centre columns with our computed ones
-  const tableColumns = [...baseColumns];
-  if (vehiclesIdx !== -1) {
-    tableColumns[vehiclesIdx] = {
-      ...tableColumns[vehiclesIdx],
+  // Define columns without edit functionality
+  const tableColumns = [
+    {
+      accessorKey: "trip_id",
+      header: "Trip ID",
+      cell: ({ row }) => row.original.trip_id || row.original.id || "-",
+    },
+    {
+      accessorKey: "orderNumber",
+      header: "Order Number",
+      cell: ({ row }) => row.original.orderNumber || "-",
+    },
+    {
       accessorKey: "vehiclesDisplay",
       header: "Vehicles",
       cell: ({ row }) => getVehicleNames(row.original) || "-",
-    };
-  }
-  if (driversIdx !== -1) {
-    tableColumns[driversIdx] = {
-      ...tableColumns[driversIdx],
+    },
+    {
       accessorKey: "driversDisplay",
       header: "Drivers",
       cell: ({ row }) => getDriverNames(row.original) || "-",
-    };
-  }
-  if (costCentreIdx !== -1) {
-    tableColumns[costCentreIdx] = {
-      ...tableColumns[costCentreIdx],
+    },
+    {
+      accessorKey: "origin",
+      header: "Origin",
+      cell: ({ row }) => row.original.origin || "-",
+    },
+    {
+      accessorKey: "destination",
+      header: "Destination",
+      cell: ({ row }) => row.original.destination || "-",
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => {
+        const status = row.original.status;
+        const statusColors = {
+          pending: "bg-yellow-100 text-yellow-800",
+          "in-progress": "bg-blue-100 text-blue-800",
+          completed: "bg-green-100 text-green-800",
+          cancelled: "bg-red-100 text-red-800",
+        };
+        return (
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[status] || "bg-gray-100 text-gray-800"}`}>
+            {status || "Unknown"}
+          </span>
+        );
+      },
+    },
+    {
       accessorKey: "costCentreDisplay",
       header: "Cost Centre",
       cell: ({ row }) => row.original.costCentreDisplay || "-",
-    };
-  }
+    },
+  ];
 
   return (
     <div className="p-6 space-y-6 w-full">
@@ -167,22 +191,20 @@ export default function TripsPage() {
       </div>
 
       {/* Stats Section */}
-      {screenStats && screenStats.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {screenStats.map((stat, i) => (
-            <div
-              key={i}
-              className="p-4 rounded-xl border bg-white shadow-sm flex items-center space-x-4"
-            >
-              <div>{stat.icon}</div>
-              <div>
-                <p className="text-sm text-gray-500">{stat.title}</p>
-                <p className="text-xl font-semibold">{stat.value}</p>
-              </div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {screenStats.map((stat, i) => (
+          <div
+            key={i}
+            className="p-6 rounded-xl border bg-white shadow-sm hover:shadow-md transition-shadow flex items-center space-x-4"
+          >
+            <div className="text-2xl">{stat.icon}</div>
+            <div>
+              <p className="text-sm text-gray-500 font-medium">{stat.title}</p>
+              <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
 
       {/* Tabs */}
       {tableInfo?.tabs && tableInfo.tabs.length > 0 && (
@@ -200,26 +222,21 @@ export default function TripsPage() {
         </Tabs>
       )}
 
-      <div className="bg-white rounded-xl border shadow-sm">
-        {/* Data Table */}
-        <div className="p-4">
-          {columns ? (
-            <DataTable
-              columns={tableColumns}
-              data={trips || []}
-              filterColumn={[]}
-              csv_headers={[]}
-              csv_rows={[]}
-              href="/fleetManager/trips"
-              downloadCSV={() => {
-                // a function to download csv
-              }}
-            />
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              Loading trips table...
-            </div>
-          )}
+      <div className="bg-white rounded-xl border shadow-sm hover:shadow-md transition-shadow">
+        <div className="p-6">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">All Trips</h3>
+            <p className="text-sm text-gray-500">View and manage all your trips</p>
+          </div>
+          <DataTable
+            columns={tableColumns}
+            data={trips || []}
+            filterColumn={[]}
+            csv_headers={[]}
+            csv_rows={[]}
+            href={null}
+            downloadCSV={() => {}}
+          />
         </div>
       </div>
 
