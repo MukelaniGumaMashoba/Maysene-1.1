@@ -2,11 +2,11 @@ import { NextResponse } from 'next/server'
 
 import { createClient } from '@/lib/supabase/server'
 
-const supabase = createClient();
 // *****************************
 // update stop point
 // *****************************
 export async function PUT(request, { params }) {
+  const supabase = await createClient();
   const { data: { session }, error: authError } = await supabase.auth.getSession();
   const { id } = await params
   const body = await request.json()
@@ -50,6 +50,7 @@ export async function PUT(request, { params }) {
 // delete stop points
 // *****************************
 export async function DELETE(request, { params }) {
+  const supabase = await createClient();
   const { data: { session }, error: authError } = await supabase.auth.getSession();
   const { id } = await params
 

@@ -1,15 +1,14 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-const supabase = createClient();
-
 // *****************************
 // fetch stop points
 // *****************************
 export async function GET(request) {
-    const session = await supabase.auth.getSession();
+    const supabase = await createClient();
+    const { data: { session } } = await supabase.auth.getSession();
 
-    if (!session.data.session) {
+    if (!session) {
         return NextResponse.json({ error: 'not a valid user' }, { status: 401 })
     }
 
@@ -17,7 +16,7 @@ export async function GET(request) {
         const { data: stop_points, error } = await supabase
             .from('stop_points')
             .select('*')
-            .eq('client_id', session.data.session.user.id)
+            .eq('client_id', session.user.id)
 
         if (error) throw error
 
@@ -31,15 +30,16 @@ export async function GET(request) {
 // add stop point
 // *****************************
 export async function POST(request) {
-    const session = await supabase.auth.getSession();
+    const supabase = await createClient();
+    const { data: { session } } = await supabase.auth.getSession();
 
-    if (!session.data.session) {
+    if (!session) {
         return NextResponse.json({ error: 'not a valid user' }, { status: 401 })
     }
 
     try {
         const body = await request.json()
-        const client_id = session.data.session.user.id
+        const client_id = session.user.id
 
         // Get last used stop point ID
         const { data: lastStopPoint, error: fetchError } = await supabase

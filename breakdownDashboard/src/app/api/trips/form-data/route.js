@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 
 // *****************************
 // get all data for trip form
 // *****************************
 export async function GET() {
-  const supabase = createClient({ cookies })
+  const supabase = createClient()
   const { data: { session }, error: authError } = await supabase.auth.getSession()
   if (authError || !session) {
     return NextResponse.json({ error: 'not a valid user' }, { status: 401 })

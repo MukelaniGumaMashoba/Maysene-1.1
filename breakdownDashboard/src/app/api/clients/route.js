@@ -1,7 +1,6 @@
 "'use server'"
 
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server';
 
 // *****************************
@@ -47,7 +46,7 @@ export async function GET(request) {
 // add clients
 // *****************************
 export async function POST(request) {
-  const supabase = createClient({ cookies })
+  const supabase = createClient();
   
   // Verify authentication
   const { data: { session }, error: authError } = await supabase.auth.getSession()

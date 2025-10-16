@@ -1,14 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
-const supabase = createClient()
 // Helper to get user from Supabase session
 async function getUser(request) {
-  const { data, error } = await supabase.auth.getUser(
-    request.headers.get('Authorization')?.replace('Bearer ', '')
-  )
-  if (error || !data?.user) return null
-  return data.user
+  const supabase = await createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user) return null
+  return session.user
 }
 
 // *****************************
@@ -21,6 +19,7 @@ export async function GET(request) {
   }
 
   try {
+    const supabase = await createClient()
     const { data: vehicles, error } = await supabase
       .from('vehiclesc')
       .select('*')
@@ -43,6 +42,7 @@ export async function POST(request) {
   }
 
   try {
+    const supabase = await createClient()
     const body = await request.json()
     const clientId = user.id
 
