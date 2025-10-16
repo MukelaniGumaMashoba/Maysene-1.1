@@ -79,8 +79,8 @@ export async function middleware(req: NextRequest) {
       if (error || userError) {
         return NextResponse.redirect(new URL('/login', req.url))
       }
-      console.log("The user id is", user?.id)
-      console.log("The user role is", userRecord?.role)
+      // Log sanitized info for debugging
+      console.log("User authenticated with role:", userRecord?.role ? 'valid' : 'invalid')
 
       if (user) {
         const role = decodeURIComponent(userRecord?.role || '')
@@ -88,7 +88,7 @@ export async function middleware(req: NextRequest) {
           const allowedPaths = getAllowedPaths(role)
           const isAllowed = allowedPaths.some(p => path.startsWith(p))
           if (!isAllowed) {
-            console.log(`Role "${role}" is not allowed to access "${path}" — redirecting to /dashboard`)
+            console.log('Access denied for role - redirecting to login')
             return NextResponse.redirect(new URL('/login', req.url))
           }
           // switch (role) {

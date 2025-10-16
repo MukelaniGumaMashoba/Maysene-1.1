@@ -1,10 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
-const supabase = createClient()
-
 export async function GET(request) {
-  const { data: session } = await supabase.auth.getSession()
+  const supabase = await createClient()
+  const { data: { session } } = await supabase.auth.getSession()
 
   if (!session) {
     return NextResponse.json({ error: 'not a valid user' }, { status: 500 })
@@ -24,7 +23,8 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  const { data: session } = await supabase.auth.getSession()
+  const supabase = await createClient()
+  const { data: { session } } = await supabase.auth.getSession()
 
   if (!session) {
     return NextResponse.json({ error: 'not a valid user' }, { status: 500 })
@@ -68,7 +68,7 @@ export async function POST(request) {
     // Create auth user
     const { data: authUser, error: authError } = await supabase.auth.signUp({
       email: body.email,
-      password: 'password', // Use secure password in production
+      password: process.env.DEFAULT_USER_PASSWORD || 'TempPass123!'
       options: {
         data: {
           role: body.role,

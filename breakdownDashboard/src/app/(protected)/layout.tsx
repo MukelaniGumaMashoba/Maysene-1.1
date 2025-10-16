@@ -39,11 +39,11 @@ const roleNavigation = {
     },
     { name: "Drivers", href: "/drivers", Icon: <Users /> },
     { name: "Vehicles", href: "/vehicles", Icon: <Car /> },
-    {
-      name: "Cost Centres",
-      href: "/fleetManager/cost-centres",
-      Icon: <Wrench />,
-    },
+    // {
+    //   name: "Cost Centres",
+    //   href: "/fleetManager/cost-centres",
+    //   Icon: <Wrench />,
+    // },
     { name: "Clients", href: "/fleetManager/clients", Icon: <Building2 /> },
     // { name: "Stop Points", href: "/fleetManager/stop-points", Icon: <Route /> },
     { name: "Trips", href: "/fleetManager/trips", Icon: <Route /> },
