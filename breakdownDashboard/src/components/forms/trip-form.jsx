@@ -56,7 +56,7 @@ const TripForm = ({ onClose, id }) => {
           { data: stopPointsData }
         ] = await Promise.all([
           supabase.from('drivers').select('*').eq('status', true),
-          supabase.from('vehicles').select('*').eq('availability', true),
+          supabase.from('vehiclesc').select('*').eq('availability', true),
           supabase.from('clients').select('*'),
           supabase.from('breakdown_cost_centers').select('*'),
           supabase.from('stop_points').select('*'),

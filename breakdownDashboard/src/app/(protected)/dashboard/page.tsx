@@ -162,10 +162,10 @@ export default function Dashboard() {
 
   const formLinks = [
     { name: "New Trip", href: "trips", icon: FileText },
-    { name: "New Vehicle", href: "vehicles", icon: Truck },
-    { name: "New Driver", href: "drivers", icon: User },
-    { name: "New Stop Point", href: "stop-points", icon: MapPin },
-    { name: "New Cost Centre", href: "cost-centres", icon: Building },
+    // { name: "New Vehicle", href: "vehicles", icon: Truck },
+    // { name: "New Driver", href: "drivers", icon: User },
+    // { name: "New Stop Point", href: "stop-points", icon: MapPin },
+    // { name: "New Cost Centre", href: "cost-centres", icon: Building },
   ];
 
   // Fetch stats and setup realtime activity subscription on userRole known
