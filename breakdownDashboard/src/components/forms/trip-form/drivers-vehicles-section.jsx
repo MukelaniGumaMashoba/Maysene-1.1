@@ -101,7 +101,7 @@ export function DriversVehiclesSection({
                     <SelectContent>
                       {available_vehicles.map((v) => (
                         <SelectItem key={v.id} value={v.id}>
-                          {v.model} ({v.registration_number}) - {v.type}  
+                          {v.model || v.make} ({v.regNumber || v.registration_number || v.reg_number}) - {v.type || 'Vehicle'}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -160,7 +160,7 @@ export function DriversVehiclesSection({
                         <SelectContent>
                           {available_drivers.map((d) => (
                             <SelectItem key={d.id} value={d.id}>
-                              {d.first_name} - {d.license_number}
+                              {d.name || d.first_name || d.firstName} - {d.license || d.license_number}
                             </SelectItem>
                           ))}
                         </SelectContent>

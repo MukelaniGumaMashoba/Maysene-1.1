@@ -56,7 +56,7 @@ const TripForm = ({ onClose, id }) => {
           { data: stopPointsData }
         ] = await Promise.all([
           supabase.from('drivers').select('*').eq('status', true),
-          supabase.from('vehiclesc').select('*').eq('availability', true),
+          supabase.from('vehiclesc').select('*').eq('available', true),
           supabase.from('clients').select('*'),
           supabase.from('breakdown_cost_centers').select('*'),
           supabase.from('stop_points').select('*'),
@@ -94,7 +94,13 @@ const TripForm = ({ onClose, id }) => {
           notes: '',
           drivers: [],
           vehicles: [],
-          vehicleAssignments: [],
+          vehicleAssignments: [
+            {
+              vehicle: { id: '', name: '' },
+              drivers: [{ id: '', name: '' }],
+              trailers: [],
+            },
+          ],
           pickupLocations: [
             {
               location: '',
@@ -137,7 +143,17 @@ const TripForm = ({ onClose, id }) => {
           console.error('Error fetching trip:', error)
           return
         }
-        setFormState(trip)
+        const parsedTrip = {
+          ...trip,
+          vehicleAssignments: trip.vehicleAssignments || trip.vehicle_assignments || [
+            {
+              vehicle: { id: '', name: '' },
+              drivers: [{ id: '', name: '' }],
+              trailers: [],
+            },
+          ],
+        }
+        setFormState(parsedTrip)
       }
     }
     fetchTrip()
