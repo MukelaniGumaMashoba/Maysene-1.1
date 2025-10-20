@@ -111,52 +111,12 @@ export default function Dashboard() {
       { name: "Jobs", href: "/jobsFleet", Icon: <Briefcase /> },
       { name: "Drivers", href: "/drivers", Icon: <Users /> },
       { name: "Vehicles", href: "/vehicles", Icon: <Car /> },
-      { name: "Quote Management", href: "/quotation", Icon: <Building2 /> },
       { name: "System Settings", href: "/settings", Icon: <Settings /> },
       {
         name: "User Management",
         href: "/userManagement",
         Icon: <PlusSquare />,
       },
-    ],
-    "call centre": [
-      { name: "Dashboard", href: "/dashboard", Icon: <ChartBar /> },
-      { name: "Jobs", href: "/jobs", Icon: <Briefcase /> },
-      { name: "Call Center", href: "/callcenter", Icon: <Phone /> },
-      {
-        name: "Technicians Assignment",
-        href: "/callcenter/technician",
-        Icon: <Wrench />,
-      },
-      {
-        name: "Technician Vehicles",
-        href: "/callcenter/breakdowns",
-        Icon: <Truck />,
-      },
-      { name: "Workshops", href: "/callcenter/clients", Icon: <Users /> },
-      { name: "Quote Management", href: "/ccenter", Icon: <Building2 /> },
-      { name: "System Settings", href: "/settings", Icon: <Settings /> },
-    ],
-    customer: [
-      { name: "Dashboard", href: "/dashboard", Icon: <ChartBar /> },
-      {
-        name: "Technicians Assignment",
-        href: "/extechnicians",
-        Icon: <Users />,
-      },
-      { name: "Workshop Vehicles", href: "/exvehicles", Icon: <Car /> },
-      { name: "Quote Management", href: "/workshopQuote", Icon: <Building2 /> },
-      { name: "System Settings", href: "/settings", Icon: <Settings /> },
-    ],
-    "cost centre": [
-      { name: "Dashboard", href: "/dashboard", Icon: <ChartBar /> },
-      { name: "Cost", href: "/ccenter", Icon: <Building2 /> },
-      {
-        name: "Quote Management",
-        href: "/ccenter/create-quotation",
-        Icon: <DollarSign />,
-      },
-      { name: "System Settings", href: "/settings", Icon: <Settings /> },
     ],
   };
 
@@ -199,13 +159,6 @@ export default function Dashboard() {
   function getQuickActions() {
     const baseActions = [
       {
-        title: "View All Vehicles Breakdowns",
-        description: "See active and pending breakdown requests",
-        icon: AlertTriangle,
-        action: "/callcenter",
-        color: "bg-red-50 text-red-600 hover:bg-red-100",
-      },
-      {
         title: "Vehicles",
         description: "Manage vehicles",
         icon: Truck,
@@ -217,13 +170,6 @@ export default function Dashboard() {
         description: "Manage drivers",
         icon: Truck,
         action: "/drivers",
-        color: "bg-blue-50 text-blue-600 hover:bg-blue-100",
-      },
-      {
-        title: "Technicians",
-        description: "View and manage all the technicians",
-        icon: User2,
-        action: "/callcenter/technician",
         color: "bg-blue-50 text-blue-600 hover:bg-blue-100",
       },
       {
@@ -239,13 +185,7 @@ export default function Dashboard() {
     const normalizedRole = userRole.toLowerCase().replace(/\s+/g, "");
 
     switch (normalizedRole) {
-      case "callcentre":
-        return baseActions.filter(
-          (a) =>
-            a.action.toLowerCase().includes("callcenter") ||
-            a.action.toLowerCase().includes("settings") ||
-            a.action.toLowerCase().includes("technian")
-        );
+
 
       case "fleetmanager":
         return baseActions.filter(
@@ -255,39 +195,6 @@ export default function Dashboard() {
             a.action.toLowerCase().includes("vehicles") ||
             a.action.toLowerCase().includes("drivers")
         );
-
-      case "costcentre":
-        return baseActions.filter(
-          (a) =>
-            a.action.toLowerCase().includes("ccenter") ||
-            a.action.toLowerCase().includes("settings")
-        );
-
-      case "customer":
-        return [
-          {
-            title: "Workshop Breakdown Vehicles",
-            description: "View all vehicle breakdown",
-            icon: Phone,
-            action: "/exvehicles",
-            color: "bg-orange-50 text-orange-600 hover:bg-orange-100",
-          },
-          {
-            title: "Quote Management",
-            description: "Edit the quotation your technician has",
-            icon: FileText,
-            action: "/workshopQoute",
-            color: "bg-blue-50 text-blue-600 hover:bg-blue-100",
-          },
-          {
-            title: "Technicians",
-            description: "View and manage all the technicians",
-            icon: User2,
-            action: "/extechnicians",
-            color: "bg-blue-50 text-blue-600 hover:bg-blue-100",
-          },
-        ];
-
       default:
         return baseActions;
     }
@@ -752,35 +659,11 @@ export default function Dashboard() {
                       </div>
                       <Link
                         href={{
-                          pathname: "/jobs",
+                          pathname: "/jobsFleet",
                           query: { statusFilter: "Breakdown Request" },
                         }}
                       >
                         <Button size="sm">Assign</Button>
-                      </Link>
-                    </div>
-                  )}
-                  {/* {normalizedRole === "costcentre" && (
-                    <div className="flex items-center justify-between p-4 border rounded-xl bg-muted/20 hover:bg-muted/30 transition">
-                      <div>
-                        <p className="font-medium">2 Technician Reports Pending</p>
-                        <p className="text-sm text-gray-600">Awaiting quotation creation</p>
-                      </div>
-                      <Button size="sm">Create Quote</Button>
-                    </div>
-                  )} */}
-                  {normalizedRole === "customer" && (
-                    <div className="flex items-center justify-between p-4 border rounded-xl bg-muted/20 hover:bg-muted/30 transition">
-                      <div>
-                        <p className="font-medium">
-                          Manage Workshop Qoutations
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          Qoute management
-                        </p>
-                      </div>
-                      <Link href="/workshopQoute">
-                        <Button size="sm">Manage</Button>
                       </Link>
                     </div>
                   )}
