@@ -166,34 +166,38 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
       {/* Sidebar: this is sticky/fixed and does NOT move */}
       <div
         className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg
+        fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-slate-900 to-slate-800 shadow-2xl
         transform transition-transform duration-300 ease-in-out
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
         lg:translate-x-0
-        h-screen
+        h-screen border-r border-slate-700
       `}
       >
         {/* Header, nav, footer go here */}
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b">
-            <h1 className="text-xl font-bold text-gray-900">
-              Breakdown Logistics
-            </h1>
+          <div className="flex items-center justify-between p-6 border-b border-slate-700">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">BL</span>
+              </div>
+              <h1 className="text-lg font-bold text-white">
+                Breakdown Logistics
+              </h1>
+            </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden"
+              className="lg:hidden text-gray-400 hover:text-white hover:bg-slate-700"
             >
               ✕
             </Button>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-2">
+          <nav className="flex-1 p-4 space-y-1">
             {navigation.map((item) => {
-              // const isActive = pathname.startsWith(item.href)
               const isActive = pathname === item.href;
 
               return (
@@ -201,16 +205,16 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                   key={item.name}
                   href={item.href}
                   className={`
-                    flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
+                    flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200
                     ${
                       isActive
-                        ? "bg-blue-100 text-blue-700 border-r-2 border-blue-700"
-                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                        ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transform scale-105"
+                        : "text-gray-300 hover:bg-slate-700 hover:text-white hover:transform hover:scale-105"
                     }
                   `}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <span className="mr-3">{item.Icon}</span>
+                  <span className="mr-3 text-lg">{item.Icon}</span>
                   {item.name}
                 </Link>
               );
@@ -218,16 +222,22 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
           </nav>
 
           {/* Footer */}
-          <div className="p-4 border-t">
-            <div className="mb-2 text-xs text-gray-500 text-center">
-              Role:{" "}
-              {userRole
-                ? userRole === "customer"
-                  ? "workshop"
-                  : userRole
-                : "No User"}
+          <div className="p-4 border-t border-slate-700">
+            <div className="mb-3 p-3 bg-slate-800 rounded-lg">
+              <div className="text-xs text-gray-400 mb-1">Current Role</div>
+              <div className="text-sm font-medium text-white capitalize">
+                {userRole
+                  ? userRole === "customer"
+                    ? "workshop"
+                    : userRole
+                  : "No User"}
+              </div>
             </div>
-            <Button onClick={handleLogout} variant="outline" className="w-full">
+            <Button 
+              onClick={handleLogout} 
+              variant="outline" 
+              className="w-full bg-transparent border-slate-600 text-gray-300 hover:bg-slate-700 hover:text-white hover:border-slate-500"
+            >
               🚪 Logout
             </Button>
           </div>
@@ -235,30 +245,40 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
       </div>
 
       {/* Main content: this scrolls */}
-      <div className="ml-64 h-screen overflow-y-auto">
+      <div className="ml-64 h-screen overflow-y-auto bg-gray-50">
         {/* Top bar */}
-        <div className="sticky top-0 z-30 bg-white border-b shadow-sm">
-          <div className="flex items-center justify-between px-4 py-3">
+        <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm">
+          <div className="flex items-center justify-between px-6 py-4">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden"
+              className="lg:hidden hover:bg-gray-100"
             >
               ☰
             </Button>
 
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">Welcome back</span>
+            <div className="flex items-center space-x-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                  <span className="text-white font-medium text-sm">U</span>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-900">Welcome back</span>
+                  <div className="text-xs text-gray-500 capitalize">
+                    {userRole === "customer" ? "workshop" : userRole || "User"}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Page content */}
         <main className="p-6 w-full">
-          <Card className="p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <GlobalProvider>{children}</GlobalProvider>
-          </Card>
+          </div>
         </main>
       </div>
     </div>

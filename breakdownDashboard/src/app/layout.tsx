@@ -17,6 +17,11 @@ export const metadata: Metadata = {
   title: "Breakdown",
   description: "Breakdown",
   authors: [{ name: "Kilig Mukelani", url: "" }],
+  icons: {
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/favicon.png",
+  },
 };
 
 export default function RootLayout({
