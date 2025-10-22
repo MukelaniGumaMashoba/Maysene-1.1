@@ -52,7 +52,7 @@ import DetailActionBar from '@/components/layout/detail-action-bar'
 import { ProgressWithWaypoints } from '@/components/ui/progress-with-waypoints'
 import DetailCard from '../ui/detail-card'
 import { Separator } from '../ui/separator'
-import TripMapView from '../map/trip-map-view'
+import TripMapboxView from '../map/trip-mapbox-view'
 
 // Helper function to format date
 const formatDate = (dateString) => {
@@ -158,7 +158,8 @@ const displayValue = (val) => {
     }
     // If it's an object with name
     if (val.name) return val.name
-    // Otherwise, show JSON
+    // Otherwise, show object type
+    // return '[Object]'
     return JSON.stringify(val)
   }
   return String(val)
@@ -186,7 +187,7 @@ const displayCostCentre = (val) => {
     // If it's a JSON string, parse and get name
     const parsed = typeof val === "string" ? JSON.parse(val) : val;
     if (parsed && parsed.name) return parsed.name;
-  } catch {}
+  } catch { }
   return String(val);
 };
 
@@ -393,14 +394,16 @@ export default function TripDetails({ id }) {
   const trip_information = [
     { label: 'Start Date', value: formatDate(parsedTrip?.startDate) },
     { label: 'End Date', value: formatDate(parsedTrip?.endDate) },
-    { label: 'Origin', value: parsedTrip?.origin || 'N/A' },
-    { label: 'Destination', value: parsedTrip?.destination || 'N/A' },
+    // { label: 'Origin', value: parsedTrip?.origin || 'N/A' },
+    { label: 'Origin', value: displayLocationsAddresses(parsedTrip?.pickupLocations) || 'N/A' },
+    // { label: 'Destination', value: parsedTrip?.destination || 'N/A' },
+    { label: 'Destination', value: displayLocationsAddresses(parsedTrip?.dropoffLocations) || 'N/A' },
     { label: 'Cost Centre', value: displayCostCentre(parsedTrip?.costCentre) },
     { label: 'Cargo', value: parsedTrip?.cargo || 'N/A' },
     { label: 'Cargo Weight', value: parsedTrip?.cargoWeight || parsedTrip?.cargo_weight || 'N/A' },
-    { label: 'Pickup Locations', value: displayLocationsAddresses(parsedTrip?.pickupLocations) },
-    { label: 'Dropoff Locations', value: displayLocationsAddresses(parsedTrip?.dropoffLocations) },
-    { label: 'Waypoints', value: displayValue(parsedTrip?.waypoints) },
+    // { label: 'Pickup Locations', value: displayLocationsAddresses(parsedTrip?.pickupLocations) },
+    // { label: 'Dropoff Locations', value: displayLocationsAddresses(parsedTrip?.dropoffLocations) },
+    // { label: 'Waypoints', value: displayValue(parsedTrip?.waypoints) },
     { label: 'Notes', value: parsedTrip?.notes || 'N/A' },
   ]
   const client_information = [
@@ -418,10 +421,10 @@ export default function TripDetails({ id }) {
   // Extract coordinates from all trip locations
   useEffect(() => {
     if (!parsedTrip) return;
-    
+
     const extractCoordinates = async () => {
       const coordinates = [];
-      
+
       // Add pickup locations
       if (parsedTrip.pickupLocations) {
         for (const location of parsedTrip.pickupLocations) {
@@ -439,7 +442,7 @@ export default function TripDetails({ id }) {
           }
         }
       }
-      
+
       // Add dropoff locations
       if (parsedTrip.dropoffLocations) {
         for (const location of parsedTrip.dropoffLocations) {
@@ -457,8 +460,8 @@ export default function TripDetails({ id }) {
           }
         }
       }
-      
-      // Add waypoints
+
+      // Add waypoints (including stop points)
       if (parsedTrip.waypoints) {
         for (const waypoint of parsedTrip.waypoints) {
           const address = waypoint.address || waypoint.location;
@@ -468,7 +471,7 @@ export default function TripDetails({ id }) {
               const data = await response.json();
               if (data.features && data.features.length > 0) {
                 const [lng, lat] = data.features[0].center;
-                coordinates.push({ lat, lng, type: 'waypoint', address });
+                coordinates.push({ lat, lng, type: 'waypoint', address, name: waypoint.location });
               }
             } catch (error) {
               console.error('Error geocoding waypoint:', error);
@@ -476,10 +479,10 @@ export default function TripDetails({ id }) {
           }
         }
       }
-      
-      // Add selected stop points
-      if (parsedTrip.selectedStopPoints) {
-        for (const stop of parsedTrip.selectedStopPoints) {
+
+      // Add stop points from database
+      if (parsedTrip.stopPoints) {
+        for (const stop of parsedTrip.stopPoints) {
           const address = stop.address || stop.location || stop.name;
           if (address) {
             try {
@@ -487,7 +490,7 @@ export default function TripDetails({ id }) {
               const data = await response.json();
               if (data.features && data.features.length > 0) {
                 const [lng, lat] = data.features[0].center;
-                coordinates.push({ lat, lng, type: 'stop', address });
+                coordinates.push({ lat, lng, type: 'stop', address, name: stop.name });
               }
             } catch (error) {
               console.error('Error geocoding stop point:', error);
@@ -495,10 +498,10 @@ export default function TripDetails({ id }) {
           }
         }
       }
-      
+
       setRouteCoordinates(coordinates);
     };
-    
+
     extractCoordinates();
   }, [parsedTrip]);
 
@@ -588,7 +591,7 @@ export default function TripDetails({ id }) {
                 </dt>
                 <dd className="mt-1 text-sm text-gray-900">
                   {/* Only render as React node for pickup/dropoff, else as string */}
-                  {(info.label === "Pickup Locations" || info.label === "Dropoff Locations")
+                  {(info.label === "Pickup Locations" || info.label === "Dropoff Locations" || info.label === "Origin" || info.label === "Destination")
                     ? info.value
                     : displayValue(info.value)}
                 </dd>
@@ -619,7 +622,7 @@ export default function TripDetails({ id }) {
           description={'Map view of this trip'}
         >
           <div className="h-[400px] w-full rounded-lg overflow-hidden border">
-            <TripMapView tripData={parsedTrip} />
+            {typeof window !== 'undefined' && <TripMapboxView tripData={parsedTrip} />}
           </div>
 
           <Separator className="my-4" />
@@ -693,10 +696,9 @@ export default function TripDetails({ id }) {
       </Card>
 
       {/* Tabs for Waypoints, Expenses, Notes */}
-      <Tabs defaultValue="notes" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          {/* <TabsTrigger value="waypoints">Waypoints</TabsTrigger> */}
-          {/* <TabsTrigger value="expenses">Expenses</TabsTrigger> */}
+      <Tabs defaultValue="waypoints" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="waypoints">Waypoints & Stop Points</TabsTrigger>
           <TabsTrigger value="notes">Notes & Documents</TabsTrigger>
         </TabsList>
 
@@ -704,46 +706,42 @@ export default function TripDetails({ id }) {
         <TabsContent value="waypoints" className="space-y-4">
           <Card>
             <CardHeader className="pb-2">
-              <div className="flex justify-between items-center">
-                <CardTitle>Trip Waypoints</CardTitle>
-                <Button variant="outline" size="sm">
-                  <PlusCircle className="h-4 w-4 mr-2" /> Add Waypoint
-                </Button>
-              </div>
+              <CardTitle>Trip Waypoints & Stop Points</CardTitle>
               <CardDescription>
-                Scheduled stops and checkpoints for this trip
+                Scheduled stops, waypoints, and stop points for this trip
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {trip?.waypoints && trip?.waypoints.length > 0 ? (
+              {(parsedTrip?.waypoints && parsedTrip?.waypoints.length > 0) || (parsedTrip?.stopPoints && parsedTrip?.stopPoints.length > 0) ? (
                 <div className="relative">
                   {/* Timeline */}
                   <div className="absolute left-0 top-0 bottom-0 w-px bg-border ml-6"></div>
 
-                  {/* Waypoints */}
+                  {/* Route */}
                   <div className="space-y-8 relative">
                     {/* Origin */}
                     <div className="flex gap-4 items-start">
-                      <div className="w-3 h-3 rounded-full bg-primary mt-1.5 z-10"></div>
+                      <div className="w-3 h-3 rounded-full bg-green-500 mt-1.5 z-10"></div>
                       <div className="flex-1">
-                        <div className="font-medium">{trip?.origin}</div>
+                        <div className="font-medium">{parsedTrip?.origin}</div>
                         <div className="text-sm text-muted-foreground">
-                          Departure: {formatDate(trip?.startDate)}
+                          Departure: {formatDate(parsedTrip?.startDate)}
                         </div>
                       </div>
                     </div>
 
                     {/* Waypoints */}
-                    {trip?.waypoints.map((waypoint, index) => (
-                      <div key={index} className="flex gap-4 items-start">
-                        <div className="w-3 h-3 rounded-full bg-primary mt-1.5 z-10"></div>
+                    {parsedTrip?.waypoints?.map((waypoint, index) => (
+                      <div key={`waypoint-${index}`} className="flex gap-4 items-start">
+                        <div className="w-3 h-3 rounded-full bg-blue-500 mt-1.5 z-10"></div>
                         <div className="flex-1">
                           <div className="font-medium">{waypoint.location}</div>
                           <div className="text-sm text-muted-foreground">
-                            Arrival: {formatDateTime(waypoint.arrivalTime)}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Departure: {formatDateTime(waypoint.departureTime)}
+                            {waypoint.address && <div>Address: {waypoint.address}</div>}
+                            {waypoint.arrivalTime && <div>Arrival: {formatDateTime(waypoint.arrivalTime)}</div>}
+                            {waypoint.departureTime && <div>Departure: {formatDateTime(waypoint.departureTime)}</div>}
+                            {waypoint.contactPerson && <div>Contact: {waypoint.contactPerson}</div>}
+                            {waypoint.contactNumber && <div>Phone: {waypoint.contactNumber}</div>}
                           </div>
                           {waypoint.notes && (
                             <div className="text-sm mt-1 p-2 bg-muted rounded-md">
@@ -754,15 +752,37 @@ export default function TripDetails({ id }) {
                       </div>
                     ))}
 
+                    {/* Stop Points */}
+                    {parsedTrip?.stopPoints?.map((stopPoint, index) => (
+                      <div key={`stop-${index}`} className="flex gap-4 items-start">
+                        <div className="w-3 h-3 rounded-full bg-amber-500 mt-1.5 z-10"></div>
+                        <div className="flex-1">
+                          <div className="font-medium">{stopPoint.name}</div>
+                          <Badge variant="outline" className="mb-2">{stopPoint.type}</Badge>
+                          <div className="text-sm text-muted-foreground">
+                            {stopPoint.address && <div>Address: {stopPoint.address}</div>}
+                            {stopPoint.contact_person && <div>Contact: {stopPoint.contact_person}</div>}
+                            {stopPoint.contact_phone && <div>Phone: {stopPoint.contact_phone}</div>}
+                            {stopPoint.operating_hours && <div>Hours: {stopPoint.operating_hours}</div>}
+                          </div>
+                          {stopPoint.notes && (
+                            <div className="text-sm mt-1 p-2 bg-muted rounded-md">
+                              {stopPoint.notes}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+
                     {/* Destination */}
                     <div className="flex gap-4 items-start">
-                      <div className="w-3 h-3 rounded-full bg-primary mt-1.5 z-10"></div>
+                      <div className="w-3 h-3 rounded-full bg-red-500 mt-1.5 z-10"></div>
                       <div className="flex-1">
-                        <div className="font-medium">{trip?.destination}</div>
+                        <div className="font-medium">{parsedTrip?.destination}</div>
                         <div className="text-sm text-muted-foreground">
                           Arrival:{' '}
-                          {trip?.endDate
-                            ? formatDate(trip?.endDate)
+                          {parsedTrip?.endDate
+                            ? formatDate(parsedTrip?.endDate)
                             : 'Expected arrival date not set'}
                         </div>
                       </div>
@@ -771,7 +791,7 @@ export default function TripDetails({ id }) {
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
-                  No waypoints have been added to this trip.
+                  No waypoints or stop points have been added to this trip.
                 </div>
               )}
             </CardContent>

@@ -25,6 +25,7 @@ import {
 import { Plus, Trash2 } from 'lucide-react'
 import { useGlobalContext } from '@/context/global-context/context'
 import { CreateStopPointModal } from './create-stop-point-modal'
+import AddressAutocomplete from '@/components/ui/address-autocomplete'
 
 export function LocationsSection({
   formData,
@@ -237,6 +238,7 @@ export function LocationsSection({
         handleWaypointChange(index, 'operatingHours', selectedStopPoint.operatingHours || '')
         handleWaypointChange(index, 'clientId', formData.selectedClient)
         handleWaypointChange(index, 'stopPointId', clientStopPointId)
+        handleWaypointChange(index, 'stopPointData', selectedStopPoint)
       }
       return
     }
@@ -254,6 +256,7 @@ export function LocationsSection({
       handleWaypointChange(index, 'operatingHours', selectedStopPoint.operating_hours || '')
       handleWaypointChange(index, 'clientId', '')
       handleWaypointChange(index, 'stopPointId', selectedStopPoint.id)
+      handleWaypointChange(index, 'stopPointData', selectedStopPoint)
     }
   }
 
@@ -330,14 +333,20 @@ export function LocationsSection({
 
               <div className="space-y-2">
                 <Label htmlFor={`pickup-address-${index}`}>Address</Label>
-                <Textarea
-                  id={`pickup-address-${index}`}
+                <AddressAutocomplete
+                  label=""
                   value={location.address || ''}
-                  onChange={(e) =>
-                    handlePickupLocationChange(index, 'address', e.target.value)
-                  }
-                  placeholder="Enter full address"
-                  rows={2}
+                  onChange={(val) => handlePickupLocationChange(index, 'address', val)}
+                  onAddressSelect={(components) => {
+                    handlePickupLocationChange(index, 'address', components.formatted_address || components.street)
+                    if (components.coords) {
+                      handlePickupLocationChange(index, 'coords', components.coords)
+                    }
+                  }}
+                  onCoordinatesChange={(coords) => {
+                    handlePickupLocationChange(index, 'coords', coords)
+                  }}
+                  placeholder="Start typing an address..."
                 />
               </div>
 
@@ -511,18 +520,20 @@ export function LocationsSection({
 
               <div className="space-y-2">
                 <Label htmlFor={`dropoff-address-${index}`}>Address</Label>
-                <Textarea
-                  id={`dropoff-address-${index}`}
+                <AddressAutocomplete
+                  label=""
                   value={location.address || ''}
-                  onChange={(e) =>
-                    handleDropoffLocationChange(
-                      index,
-                      'address',
-                      e.target.value
-                    )
-                  }
-                  placeholder="Enter full address"
-                  rows={2}
+                  onChange={(val) => handleDropoffLocationChange(index, 'address', val)}
+                  onAddressSelect={(components) => {
+                    handleDropoffLocationChange(index, 'address', components.formatted_address || components.street)
+                    if (components.coords) {
+                      handleDropoffLocationChange(index, 'coords', components.coords)
+                    }
+                  }}
+                  onCoordinatesChange={(coords) => {
+                    handleDropoffLocationChange(index, 'coords', coords)
+                  }}
+                  placeholder="Start typing an address..."
                 />
               </div>
 

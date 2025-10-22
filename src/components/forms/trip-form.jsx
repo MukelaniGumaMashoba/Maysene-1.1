@@ -43,6 +43,7 @@ const TripForm = ({ onClose, id }) => {
   const [loading, setLoading] = useState(false)
   const [formState, setFormState] = useState(null)
   const [currentTab, setCurrentTab] = useState(0)
+  const [validationErrors, setValidationErrors] = useState({})
 
   // Fetch all reference data from Supabase on mount
   useEffect(() => {
@@ -723,9 +724,78 @@ const TripForm = ({ onClose, id }) => {
     })
   }
 
+  // Validation function
+  const validateCurrentTab = () => {
+    const errors = {}
+    
+    if (currentTab === 0) { // Trip Information
+      if (!formState.orderNumber) errors.orderNumber = 'Order number is required'
+      if (!formState.rate) errors.rate = 'Rate is required'
+      if (!formState.costCentre) errors.costCentre = 'Cost centre is required'
+      if (!formState.startDate) errors.startDate = 'Start date is required'
+      if (!formState.endDate) errors.endDate = 'End date is required'
+      if (!formState.cargo) errors.cargo = 'Cargo description is required'
+      if (!formState.cargoWeight) errors.cargoWeight = 'Cargo weight is required'
+      if (!formState.clientDetails.name) errors.clientName = 'Client name is required'
+      if (!formState.clientDetails.contactPerson) errors.contactPerson = 'Contact person is required'
+      if (!formState.clientDetails.phone) errors.clientPhone = 'Client phone is required'
+      if (!formState.clientDetails.email) errors.clientEmail = 'Client email is required'
+    }
+    
+    if (currentTab === 1) { // Vehicle Information
+      if (!formState.vehicleAssignments || formState.vehicleAssignments.length === 0) {
+        errors.vehicles = 'At least one vehicle assignment is required'
+      } else {
+        formState.vehicleAssignments.forEach((assignment, index) => {
+          if (!assignment.vehicle?.id) {
+            errors[`vehicle_${index}`] = 'Vehicle selection is required'
+          }
+          if (!assignment.drivers || assignment.drivers.length === 0 || !assignment.drivers[0]?.id) {
+            errors[`driver_${index}`] = 'At least one driver is required'
+          }
+        })
+      }
+    }
+    
+    if (currentTab === 2) { // Location Information
+      if (!formState.pickupLocations || formState.pickupLocations.length === 0) {
+        errors.pickupLocations = 'At least one pickup location is required'
+      } else {
+        formState.pickupLocations.forEach((location, index) => {
+          if (!location.location) errors[`pickup_location_${index}`] = 'Location name is required'
+          if (!location.address) errors[`pickup_address_${index}`] = 'Address is required'
+        })
+      }
+      
+      if (!formState.dropoffLocations || formState.dropoffLocations.length === 0) {
+        errors.dropoffLocations = 'At least one dropoff location is required'
+      } else {
+        formState.dropoffLocations.forEach((location, index) => {
+          if (!location.location) errors[`dropoff_location_${index}`] = 'Location name is required'
+          if (!location.address) errors[`dropoff_address_${index}`] = 'Address is required'
+        })
+      }
+    }
+    
+    setValidationErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  // Handle next button with validation
+  const handleNext = () => {
+    if (validateCurrentTab()) {
+      if (currentTab === 2) { // After locations tab, auto-submit
+        handleSubmit()
+      } else {
+        setCurrentTab(currentTab + 1)
+      }
+    }
+  }
+
   // Handle form submission
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    if (e) e.preventDefault()
+    if (!validateCurrentTab()) return
     setLoading(true)
     try {
       // Normalize and resolve references for drivers, vehicles, costCentre, etc.
@@ -1216,13 +1286,30 @@ const TripForm = ({ onClose, id }) => {
                 Previous
               </Button>
             )}
-            {currentTab < tabs.length - 1 || currentTab === 0 ? (
+            {currentTab < 2 ? (
               <Button
                 type="button"
-                onClick={() => setCurrentTab(currentTab + 1)}
+                onClick={handleNext}
                 disabled={loading}
               >
                 Next
+              </Button>
+            ) : currentTab === 2 ? (
+              <Button
+                type="button"
+                onClick={handleNext}
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-b-transparent"></span>
+                    Saving Trip...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" /> Save Trip
+                  </>
+                )}
               </Button>
             ) : (
               <Button
