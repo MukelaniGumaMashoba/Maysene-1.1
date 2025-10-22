@@ -20,28 +20,30 @@ const titleSection = {
   },
 }
 
-const screenStats = [
+const getScreenStats = (data = []) => [
   {
     title: 'Total Stop Points',
-    value: 35,
+    value: data.length,
     icon: <Map className="h-4 w-4 text-gray-500" />,
   },
   {
     title: 'Warehouses',
-    value: 12,
-    icon: <MapPin className="h-4 w-4 text-amber-500" />,
+    value: data.filter(sp => sp.type === 'warehouse').length,
+    icon: <MapPin className="h-4 w-4 text-blue-500" />,
   },
   {
     title: 'Distribution Centers',
-    value: 8,
-    icon: <MapPin className="h-4 w-4 text-amber-500" />,
+    value: data.filter(sp => sp.type === 'distribution').length,
+    icon: <MapPin className="h-4 w-4 text-green-500" />,
   },
   {
-    title: 'Truck Stops',
-    value: 15,
-    icon: <MapPin className="h-4 w-4 text-amber-500" />,
+    title: 'Hubs',
+    value: data.filter(sp => sp.type === 'hub').length,
+    icon: <MapPin className="h-4 w-4 text-purple-500" />,
   },
 ]
+
+const screenStats = getScreenStats([])
 
 const tableInfo = {
   title: 'Stop Points',
@@ -133,6 +135,7 @@ export const initialStopPointsState = {
   csv_rows: rows,
   titleSection,
   screenStats,
+  getScreenStats,
   tableInfo,
   columns: columns,
   data,

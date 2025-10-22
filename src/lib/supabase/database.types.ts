@@ -41,6 +41,81 @@ export type Database = {
         }
         Relationships: []
       }
+      boot_stock: {
+        Row: {
+          code: string | null
+          cost_excl_vat_zar: string | null
+          created_at: string | null
+          description: string | null
+          id: number
+          ip_addresses: Json | null
+          quantity: string | null
+          stock_type: string | null
+          supplier: string | null
+          total_value: string | null
+          USD: string | null
+        }
+        Insert: {
+          code?: string | null
+          cost_excl_vat_zar?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: never
+          ip_addresses?: Json | null
+          quantity?: string | null
+          stock_type?: string | null
+          supplier?: string | null
+          total_value?: string | null
+          USD?: string | null
+        }
+        Update: {
+          code?: string | null
+          cost_excl_vat_zar?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: never
+          ip_addresses?: Json | null
+          quantity?: string | null
+          stock_type?: string | null
+          supplier?: string | null
+          total_value?: string | null
+          USD?: string | null
+        }
+        Relationships: []
+      }
+      boot_stock_catalog: {
+        Row: {
+          code: string
+          cost_excl_vat_zar: string | null
+          created_at: string | null
+          description: string
+          id: number
+          stock_type: string | null
+          supplier: string | null
+          usd: string | null
+        }
+        Insert: {
+          code: string
+          cost_excl_vat_zar?: string | null
+          created_at?: string | null
+          description: string
+          id?: never
+          stock_type?: string | null
+          supplier?: string | null
+          usd?: string | null
+        }
+        Update: {
+          code?: string
+          cost_excl_vat_zar?: string | null
+          created_at?: string | null
+          description?: string
+          id?: never
+          stock_type?: string | null
+          supplier?: string | null
+          usd?: string | null
+        }
+        Relationships: []
+      }
       breakdown_cost_centers: {
         Row: {
           budget: number | null
@@ -1143,6 +1218,7 @@ export type Database = {
           professional_driving_permit: boolean | null
           rear_of_driver_pic: string | null
           sa_issued: boolean | null
+          status: boolean | null
           surname: string
           user_id: string | null
           vehicle_restriction_code: string | null
@@ -1166,6 +1242,7 @@ export type Database = {
           professional_driving_permit?: boolean | null
           rear_of_driver_pic?: string | null
           sa_issued?: boolean | null
+          status?: boolean | null
           surname: string
           user_id?: string | null
           vehicle_restriction_code?: string | null
@@ -1189,6 +1266,7 @@ export type Database = {
           professional_driving_permit?: boolean | null
           rear_of_driver_pic?: string | null
           sa_issued?: boolean | null
+          status?: boolean | null
           surname?: string
           user_id?: string | null
           vehicle_restriction_code?: string | null
@@ -2454,6 +2532,47 @@ export type Database = {
         }
         Relationships: []
       }
+      load_inspections: {
+        Row: {
+          created_at: string | null
+          driver_id: string
+          id: number
+          images: string[]
+          inspection_date: string
+          status: string
+          trip_id: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          driver_id: string
+          id?: never
+          images: string[]
+          inspection_date?: string
+          status?: string
+          trip_id?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          driver_id?: string
+          id?: never
+          images?: string[]
+          inspection_date?: string
+          status?: string
+          trip_id?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "load_inspections_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mac_steel: {
         Row: {
           company: string | null
@@ -2859,6 +2978,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           id: number
+          ip_addresses: Json | null
           quantity: string | null
           stock_type: string | null
           supplier: string | null
@@ -2871,6 +2991,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: never
+          ip_addresses?: Json | null
           quantity?: string | null
           stock_type?: string | null
           supplier?: string | null
@@ -2883,6 +3004,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: never
+          ip_addresses?: Json | null
           quantity?: string | null
           stock_type?: string | null
           supplier?: string | null
@@ -3010,6 +3132,72 @@ export type Database = {
         }
         Relationships: []
       }
+      stop_points: {
+        Row: {
+          address: string | null
+          capacity: string | null
+          city: string | null
+          contact_email: string | null
+          contact_person: string | null
+          contact_phone: string | null
+          coordinates: string | null
+          coords: string | null
+          country: string | null
+          created_at: string | null
+          facilities: string[] | null
+          id: number
+          name: string | null
+          notes: string | null
+          operating_hours: string | null
+          state: string | null
+          street: string | null
+          type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          capacity?: string | null
+          city?: string | null
+          contact_email?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          coordinates?: string | null
+          coords?: string | null
+          country?: string | null
+          created_at?: string | null
+          facilities?: string[] | null
+          id?: never
+          name?: string | null
+          notes?: string | null
+          operating_hours?: string | null
+          state?: string | null
+          street?: string | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          capacity?: string | null
+          city?: string | null
+          contact_email?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          coordinates?: string | null
+          coords?: string | null
+          country?: string | null
+          created_at?: string | null
+          facilities?: string[] | null
+          id?: never
+          name?: string | null
+          notes?: string | null
+          operating_hours?: string | null
+          state?: string | null
+          street?: string | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       systems: {
         Row: {
           created_at: string
@@ -3033,6 +3221,65 @@ export type Database = {
           users?: Json | null
         }
         Relationships: []
+      }
+      tech_stock: {
+        Row: {
+          created_at: string
+          id: number
+          new_stock_assigned: boolean | null
+          stock: Json | null
+          technician_email: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          new_stock_assigned?: boolean | null
+          stock?: Json | null
+          technician_email?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          new_stock_assigned?: boolean | null
+          stock?: Json | null
+          technician_email?: string | null
+        }
+        Relationships: []
+      }
+      technician_boot_stock: {
+        Row: {
+          catalog_item_id: number | null
+          id: number
+          ip_addresses: Json | null
+          last_updated: string | null
+          quantity: number | null
+          technician_email: string
+        }
+        Insert: {
+          catalog_item_id?: number | null
+          id?: never
+          ip_addresses?: Json | null
+          last_updated?: string | null
+          quantity?: number | null
+          technician_email: string
+        }
+        Update: {
+          catalog_item_id?: number | null
+          id?: never
+          ip_addresses?: Json | null
+          last_updated?: string | null
+          quantity?: number | null
+          technician_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technician_boot_stock_catalog_item_id_fkey"
+            columns: ["catalog_item_id"]
+            isOneToOne: false
+            referencedRelation: "boot_stock_catalog"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       technicians: {
         Row: {
@@ -3061,99 +3308,233 @@ export type Database = {
         }
         Relationships: []
       }
+      trailer: {
+        Row: {
+          created_at: string
+          fleet_number: string | null
+          id: number
+          registration: string | null
+        }
+        Insert: {
+          created_at?: string
+          fleet_number?: string | null
+          id?: number
+          registration?: string | null
+        }
+        Update: {
+          created_at?: string
+          fleet_number?: string | null
+          id?: number
+          registration?: string | null
+        }
+        Relationships: []
+      }
       trips: {
         Row: {
           cargo: string | null
           cargo_weight: string | null
-          cargoWeight: number | null
+          cargoweight: string | null
+          cargoWeight: string | null
           client_details: Json | null
+          clientDetails: Json | null
           cost_centre: string | null
+          costcentre: Json | null
+          costCentre: string | null
+          created_at: string | null
           destination: string | null
           distance: string | null
           driver: string | null
           drivers: Json | null
           dropoff_locations: Json | null
+          dropofflocations: Json | null
+          dropoffLocations: Json | null
           end_date: string | null
+          enddate: string | null
+          endDate: string | null
           id: number
+          load_inspection_id: number | null
           notes: string | null
-          order_number: string | null
+          ordernumber: string | null
+          orderNumber: string | null
           origin: string | null
           pickup_locations: Json | null
+          pickuplocations: Json | null
+          pickupLocations: Json | null
           rate: string | null
           route: string | null
           selected_client: string | null
           selected_stop_points: Json | null
-          start_date: string | null
-          status: string
+          selectedclient: string | null
+          selectedClient: string | null
+          selectedstoppoints: Json | null
+          selectedStopPoints: Json | null
+          startdate: string | null
+          startDate: string | null
+          status: string | null
+          status_history: string[] | null
           status_notes: string | null
+          statusnotes: string | null
+          statusNotes: string | null
           stop_points: Json | null
-          trip_id: string
+          stoppoints: Json | null
+          stopPoints: Json | null
+          trip_id: string | null
+          updated_at: string | null
           vehicle: string | null
           vehicle_assignments: Json | null
+          vehicleassignments: Json | null
+          vehicleAssignments: Json | null
           vehicles: Json | null
           waypoints: Json | null
         }
         Insert: {
           cargo?: string | null
           cargo_weight?: string | null
-          cargoWeight?: number | null
+          cargoweight?: string | null
+          cargoWeight?: string | null
           client_details?: Json | null
+          clientDetails?: Json | null
           cost_centre?: string | null
+          costcentre?: Json | null
+          costCentre?: string | null
+          created_at?: string | null
           destination?: string | null
           distance?: string | null
           driver?: string | null
           drivers?: Json | null
           dropoff_locations?: Json | null
+          dropofflocations?: Json | null
+          dropoffLocations?: Json | null
           end_date?: string | null
-          id?: number
+          enddate?: string | null
+          endDate?: string | null
+          id?: never
+          load_inspection_id?: number | null
           notes?: string | null
-          order_number?: string | null
+          ordernumber?: string | null
+          orderNumber?: string | null
           origin?: string | null
           pickup_locations?: Json | null
+          pickuplocations?: Json | null
+          pickupLocations?: Json | null
           rate?: string | null
           route?: string | null
           selected_client?: string | null
           selected_stop_points?: Json | null
-          start_date?: string | null
-          status?: string
+          selectedclient?: string | null
+          selectedClient?: string | null
+          selectedstoppoints?: Json | null
+          selectedStopPoints?: Json | null
+          startdate?: string | null
+          startDate?: string | null
+          status?: string | null
+          status_history?: string[] | null
           status_notes?: string | null
+          statusnotes?: string | null
+          statusNotes?: string | null
           stop_points?: Json | null
-          trip_id: string
+          stoppoints?: Json | null
+          stopPoints?: Json | null
+          trip_id?: string | null
+          updated_at?: string | null
           vehicle?: string | null
           vehicle_assignments?: Json | null
+          vehicleassignments?: Json | null
+          vehicleAssignments?: Json | null
           vehicles?: Json | null
           waypoints?: Json | null
         }
         Update: {
           cargo?: string | null
           cargo_weight?: string | null
-          cargoWeight?: number | null
+          cargoweight?: string | null
+          cargoWeight?: string | null
           client_details?: Json | null
+          clientDetails?: Json | null
           cost_centre?: string | null
+          costcentre?: Json | null
+          costCentre?: string | null
+          created_at?: string | null
           destination?: string | null
           distance?: string | null
           driver?: string | null
           drivers?: Json | null
           dropoff_locations?: Json | null
+          dropofflocations?: Json | null
+          dropoffLocations?: Json | null
           end_date?: string | null
-          id?: number
+          enddate?: string | null
+          endDate?: string | null
+          id?: never
+          load_inspection_id?: number | null
           notes?: string | null
-          order_number?: string | null
+          ordernumber?: string | null
+          orderNumber?: string | null
           origin?: string | null
           pickup_locations?: Json | null
+          pickuplocations?: Json | null
+          pickupLocations?: Json | null
           rate?: string | null
           route?: string | null
           selected_client?: string | null
           selected_stop_points?: Json | null
-          start_date?: string | null
-          status?: string
+          selectedclient?: string | null
+          selectedClient?: string | null
+          selectedstoppoints?: Json | null
+          selectedStopPoints?: Json | null
+          startdate?: string | null
+          startDate?: string | null
+          status?: string | null
+          status_history?: string[] | null
           status_notes?: string | null
+          statusnotes?: string | null
+          statusNotes?: string | null
           stop_points?: Json | null
-          trip_id?: string
+          stoppoints?: Json | null
+          stopPoints?: Json | null
+          trip_id?: string | null
+          updated_at?: string | null
           vehicle?: string | null
           vehicle_assignments?: Json | null
+          vehicleassignments?: Json | null
+          vehicleAssignments?: Json | null
           vehicles?: Json | null
           waypoints?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trips_load_inspection_id_fkey"
+            columns: ["load_inspection_id"]
+            isOneToOne: false
+            referencedRelation: "load_inspections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trips_assignement: {
+        Row: {
+          accepted: boolean | null
+          created_at: string
+          driver_id: number | null
+          id: number
+          trailer_id: number | null
+          vehicle_id: number | null
+        }
+        Insert: {
+          accepted?: boolean | null
+          created_at?: string
+          driver_id?: number | null
+          id?: number
+          trailer_id?: number | null
+          vehicle_id?: number | null
+        }
+        Update: {
+          accepted?: boolean | null
+          created_at?: string
+          driver_id?: number | null
+          id?: number
+          trailer_id?: number | null
+          vehicle_id?: number | null
         }
         Relationships: []
       }
@@ -3203,6 +3584,7 @@ export type Database = {
           id: number
           inspected: boolean
           inspection_date: string | null
+          trailer: string | null
           type: string | null
           updated_at: string | null
           user_id: string | null
@@ -3211,9 +3593,10 @@ export type Database = {
         Insert: {
           created_at?: string | null
           driver_id?: number | null
-          id?: number
+          id?: never
           inspected?: boolean
           inspection_date?: string | null
+          trailer?: string | null
           type?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -3222,9 +3605,10 @@ export type Database = {
         Update: {
           created_at?: string | null
           driver_id?: number | null
-          id?: number
+          id?: never
           inspected?: boolean
           inspection_date?: string | null
+          trailer?: string | null
           type?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -5264,6 +5648,7 @@ export type Database = {
       }
       vehiclesc: {
         Row: {
+          available: boolean | null
           boarding_km_hours: number | null
           colour: string
           company_id: number | null
@@ -5273,6 +5658,7 @@ export type Database = {
           driver_id: number | null
           engine_number: string | null
           expected_boarding_date: string | null
+          fleet_number: string | null
           fuel_type: string | null
           id: number
           inspected: boolean | null
@@ -5286,11 +5672,13 @@ export type Database = {
           registration_number: string
           retail_price: number | null
           service_intervals: string
+          speedo_current: number | null
           status: string | null
           sub_model: string | null
           take_on_kilometers: number
           tank_capacity: number | null
           tech_id: number | null
+          trailer_name: string | null
           transmission_type: string | null
           type: string | null
           updated_at: string | null
@@ -5300,6 +5688,7 @@ export type Database = {
           workshop_id: string | null
         }
         Insert: {
+          available?: boolean | null
           boarding_km_hours?: number | null
           colour: string
           company_id?: number | null
@@ -5309,6 +5698,7 @@ export type Database = {
           driver_id?: number | null
           engine_number?: string | null
           expected_boarding_date?: string | null
+          fleet_number?: string | null
           fuel_type?: string | null
           id?: number
           inspected?: boolean | null
@@ -5322,11 +5712,13 @@ export type Database = {
           registration_number: string
           retail_price?: number | null
           service_intervals: string
+          speedo_current?: number | null
           status?: string | null
           sub_model?: string | null
           take_on_kilometers: number
           tank_capacity?: number | null
           tech_id?: number | null
+          trailer_name?: string | null
           transmission_type?: string | null
           type?: string | null
           updated_at?: string | null
@@ -5336,6 +5728,7 @@ export type Database = {
           workshop_id?: string | null
         }
         Update: {
+          available?: boolean | null
           boarding_km_hours?: number | null
           colour?: string
           company_id?: number | null
@@ -5345,6 +5738,7 @@ export type Database = {
           driver_id?: number | null
           engine_number?: string | null
           expected_boarding_date?: string | null
+          fleet_number?: string | null
           fuel_type?: string | null
           id?: number
           inspected?: boolean | null
@@ -5358,11 +5752,13 @@ export type Database = {
           registration_number?: string
           retail_price?: number | null
           service_intervals?: string
+          speedo_current?: number | null
           status?: string | null
           sub_model?: string | null
           take_on_kilometers?: number
           tank_capacity?: number | null
           tech_id?: number | null
+          trailer_name?: string | null
           transmission_type?: string | null
           type?: string | null
           updated_at?: string | null
@@ -5485,10 +5881,16 @@ export type Database = {
       }
     }
     Functions: {
-      calculate_monthly_billing: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
+      assign_technician_with_override: {
+        Args: {
+          p_job_date: string
+          p_job_id: string
+          p_override?: boolean
+          p_technician_name: string
+        }
+        Returns: Json
       }
+      calculate_monthly_billing: { Args: never; Returns: undefined }
       calculate_premium_with_tolerance: {
         Args: {
           p_base_premium: number
@@ -5505,16 +5907,27 @@ export type Database = {
           performance_rating: number
         }[]
       }
-      generate_job_number: {
-        Args: Record<PropertyKey, never>
-        Returns: string
+      check_technician_availability: {
+        Args: { p_job_date: string; p_technician_name: string }
+        Returns: {
+          conflicting_date: string
+          customer_name: string
+          job_id: string
+          job_number: string
+        }[]
       }
-      generate_quotation_number: {
-        Args: Record<PropertyKey, never>
-        Returns: string
+      force_assign_technician: {
+        Args: {
+          p_job_date: string
+          p_job_id: string
+          p_technician_name: string
+        }
+        Returns: Json
       }
+      generate_job_number: { Args: never; Returns: string }
+      generate_quotation_number: { Args: never; Returns: string }
       get_available_months: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           has_fleet_stats: boolean
           has_premiums: boolean
@@ -5535,7 +5948,7 @@ export type Database = {
         }[]
       }
       get_payments_summary: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           balance_due: number
           company: string
@@ -5549,25 +5962,9 @@ export type Database = {
           total_paid: number
         }[]
       }
-      gtrgm_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_decompress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_in: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_options: {
-        Args: { "": unknown }
+      initialize_technician_stock: {
+        Args: { tech_email: string }
         Returns: undefined
-      }
-      gtrgm_out: {
-        Args: { "": unknown }
-        Returns: unknown
       }
       insert_monthly_premiums: {
         Args: {
@@ -5579,54 +5976,16 @@ export type Database = {
         }
         Returns: undefined
       }
-      monthly_billing_process: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      reset_loan_vehicles: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      set_limit: {
-        Args: { "": number }
-        Returns: number
-      }
-      show_limit: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      show_trgm: {
-        Args: { "": string }
-        Returns: string[]
-      }
-      trigger_monthly_billing: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      unaccent: {
-        Args: { "": string }
-        Returns: string
-      }
-      unaccent_init: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      update_overdue_amounts: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      update_payment_months: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      update_payment_months_once: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      update_payments_on_22nd: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      monthly_billing_process: { Args: never; Returns: undefined }
+      reset_loan_vehicles: { Args: never; Returns: undefined }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
+      trigger_monthly_billing: { Args: never; Returns: string }
+      unaccent: { Args: { "": string }; Returns: string }
+      update_overdue_amounts: { Args: never; Returns: undefined }
+      update_payment_months: { Args: never; Returns: undefined }
+      update_payment_months_once: { Args: never; Returns: undefined }
+      update_payments_on_22nd: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

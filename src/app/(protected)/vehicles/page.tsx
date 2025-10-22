@@ -19,7 +19,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Truck, Car, FileText, TruckElectricIcon } from "lucide-react";
+import { Plus, Truck, Car, FileText, TruckElectricIcon, Image } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -143,34 +144,38 @@ export default function Vehicles() {
     setFilteredDrivers(filtered);
   }, [searchTerm, drivers]);
 
-  const useWorkshopId = () => {
-    const [workshopId, setWorkshopId] = useState<string | null>(null);
-    useEffect(() => {
-      const fetchWorkshopId = async () => {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const userId = sessionData?.session?.user?.id;
-        if (!userId) return;
+  // const useWorkshopId = () => {
+  //   const [workshopId, setWorkshopId] = useState<string | null>(null);
+  //   useEffect(() => {
+  //     const fetchWorkshopId = async () => {
+  //       const { data: sessionData } = await supabase.auth.getSession();
+  //       const userId = sessionData?.session?.user?.id;
+  //       if (!userId) return;
 
-        const { data, error } = await supabase
-          .from("users")
-          .select("workshop_id")
-          .eq("id", userId)
-          .single();
+  //       const { data, error } = await supabase
+  //         .from("users")
+  //         .select("workshop_id")
+  //         .eq("id", userId)
+  //         .single();
 
-        if (data && !error) {
-          setWorkshopId(data.workshop_id);
-        }
-      };
+  //       if (data && !error) {
+  //         setWorkshopId(data.workshop_id);
+  //       }
+  //     };
 
-      fetchWorkshopId();
-    }, []);
+  //     fetchWorkshopId();
+  //   }, []);
 
-    return workshopId;
-  };
-  const workshopId = useWorkshopId();
+  //   return workshopId;
+  // };
+  // const workshopId = useWorkshopId();
+  
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [filteredTechs, setFilteredTechs] = useState<Technician[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [trailers, setTrailers] = useState([]);
+  const [isAddingTrailer, setIsAddingTrailer] = useState(false);
+  const [trailerForm, setTrailerForm] = useState({ registration: '', fleet_number: '', image: null });
   
   
 
@@ -256,6 +261,28 @@ export default function Vehicles() {
       setVehicles(vehicles || []);
     }
   };
+
+  const fetchTrailers = async () => {
+    const { data, error } = await supabase.from('trailer').select('*');
+    if (error) {
+      console.error('Error fetching trailers:', error);
+    } else {
+      setTrailers(data || []);
+    }
+  };
+
+  const handleAddTrailer = async () => {
+    const { error } = await supabase.from('trailer').insert([trailerForm]);
+    if (error) {
+      console.error('Error adding trailer:', error);
+      toast.error('Failed to add trailer');
+    } else {
+      toast.success('Trailer added successfully');
+      setTrailerForm({ registration: '', fleet_number: '', image: null });
+      setIsAddingTrailer(false);
+      fetchTrailers();
+    }
+  };
   useEffect(() => {
     const vehiclesc = supabase
       .channel("schema-db-changes")
@@ -268,6 +295,7 @@ export default function Vehicles() {
       )
       .subscribe();
     fetchVehicles();
+    fetchTrailers();
 
     return () => {
       vehiclesc.unsubscribe;
@@ -442,7 +470,7 @@ export default function Vehicles() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Trailers</p>
                 <p className="text-2xl font-bold text-purple-600">
-                  {vehicles.filter((v) => v.vehicle_type === "trailer").length}
+                  {trailers.length}
                 </p>
               </div>
               <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -469,7 +497,15 @@ export default function Vehicles() {
           </CardContent>
         </Card>
       </div>
-      {/* Add Vehicle Form */}
+      {/* Tabs for Vehicles and Trailers */}
+      <Tabs defaultValue="vehicles" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="vehicles">Vehicles</TabsTrigger>
+          <TabsTrigger value="trailers">Trailers</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="vehicles" className="space-y-6">
+          {/* Add Vehicle Form */}
       {isAddingVehicle && (
         <Card>
           <CardHeader>
@@ -1069,17 +1105,118 @@ export default function Vehicles() {
         </Card>
       )}
 
-      {columns && vehicles && vehicles.length > 0 && (
-        <DataTable
-          columns={columns()}
-          data={vehicles}
-          filterColumn={""}
-          filterPlaceholder={""}
-          // csv_headers={[]}
-          // csv_rows={[]}
-          href={`/vehicles`}
-        />
-      )}
+          {columns && vehicles && vehicles.length > 0 && (
+            <DataTable
+              columns={columns()}
+              data={vehicles}
+              filterColumn={""}
+              filterPlaceholder={""}
+              href={`/vehicles`}
+            />
+          )}
+        </TabsContent>
+        
+        <TabsContent value="trailers" className="space-y-6">
+          {/* Add Trailer Button */}
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">Trailer Fleet</h2>
+            <Button onClick={() => setIsAddingTrailer(true)} className="bg-purple-600 hover:bg-purple-700">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Trailer
+            </Button>
+          </div>
+          
+          {/* Add Trailer Form */}
+          {isAddingTrailer && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Add New Trailer</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Registration *</label>
+                    <Input
+                      value={trailerForm.registration}
+                      onChange={(e) => setTrailerForm({...trailerForm, registration: e.target.value})}
+                      placeholder="ABC 123 GP"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Fleet Number</label>
+                    <Input
+                      value={trailerForm.fleet_number}
+                      onChange={(e) => setTrailerForm({...trailerForm, fleet_number: e.target.value})}
+                      placeholder="TRL-001"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <Button onClick={handleAddTrailer} className="bg-purple-600 hover:bg-purple-700">
+                    Save Trailer
+                  </Button>
+                  <Button variant="outline" onClick={() => setIsAddingTrailer(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          
+          {/* Trailers Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {trailers.map((trailer) => (
+              <Card key={trailer.id} className="hover:shadow-lg transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Truck className="w-5 h-5 text-purple-600" />
+                      <span className="font-semibold">{trailer.registration}</span>
+                    </div>
+                    <Badge className="bg-purple-100 text-purple-800">Trailer</Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Fleet Number:</span>
+                      <span className="text-sm font-medium">{trailer.fleet_number || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Added:</span>
+                      <span className="text-sm font-medium">{new Date(trailer.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  <div className="mt-4 h-32 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <Image className="w-8 h-8 text-gray-400" />
+                    <span className="ml-2 text-sm text-gray-500">No image</span>
+                  </div>
+                  <div className="mt-4 flex gap-2">
+                    <Button size="sm" variant="outline" className="flex-1">
+                      View Details
+                    </Button>
+                    <Button size="sm" variant="outline">
+                      Edit
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          
+          {trailers.length === 0 && (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <Truck className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No trailers found</h3>
+                <p className="text-gray-500 mb-4">Get started by adding your first trailer to the fleet.</p>
+                <Button onClick={() => setIsAddingTrailer(true)} className="bg-purple-600 hover:bg-purple-700">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add First Trailer
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

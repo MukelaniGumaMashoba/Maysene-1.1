@@ -52,7 +52,7 @@ import DetailActionBar from '@/components/layout/detail-action-bar'
 import { ProgressWithWaypoints } from '@/components/ui/progress-with-waypoints'
 import DetailCard from '../ui/detail-card'
 import { Separator } from '../ui/separator'
-import DisplayMap from '../map/display-map'
+import TripMapView from '../map/trip-map-view'
 
 // Helper function to format date
 const formatDate = (dateString) => {
@@ -207,6 +207,7 @@ export default function TripDetails({ id }) {
   })
   const [updatingStatus, setUpdatingStatus] = useState(false)
   const [locations, setLocations] = useState([])
+  const [routeCoordinates, setRouteCoordinates] = useState([])
 
   const handleGoBack = () => {
     router.back()
@@ -414,27 +415,94 @@ export default function TripDetails({ id }) {
     { label: 'Total Expenses', value: calculateTotalExpenses() },
   ]
 
-  // useEffect(() => {
-  //   // If trip is not found, redirect to trips list
-  //   if (!trip) {
-  //     return []
-  //   }
+  // Extract coordinates from all trip locations
+  useEffect(() => {
+    if (!parsedTrip) return;
+    
+    const extractCoordinates = async () => {
+      const coordinates = [];
+      
+      // Add pickup locations
+      if (parsedTrip.pickupLocations) {
+        for (const location of parsedTrip.pickupLocations) {
+          if (location.address) {
+            try {
+              const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(location.address)}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`);
+              const data = await response.json();
+              if (data.features && data.features.length > 0) {
+                const [lng, lat] = data.features[0].center;
+                coordinates.push({ lat, lng, type: 'pickup', address: location.address });
+              }
+            } catch (error) {
+              console.error('Error geocoding pickup location:', error);
+            }
+          }
+        }
+      }
+      
+      // Add dropoff locations
+      if (parsedTrip.dropoffLocations) {
+        for (const location of parsedTrip.dropoffLocations) {
+          if (location.address) {
+            try {
+              const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(location.address)}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`);
+              const data = await response.json();
+              if (data.features && data.features.length > 0) {
+                const [lng, lat] = data.features[0].center;
+                coordinates.push({ lat, lng, type: 'dropoff', address: location.address });
+              }
+            } catch (error) {
+              console.error('Error geocoding dropoff location:', error);
+            }
+          }
+        }
+      }
+      
+      // Add waypoints
+      if (parsedTrip.waypoints) {
+        for (const waypoint of parsedTrip.waypoints) {
+          const address = waypoint.address || waypoint.location;
+          if (address) {
+            try {
+              const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`);
+              const data = await response.json();
+              if (data.features && data.features.length > 0) {
+                const [lng, lat] = data.features[0].center;
+                coordinates.push({ lat, lng, type: 'waypoint', address });
+              }
+            } catch (error) {
+              console.error('Error geocoding waypoint:', error);
+            }
+          }
+        }
+      }
+      
+      // Add selected stop points
+      if (parsedTrip.selectedStopPoints) {
+        for (const stop of parsedTrip.selectedStopPoints) {
+          const address = stop.address || stop.location || stop.name;
+          if (address) {
+            try {
+              const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`);
+              const data = await response.json();
+              if (data.features && data.features.length > 0) {
+                const [lng, lat] = data.features[0].center;
+                coordinates.push({ lat, lng, type: 'stop', address });
+              }
+            } catch (error) {
+              console.error('Error geocoding stop point:', error);
+            }
+          }
+        }
+      }
+      
+      setRouteCoordinates(coordinates);
+    };
+    
+    extractCoordinates();
+  }, [parsedTrip]);
 
-  //   // Extract pickup and dropoff locations
-  //   const pickupLocations =
-  //     trip.pickupLocations?.map((location) => ({
-  //       label: location.address,
-  //       value: location.address,
-  //     })) || []
-  //   const dropoffLocations =
-  //     trip.dropoffLocations?.map((location) => ({
-  //       label: location.address,
-  //       value: location.address,
-  //     })) || []
-  //   setLocations([...pickupLocations, ...dropoffLocations])
-  // }, [trip])
 
-  console.log('locations :>> ', locations)
 
   // If loading, show skeleton or loading state
   if (loading) {
@@ -510,7 +578,7 @@ export default function TripDetails({ id }) {
       <div className="grid gap-6 md:grid-cols-2">
         <DetailCard
           title={`Trip Information`}
-          description={'DInformation about this trip'}
+          description={'Information about this trip'}
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {trip_information.map((info) => (
@@ -550,13 +618,13 @@ export default function TripDetails({ id }) {
           title={`Trip Overview`}
           description={'Map view of this trip'}
         >
-          <div className=" h-[250] rounded-lg bg-gray-100 flex items-center justify-center">
-            <DisplayMap address={locations} />
+          <div className="h-[400px] w-full rounded-lg overflow-hidden border">
+            <TripMapView tripData={parsedTrip} />
           </div>
 
           <Separator className="my-4" />
 
-          <div className="mb-4">
+          {/* <div className="mb-4">
             <label className="text-sm font-medium text-gray-500">
               Financial Summary
             </label>
@@ -570,7 +638,7 @@ export default function TripDetails({ id }) {
                 <dd className="mt-1 text-sm text-gray-900">{displayValue(info.value)}</dd>
               </div>
             ))}
-          </div>
+          </div> */}
         </DetailCard>
       </div>
 
@@ -604,14 +672,14 @@ export default function TripDetails({ id }) {
                         {displayValue(assignment.drivers)}
                       </p>
                     </div>
-                    <div>
+                    {/* <div>
                       <h4 className="font-medium text-sm text-gray-500">
                         Trailers
                       </h4>
                       <p className="text-sm">
                         {displayValue(assignment.trailers) || 'None'}
                       </p>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               ))}
@@ -625,9 +693,9 @@ export default function TripDetails({ id }) {
       </Card>
 
       {/* Tabs for Waypoints, Expenses, Notes */}
-      <Tabs defaultValue="waypoints" className="w-full">
+      <Tabs defaultValue="notes" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="waypoints">Waypoints</TabsTrigger>
+          {/* <TabsTrigger value="waypoints">Waypoints</TabsTrigger> */}
           {/* <TabsTrigger value="expenses">Expenses</TabsTrigger> */}
           <TabsTrigger value="notes">Notes & Documents</TabsTrigger>
         </TabsList>
@@ -781,7 +849,7 @@ export default function TripDetails({ id }) {
                   </p>
                 </div>
 
-                <div className="p-4 border rounded-md">
+                {/* <div className="p-4 border rounded-md">
                   <h3 className="font-medium mb-2">Documents</h3>
                   <p className="text-sm text-muted-foreground">
                     No documents have been attached to this trip.
@@ -789,7 +857,7 @@ export default function TripDetails({ id }) {
                   <Button variant="outline" size="sm" className="mt-2">
                     <PlusCircle className="h-4 w-4 mr-2" /> Attach Document
                   </Button>
-                </div>
+                </div> */}
               </div>
             </CardContent>
           </Card>

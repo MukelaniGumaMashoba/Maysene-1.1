@@ -24,11 +24,12 @@ import { Badge } from '@/components/ui/badge'
 import { ArrowLeft, Save } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 
-// import * as api from '@/context/stop-points-context/api'
 import { useGlobalContext } from '@/context/global-context/context'
 import DetailCard from '../ui/detail-card'
 import DynamicInput from '../ui/dynamic-input'
 import { getLatLngFromAddress } from '@/hooks/get-coords'
+import AddressAutocomplete from '../ui/address-autocomplete'
+import { createClient } from '@/lib/supabase/client'
 
 // Function to get type badge for preview
 const getTypeBadge = (type) => {
@@ -84,8 +85,9 @@ const getTypeBadge = (type) => {
 }
 
 const StopPointForm = ({ onCancel, id }) => {
-  const { stop_points, stopPointsDispatch } = useGlobalContext()
+  const { stop_points, stopPointsDispatch, sp_api } = useGlobalContext()
   const stopPoint = stop_points.data.find((sp) => sp.id === id)
+  const supabase = createClient()
 
   const [formData, setFormData] = useState({
     id: stopPoint?.id || '',
@@ -105,6 +107,7 @@ const StopPointForm = ({ onCancel, id }) => {
     capacity: stopPoint?.capacity || '',
     notes: stopPoint?.notes || '',
     facilities: stopPoint?.facilities || [],
+    fullAddress: stopPoint?.address || '',
   })
 
   useEffect(() => {
@@ -135,9 +138,39 @@ const StopPointForm = ({ onCancel, id }) => {
     }))
   }
 
-  const onSubmit = (data) => {
-    // api.upsertStopPoints(id, data, stopPointsDispatch)
-    onCancel()
+  const handleAddressSelect = (components) => {
+    setFormData((prev) => ({
+      ...prev,
+      street: components.street || prev.street,
+      city: components.city || prev.city,
+      state: components.state || prev.state,
+      country: components.country || prev.country,
+      fullAddress: components.formatted_address || prev.fullAddress,
+    }))
+  }
+
+  const handleCoordinatesChange = (coords) => {
+    setFormData((prev) => ({
+      ...prev,
+      coords,
+    }))
+  }
+
+  const onSubmit = async (data) => {
+    // Build complete address from components
+    const completeData = {
+      ...data,
+      address: `${data.street}, ${data.city}, ${data.state}, ${data.country}`,
+    }
+    
+    try {
+      await sp_api.upsertStopPoint(id, completeData, stopPointsDispatch)
+      console.log('Stop point saved successfully')
+      onCancel()
+    } catch (error) {
+      console.error('Error saving stop point:', error)
+      alert('There was an error saving the stop point. Please try again.')
+    }
   }
 
   const handleSubmit = (e) => {
@@ -165,6 +198,14 @@ const StopPointForm = ({ onCancel, id }) => {
       label: 'Type *',
       value: formData.type,
       placeholder: 'Select type',
+      type: 'select',
+      options: [
+        { value: 'warehouse', label: 'Warehouse' },
+        { value: 'distribution', label: 'Distribution' },
+        { value: 'hub', label: 'Hub' },
+        { value: 'loading', label: 'Loading' },
+        { value: 'transit', label: 'Transit' }
+      ]
     },
     {
       htmlFor: 'operatingHours',
@@ -398,6 +439,21 @@ const StopPointForm = ({ onCancel, id }) => {
             handleChange={handleChange}
           />
           <Separator className="my-4" />
+          
+          {/* Address Autocomplete */}
+          <div className="mb-4">
+            <AddressAutocomplete
+              label="Search Address"
+              value={formData.fullAddress}
+              onChange={(val) =>
+                setFormData((prev) => ({ ...prev, fullAddress: val }))
+              }
+              onAddressSelect={handleAddressSelect}
+              onCoordinatesChange={handleCoordinatesChange}
+              placeholder="Start typing an address..."
+            />
+          </div>
+
           <DynamicInput
             inputs={address_details}
             handleSelectChange={handleSelectChange}

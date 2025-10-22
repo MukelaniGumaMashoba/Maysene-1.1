@@ -58,7 +58,7 @@ export default function SettingsPage() {
 
             if (userId) {
                 const { data: profile, error: profileError } = await supabase
-                    .from("profiles")
+                    .from("users")
                     .select("*")
                     .eq("id", userId)
                     .single();  // Since there's only one profile per user     

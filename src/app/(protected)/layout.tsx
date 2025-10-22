@@ -39,20 +39,10 @@ const roleNavigation = {
     },
     { name: "Drivers", href: "/drivers", Icon: <Users /> },
     { name: "Vehicles", href: "/vehicles", Icon: <Car /> },
-    // {
-    //   name: "Cost Centres",
-    //   href: "/fleetManager/cost-centres",
-    //   Icon: <Wrench />,
-    // },
     { name: "Clients", href: "/fleetManager/clients", Icon: <Building2 /> },
-    // { name: "Stop Points", href: "/fleetManager/stop-points", Icon: <Route /> },
+    { name: "Stop Points", href: "/fleetManager/stop-points", Icon: <Route /> },
     { name: "Trips", href: "/fleetManager/trips", Icon: <Route /> },
-    // { name: "Routes", href: "/fleetManager/routes", Icon: <Truck /> },
-
-    // { name: 'Qoute Management', href: '/qoutation', Icon: <Building2 /> },
-    // { name: 'Profile', href: '/profile', Icon: <Settings2Icon /> },
     { name: "System Settings", href: "/settings", Icon: <Settings /> },
-    // { name: 'User Management', href: '/userManagement', Icon: <PlusSquare /> },
   ],
   fc: [
     { name: "Dashboard", href: "/dashboard", Icon: <ChartBar /> },
@@ -182,7 +172,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                 <span className="text-white font-bold text-sm">BL</span>
               </div>
               <h1 className="text-lg font-bold text-white">
-                Breakdown Logistics
+                Maysene Logistics
               </h1>
             </div>
             <Button

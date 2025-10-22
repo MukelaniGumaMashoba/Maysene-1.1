@@ -15,7 +15,7 @@ import React from "react";
 
 // const TripDetailsPage = async ({ params }: TripDetailsPageProps) => {
 const TripDetailsPage = async ({ params }) => {
-  const { id } = params;
+  const { id } = await params;
   const supabase = createClient();
   const {
     data: { user },

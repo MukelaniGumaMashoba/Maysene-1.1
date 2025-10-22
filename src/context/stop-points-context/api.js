@@ -1,125 +1,142 @@
-// axios
-import axios from 'axios'
-
 // actions
 import * as api from './actions'
 
-// client cookies js
-import Cookies from 'js-cookie'
+import { createClient } from '@/lib/supabase/client'
 
-// hooks
-import { toast } from '@/hooks/use-toast'
-import { fetchApi } from '@/hooks/use-apis'
-
-// api url
-const API_URL = '/api/stop-points'
+// Transform database data to frontend format
+const transformStopPointFromDB = (dbStopPoint) => {
+  if (!dbStopPoint) return null
+  
+  let coords = null
+  try {
+    coords = dbStopPoint.coords ? JSON.parse(dbStopPoint.coords) : null
+  } catch (e) {
+    coords = null
+  }
+  
+  return {
+    id: dbStopPoint.id,
+    name: dbStopPoint.name || '',
+    type: dbStopPoint.type || 'warehouse',
+    address: dbStopPoint.address || '',
+    street: dbStopPoint.street || '',
+    city: dbStopPoint.city || '',
+    state: dbStopPoint.state || '',
+    country: dbStopPoint.country || '',
+    coords,
+    coordinates: dbStopPoint.coordinates || '',
+    contactPerson: dbStopPoint.contact_person || '',
+    contactPhone: dbStopPoint.contact_phone || '',
+    contactEmail: dbStopPoint.contact_email || '',
+    operatingHours: dbStopPoint.operating_hours || '',
+    capacity: dbStopPoint.capacity || '',
+    notes: dbStopPoint.notes || '',
+    facilities: dbStopPoint.facilities || [],
+    createdAt: dbStopPoint.created_at,
+    updatedAt: dbStopPoint.updated_at,
+  }
+}
 
 // *****************************
-// fetch stop points
+// fetch stop points (Supabase)
 // *****************************
 export const fetchStopPoints = async (stopPointsDispatch) => {
-  fetchApi({
-    dispatch: stopPointsDispatch,
-    start: api.fetchStopPointsStart,
-    success: api.fetchStopPointsSuccess,
-    failure: api.fetchStopPointsFailure,
-    errorMsg: 'Something went wrong, while fetching stop points',
-    url: API_URL,
-  })
+  stopPointsDispatch(api.fetchStopPointsStart())
+  try {
+    const supabase = createClient()
+    const { data, error } = await supabase.from('stop_points').select('*')
+
+    if (error) {
+      console.error('fetchStopPoints error', error)
+      stopPointsDispatch(api.fetchStopPointsFailure(error))
+      return
+    }
+
+    const transformedData = (data || []).map(transformStopPointFromDB)
+    stopPointsDispatch(api.fetchStopPointsSuccess(transformedData))
+  } catch (err) {
+    console.error('fetchStopPoints exception', err)
+    stopPointsDispatch(api.fetchStopPointsFailure(err))
+  }
+}
+
+// Transform frontend data to database format
+const transformStopPointToDB = (stopPoint, isUpdate = false) => {
+  const dbData = {
+    name: stopPoint.name,
+    type: stopPoint.type,
+    address: stopPoint.address,
+    street: stopPoint.street,
+    city: stopPoint.city,
+    state: stopPoint.state,
+    country: stopPoint.country,
+    coords: stopPoint.coords ? JSON.stringify(stopPoint.coords) : null,
+    coordinates: stopPoint.coordinates,
+    contact_person: stopPoint.contactPerson,
+    contact_phone: stopPoint.contactPhone,
+    contact_email: stopPoint.contactEmail,
+    operating_hours: stopPoint.operatingHours,
+    capacity: stopPoint.capacity,
+    notes: stopPoint.notes,
+    facilities: stopPoint.facilities || [],
+  }
+  
+  // Only include ID for updates, not for inserts (auto-generated)
+  if (isUpdate && stopPoint.id) {
+    dbData.id = stopPoint.id
+  }
+  
+  return dbData
 }
 
 // *****************************
 // add stop point
 // *****************************
-export const addStopPoint = async (stopPoint, stopPointsDispatch) => {
+const addStopPoint = async (stopPoint, stopPointsDispatch) => {
   stopPointsDispatch(api.addStopPointStart())
   try {
-    const token = Cookies.get('firebaseIdToken')
-    if (!token) {
-      stopPointsDispatch(api.addStopPointFailure({ error: 'invalid user' }))
+    const supabase = createClient()
+    const dbStopPoint = transformStopPointToDB(stopPoint)
+    const { data, error } = await supabase.from('stop_points').insert(dbStopPoint).select()
+
+    if (error) {
+      stopPointsDispatch(api.addStopPointFailure(error))
       return
     }
-    const response = await axios.post(`${API_URL}`, stopPoint, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-
-    // Handle new standardized response format
-    const responseData = response.data
-    if (responseData.success && responseData.data !== undefined) {
-      stopPointsDispatch(api.addStopPointSuccess(responseData.data))
-    } else {
-      // Fallback for old format
-      stopPointsDispatch(api.addStopPointSuccess(responseData))
-    }
-
-    toast({
-      title: 'Stop point added successfully',
-      description: responseData?.message || 'Stop point has been added.',
-    })
-  } catch (error) {
-    stopPointsDispatch(api.addStopPointFailure(error))
-    toast({
-      title: 'Something went wrong, while adding stop point',
-      description:
-        error?.response?.data?.message ||
-        error?.response?.data?.error ||
-        error.message ||
-        'Unknown error',
-      variant: 'destructive',
-    })
+    // insert returns array
+    const transformedData = transformStopPointFromDB(data?.[0] || data)
+    stopPointsDispatch(api.addStopPointSuccess(transformedData))
+  } catch (err) {
+    stopPointsDispatch(api.addStopPointFailure(err))
   }
 }
 
 // *****************************
 // update stop point
 // *****************************
-export const updateStopPoint = async (id, stopPoint, stopPointsDispatch) => {
+const updateStopPoint = async (id, stopPoint, stopPointsDispatch) => {
   stopPointsDispatch(api.updateStopPointStart())
   try {
-    const token = Cookies.get('firebaseIdToken')
-    if (!token) {
-      stopPointsDispatch(api.updateStopPointFailure({ error: 'invalid user' }))
+    const supabase = createClient()
+    const dbStopPoint = transformStopPointToDB(stopPoint, true)
+    const { data, error } = await supabase.from('stop_points').update(dbStopPoint).eq('id', id).select()
+
+    if (error) {
+      stopPointsDispatch(api.updateStopPointFailure(error))
       return
     }
-    const response = await axios.put(`${API_URL}/${id}`, stopPoint, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-
-    // Handle new standardized response format
-    const responseData = response.data
-    if (responseData.success && responseData.data !== undefined) {
-      stopPointsDispatch(api.updateStopPointSuccess(responseData.data))
-    } else {
-      // Fallback for old format
-      stopPointsDispatch(api.updateStopPointSuccess(responseData))
-    }
-
-    toast({
-      title: 'Stop point updated successfully',
-      description: responseData?.message || 'Stop point has been updated.',
-    })
-  } catch (error) {
-    stopPointsDispatch(api.updateStopPointFailure(error))
-    toast({
-      title: 'Something went wrong, while updating stop point',
-      description:
-        error?.response?.data?.message ||
-        error?.response?.data?.error ||
-        error.message ||
-        'Unknown error',
-      variant: 'destructive',
-    })
+    const transformedData = transformStopPointFromDB(data?.[0] || data)
+    stopPointsDispatch(api.updateStopPointSuccess(transformedData))
+  } catch (err) {
+    stopPointsDispatch(api.updateStopPointFailure(err))
   }
 }
 
-export const upsertStopPoints = async (id, stopPoint, stopPointsDispatch) =>
-  id
-    ? updateStopPoint(id, stopPoint, stopPointsDispatch)
-    : addStopPoint(stopPoint, stopPointsDispatch)
+// *****************************
+// upsert stop point
+// *****************************
+export const upsertStopPoint = async (id, stopPoint, stopPointsDispatch) =>
+  id ? updateStopPoint(id, stopPoint, stopPointsDispatch) : addStopPoint(stopPoint, stopPointsDispatch)
 
 // *****************************
 // delete stop point
@@ -127,40 +144,15 @@ export const upsertStopPoints = async (id, stopPoint, stopPointsDispatch) =>
 export const deleteStopPoint = async (id, stopPointsDispatch) => {
   stopPointsDispatch(api.deleteStopPointStart())
   try {
-    const token = Cookies.get('firebaseIdToken')
-    if (!token) {
-      stopPointsDispatch(api.deleteStopPointFailure({ error: 'invalid user' }))
+    const supabase = createClient()
+    const { error } = await supabase.from('stop_points').delete().eq('id', id)
+
+    if (error) {
+      stopPointsDispatch(api.deleteStopPointFailure(error))
       return
     }
-    const response = await axios.delete(`${API_URL}/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-
-    // Handle new standardized response format
-    const responseData = response.data
-    if (responseData.success && responseData.data !== undefined) {
-      stopPointsDispatch(api.deleteStopPointSuccess(responseData.data))
-    } else {
-      // Fallback for old format
-      stopPointsDispatch(api.deleteStopPointSuccess(responseData))
-    }
-
-    toast({
-      title: 'Stop point removed successfully',
-      description: responseData?.message || 'Stop point has been removed.',
-    })
-  } catch (error) {
-    stopPointsDispatch(api.deleteStopPointFailure(error))
-    toast({
-      title: 'Something went wrong, while removing stop point',
-      description:
-        error?.response?.data?.message ||
-        error?.response?.data?.error ||
-        error.message ||
-        'Unknown error',
-      variant: 'destructive',
-    })
+    stopPointsDispatch(api.deleteStopPointSuccess(id))
+  } catch (err) {
+    stopPointsDispatch(api.deleteStopPointFailure(err))
   }
 }

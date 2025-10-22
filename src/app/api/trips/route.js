@@ -32,6 +32,7 @@ async function verifyAuth(request) {
 // get trips
 // *****************************
 export async function GET(request) {
+  const supabase = createClient()
   const token = await verifyAuth(request)
 
   if (!token) {
@@ -42,12 +43,23 @@ export async function GET(request) {
     const { data: trips, error } = await supabase
       .from('trips')
       .select('*')
-      .eq('client_id', token.clientId)
+      .order('created_at', { ascending: false })
     
     if (error) throw error
     
-    return NextResponse.json(trips)
+    // Parse JSONB fields for frontend consumption
+    const parsedTrips = trips.map(trip => ({
+      ...trip,
+      vehicleAssignments: trip.vehicleAssignments || trip.vehicle_assignments || [],
+      pickupLocations: trip.pickupLocations || trip.pickup_locations || [],
+      dropoffLocations: trip.dropoffLocations || trip.dropoff_locations || [],
+      selectedStopPoints: trip.selectedStopPoints || trip.selected_stop_points || [],
+      clientDetails: trip.clientDetails || trip.client_details || {}
+    }))
+    
+    return NextResponse.json(parsedTrips)
   } catch (err) {
+    console.error('Trips fetch error:', err)
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
@@ -56,6 +68,7 @@ export async function GET(request) {
 // add trip
 // *****************************
 export async function POST(request) {
+  const supabase = createClient()
   const token = await verifyAuth(request)
 
   if (!token) {
@@ -66,104 +79,82 @@ export async function POST(request) {
     const body = await request.json()
     const clientId = token.clientId
     
-    // Look up cost centre ID by name
-    const { data: costCentres, error: costCentreError } = await supabase
-      .from('breakdown_cost_centres')
-      .select('id, active_trips')
-      .eq('client_id', clientId)
-      .eq('name', body.costCentre)
-      .limit(1)
+    // Generate trip ID
+    const tripId = `TRP-${Date.now()}`
     
-    if (costCentreError) throw costCentreError
-    
-    if (!costCentres || costCentres.length === 0) {
-      return NextResponse.json(
-        { error: 'Cost centre not found' },
-        { status: 404 }
-      )
-    }
-    
-    const costCentreId = costCentres[0].id
-    
-    // Get last used trip ID
-    const { data: lastTrips, error: lastTripError } = await supabase
-      .from('trips')
-      .select('id')
-      .eq('client_id', clientId)
-      .order('id', { ascending: false })
-      .limit(1)
-    
-    if (lastTripError) throw lastTripError
-    
-    let lastIdNum = 0
-    if (lastTrips && lastTrips.length > 0) {
-      const lastId = lastTrips[0].id
-      lastIdNum = parseInt(lastId.split('-')[1]) || 0
-    }
-    
-    const newId = `TRP-${String(lastIdNum + 1).padStart(3, '0')}`
-    
-    // Create the trip
-    const newTrip = {
-      ...body,
-      client_id: clientId,
-      cost_centre_id: costCentreId,
-      id: newId,
-      status: body.status || 'active',
-      created_at: new Date().toISOString().split('T')[0],
+    // Prepare trip data with proper JSONB fields
+    const tripData = {
+      trip_id: tripId,
+      orderNumber: body.orderNumber,
+      rate: body.rate,
+      status: body.status || 'pending',
+      startDate: body.startDate,
+      endDate: body.endDate,
+      cost_centre: JSON.stringify(body.costCentre),
+      origin: body.origin,
+      destination: body.destination,
+      cargo: body.cargo,
+      cargoWeight: body.cargoWeight,
+      notes: body.notes,
+      
+      // JSONB fields
+      vehicleAssignments: JSON.stringify(body.vehicleAssignments || []),
+      pickupLocations: JSON.stringify(body.pickupLocations || []),
+      dropoffLocations: JSON.stringify(body.dropoffLocations || []),
+      selectedStopPoints: JSON.stringify(body.selectedStopPoints || []),
+      waypoints: JSON.stringify(body.waypoints || []),
+      clientDetails: JSON.stringify(body.clientDetails || {}),
+      
+      // Snake case for DB compatibility
+      vehicle_assignments: JSON.stringify(body.vehicleAssignments || []),
+      pickup_locations: JSON.stringify(body.pickupLocations || []),
+      dropoff_locations: JSON.stringify(body.dropoffLocations || []),
+      selected_stop_points: JSON.stringify(body.selectedStopPoints || []),
+      client_details: JSON.stringify(body.clientDetails || {}),
+      
+      route: `${body.origin} to ${body.destination}`,
+      distance: 'Calculating...',
+      statusNotes: body.statusNotes || '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     }
     
     const { data: insertedTrip, error: insertError } = await supabase
       .from('trips')
-      .insert(newTrip)
+      .insert(tripData)
       .select()
       .single()
     
     if (insertError) throw insertError
     
-    // Update cost centre's activeTrips count
-    if (body.status === 'completed' || body.status === 'cancelled') {
-      await supabase
-        .from('cost_centres')
-        .update({ active_trips: costCentres[0].active_trips + 1 })
-        .eq('id', costCentreId)
-    }
-    
-    // Update vehicles and drivers status
-    const vehicles = body.vehicleAssignments.map(v => v.vehicle)
-    const drivers = body.vehicleAssignments.flatMap(v => v.drivers)
-    
-    const statusForEntities = ['completed', 'cancelled'].includes(body.status)
-      ? 'available'
-      : 'on-trip'
-    const tripIdForDriver = body.status === 'completed' ? null : body.id
-    
-    // Update vehicles status
-    for (const v of vehicles) {
-      await supabase
-        .from('vehicles')
-        .update({
-          status: statusForEntities,
-          assigned_to: body.clientDetails.name
-        })
-        .eq('client_id', clientId)
-        .eq('id', v.id)
-    }
-    
-    // Update drivers status
-    for (const d of drivers) {
-      await supabase
-        .from('drivers')
-        .update({
-          status: statusForEntities,
-          current_trip: tripIdForDriver
-        })
-        .eq('client_id', clientId)
-        .eq('id', d.id)
+    // Update vehicle and driver status if assigned
+    if (body.vehicleAssignments?.length > 0) {
+      for (const assignment of body.vehicleAssignments) {
+        // Update vehicle status
+        if (assignment.vehicle?.id) {
+          await supabase
+            .from('vehiclesc')
+            .update({ status: 'on-trip', current_trip: tripId })
+            .eq('id', assignment.vehicle.id)
+        }
+        
+        // Update driver status
+        if (assignment.drivers?.length > 0) {
+          for (const driver of assignment.drivers) {
+            if (driver.id) {
+              await supabase
+                .from('drivers')
+                .update({ status: 'on-trip', current_trip: tripId })
+                .eq('id', driver.id)
+            }
+          }
+        }
+      }
     }
     
     return NextResponse.json(insertedTrip, { status: 201 })
   } catch (error) {
+    console.error('Trip creation error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

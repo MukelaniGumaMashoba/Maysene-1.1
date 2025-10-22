@@ -81,7 +81,7 @@ const TripForm = ({ onClose, id }) => {
         setFormState({
           id: undefined,
           trip_id: `TRP-${Date.now()}`,
-          orderNumber: '',
+          orderNumber: `ORD-${Date.now()}`,
           rate: '',
           status: 'pending',
           startDate: format(new Date(), 'yyyy-MM-dd'),
@@ -676,6 +676,53 @@ const TripForm = ({ onClose, id }) => {
     }))
   }
 
+  // Handle waypoint change
+  const handleWaypointChange = (index, field, value) => {
+    setFormState((prev) => {
+      const updatedWaypoints = [...prev.waypoints]
+      updatedWaypoints[index] = { ...updatedWaypoints[index], [field]: value }
+      return {
+        ...prev,
+        waypoints: updatedWaypoints,
+      }
+    })
+  }
+
+  // Add waypoint
+  const addWaypoint = () => {
+    setFormState((prev) => ({
+      ...prev,
+      waypoints: [
+        ...prev.waypoints,
+        {
+          id: Date.now(),
+          location: '',
+          address: '',
+          contactPerson: '',
+          contactNumber: '',
+          operatingHours: '',
+          arrivalTime: '',
+          departureTime: '',
+          notes: '',
+          clientId: '',
+          stopPointId: '',
+        },
+      ],
+    }))
+  }
+
+  // Remove waypoint
+  const removeWaypoint = (index) => {
+    setFormState((prev) => {
+      const updatedWaypoints = [...prev.waypoints]
+      updatedWaypoints.splice(index, 1)
+      return {
+        ...prev,
+        waypoints: updatedWaypoints,
+      }
+    })
+  }
+
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -750,7 +797,16 @@ const TripForm = ({ onClose, id }) => {
         ? formState.dropoffLocations.map((loc) => ({ ...loc }))
         : []
 
-      // 7. Prepare tripData with both camelCase and snake_case for all relevant fields
+      // 7. Resolve waypoints with client and stop point relationships
+      const resolvedWaypoints = Array.isArray(formState.waypoints)
+        ? formState.waypoints.map((waypoint) => ({
+          ...waypoint,
+          clientId: waypoint.clientId || null,
+          stopPointId: waypoint.stopPointId || null,
+        }))
+        : []
+
+      // 8. Prepare tripData with both camelCase and snake_case for all relevant fields
       const tripData = {
         ...formState,
         route: `${formState.origin} to ${formState.destination}`,
@@ -763,6 +819,7 @@ const TripForm = ({ onClose, id }) => {
         clientDetails: resolvedClientDetails,
         pickupLocations: resolvedPickupLocations,
         dropoffLocations: resolvedDropoffLocations,
+        waypoints: resolvedWaypoints,
         // snake_case for DB compatibility
         vehicle_assignments: resolvedVehicleAssignments,
         cost_centre: resolvedCostCentre,
@@ -783,7 +840,6 @@ const TripForm = ({ onClose, id }) => {
         selected_stop_points: formState.selectedStopPoints,
         stopPoints: formState.stopPoints,
         stop_points: formState.stopPoints,
-        waypoints: formState.waypoints,
       }
       if (!tripData.id || isNaN(Number(tripData.id))) {
         delete tripData.id
@@ -1076,6 +1132,9 @@ const TripForm = ({ onClose, id }) => {
               addDropoffLocation={addDropoffLocation}
               removeDropoffLocation={removeDropoffLocation}
               handleStopPointChange={handleStopPointsChange}
+              handleWaypointChange={handleWaypointChange}
+              addWaypoint={addWaypoint}
+              removeWaypoint={removeWaypoint}
               clients={clients}
             />
           </TabsContent>
@@ -1157,7 +1216,7 @@ const TripForm = ({ onClose, id }) => {
                 Previous
               </Button>
             )}
-            {currentTab < tabs.length - 1 ? (
+            {currentTab < tabs.length - 1 || currentTab === 0 ? (
               <Button
                 type="button"
                 onClick={() => setCurrentTab(currentTab + 1)}

@@ -1,5 +1,7 @@
 'use client'
 
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import {
@@ -22,6 +24,7 @@ import {
 } from '@/components/ui/card'
 import { Plus, Trash2 } from 'lucide-react'
 import { useGlobalContext } from '@/context/global-context/context'
+import { CreateStopPointModal } from './create-stop-point-modal'
 
 export function LocationsSection({
   formData,
@@ -31,10 +34,31 @@ export function LocationsSection({
   handleDropoffLocationChange,
   addDropoffLocation,
   removeDropoffLocation,
-  handleStopPointChange,
+  stopPoints,
+  handleStopPointSelection,
+  handleWaypointChange,
+  addWaypoint,
+  removeWaypoint,
   clients,
 }) {
   const { stop_points } = useGlobalContext()
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [creatingForWaypointIndex, setCreatingForWaypointIndex] = useState(null)
+  const [dbStopPoints, setDbStopPoints] = useState([])
+  const supabase = createClient()
+
+  // Fetch stop points from database
+  useEffect(() => {
+    const fetchStopPoints = async () => {
+      const { data, error } = await supabase.from('stop_points').select('*')
+      if (error) {
+        console.error('Error fetching stop points:', error)
+      } else {
+        setDbStopPoints(data || [])
+      }
+    }
+    fetchStopPoints()
+  }, [])
 
   // Only show locations from the selected client, parsing JSON fields if needed
   const getSelectedClient = () => {
@@ -152,70 +176,84 @@ export function LocationsSection({
     }
   }
 
+  // Get client-linked stop points
+  const getClientStopPoints = () => {
+    if (!selectedClient || !selectedClient.stopPoints) return []
+    
+    let clientStopPoints = []
+    if (typeof selectedClient.stopPoints === 'string') {
+      try {
+        clientStopPoints = JSON.parse(selectedClient.stopPoints)
+      } catch {
+        clientStopPoints = []
+      }
+    } else if (Array.isArray(selectedClient.stopPoints)) {
+      clientStopPoints = selectedClient.stopPoints
+    }
+    
+    return clientStopPoints
+  }
+
+  // Handle new stop point creation
+  const handleCreateStopPoint = (index) => {
+    setCreatingForWaypointIndex(index)
+    setShowCreateModal(true)
+  }
+
+  // Handle stop point created
+  const handleStopPointCreated = (newStopPoint) => {
+    if (creatingForWaypointIndex !== null) {
+      handleWaypointChange(creatingForWaypointIndex, 'location', newStopPoint.name)
+      handleWaypointChange(creatingForWaypointIndex, 'address', newStopPoint.address || '')
+      handleWaypointChange(creatingForWaypointIndex, 'contactPerson', newStopPoint.contact_person || '')
+      handleWaypointChange(creatingForWaypointIndex, 'contactNumber', newStopPoint.contact_phone || '')
+      handleWaypointChange(creatingForWaypointIndex, 'operatingHours', newStopPoint.operating_hours || '')
+      handleWaypointChange(creatingForWaypointIndex, 'clientId', formData.selectedClient || '')
+      handleWaypointChange(creatingForWaypointIndex, 'stopPointId', newStopPoint.id)
+    }
+    setCreatingForWaypointIndex(null)
+  }
+
   // Handle stop point selection from stop points data
   const handleStopPointSelect = (index, stopPointId) => {
-    const selectedStopPoint = stop_points?.data?.find(
-      (sp) => sp.id === stopPointId
+    if (stopPointId === 'new') {
+      handleCreateStopPoint(index)
+      return
+    }
+
+    // Check if it's a client stop point
+    if (stopPointId.startsWith('client-')) {
+      const clientStopPointId = stopPointId.replace('client-', '')
+      const clientStopPoints = getClientStopPoints()
+      const selectedStopPoint = clientStopPoints.find(
+        (sp) => sp.id === clientStopPointId
+      )
+
+      if (selectedStopPoint) {
+        handleWaypointChange(index, 'location', selectedStopPoint.name)
+        handleWaypointChange(index, 'address', selectedStopPoint.address || '')
+        handleWaypointChange(index, 'contactPerson', selectedStopPoint.contactPerson || '')
+        handleWaypointChange(index, 'contactNumber', selectedStopPoint.contactPhone || '')
+        handleWaypointChange(index, 'operatingHours', selectedStopPoint.operatingHours || '')
+        handleWaypointChange(index, 'clientId', formData.selectedClient)
+        handleWaypointChange(index, 'stopPointId', clientStopPointId)
+      }
+      return
+    }
+
+    // Regular stop point selection from database
+    const selectedStopPoint = dbStopPoints.find(
+      (sp) => sp.id === parseInt(stopPointId)
     )
 
     if (selectedStopPoint) {
-      handleStopPointChange(index, 'name', selectedStopPoint.name)
-      handleStopPointChange(index, 'address', selectedStopPoint.address || '')
-      handleStopPointChange(
-        index,
-        'contactPerson',
-        selectedStopPoint.contactPerson || ''
-      )
-      handleStopPointChange(
-        index,
-        'contactNumber',
-        selectedStopPoint.contactNumber || ''
-      )
-      handleStopPointChange(
-        index,
-        'operatingHours',
-        selectedStopPoint.operatingHours || ''
-      )
-    }
-  }
-
-  // Add stop point
-  const addStopPoint = () => {
-    const newStopPoint = {
-      name: '',
-      address: '',
-      contactPerson: '',
-      contactNumber: '',
-      operatingHours: '',
-      scheduledTime: '',
-      notes: '',
-    }
-    const updatedStopPoints = [...(formData.stopPoints || []), newStopPoint]
-    if (handleStopPointChange) {
-      handleStopPointChange(updatedStopPoints)
-    }
-  }
-
-  // Remove stop point
-  const removeStopPoint = (index) => {
-    const updatedStopPoints = [...(formData.stopPoints || [])]
-    updatedStopPoints.splice(index, 1)
-    const finalStopPoints =
-      updatedStopPoints.length > 0
-        ? updatedStopPoints
-        : [
-          {
-            name: '',
-            address: '',
-            contactPerson: '',
-            contactNumber: '',
-            operatingHours: '',
-            scheduledTime: '',
-            notes: '',
-          },
-        ]
-    if (handleStopPointChange) {
-      handleStopPointChange(finalStopPoints)
+      handleWaypointChange(index, 'location', selectedStopPoint.name)
+      handleWaypointChange(index, 'address', selectedStopPoint.address || '')
+      handleWaypointChange(index, 'contactPerson', selectedStopPoint.contact_person || '')
+      handleWaypointChange(index, 'contactNumber', selectedStopPoint.contact_phone || '')
+      handleWaypointChange(index, 'operatingHours', selectedStopPoint.operating_hours || '')
+      handleWaypointChange(index, 'clientId', '')
+      handleWaypointChange(index, 'stopPointId', selectedStopPoint.id)
     }
   }
 
@@ -589,24 +627,25 @@ export function LocationsSection({
           </Button>
         </CardContent>
       </Card>
+      {/* Stop Points / Waypoints */}
       <Card>
         <CardHeader>
-          <CardTitle>Stop Points</CardTitle>
-          <CardDescription>Add stop points for this trip</CardDescription>
+          <CardTitle>Stop Points & Waypoints</CardTitle>
+          <CardDescription>Add waypoints linked to client stop points</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {formData.stopPoints?.map((stopPoint, index) => (
-            <div key={`stop-point-${index}`} className="space-y-4">
+          {formData.waypoints?.map((waypoint, index) => (
+            <div key={`waypoint-${index}`} className="space-y-4">
               <div className="flex items-center justify-between">
                 <Badge variant="outline" className="px-2 py-1">
-                  Stop Point {index + 1}
+                  Waypoint {index + 1}
                 </Badge>
-                {formData.stopPoints.length > 1 && (
+                {formData.waypoints.length > 1 && (
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => removeStopPoint(index)}
+                    onClick={() => removeWaypoint(index)}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -615,24 +654,35 @@ export function LocationsSection({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor={`stop-point-select-${index}`}>
-                    Select from Stop Points
+                  <Label htmlFor={`waypoint-select-${index}`}>
+                    Select Stop Point
                   </Label>
                   <Select
                     onValueChange={(value) =>
                       handleStopPointSelect(index, value)
                     }
                   >
-                    <SelectTrigger
-                      id={`stop-point-select-${index}`}
-                      className="w-full border-[#d3d3d3]"
-                    >
+                    <SelectTrigger id={`waypoint-select-${index}`}>
                       <SelectValue placeholder="Select stop point" />
                     </SelectTrigger>
                     <SelectContent>
-                      {stop_points?.data?.map((stopPoint) => (
-                        <SelectItem key={stopPoint.id} value={stopPoint.id}>
-                          {stopPoint.name}
+                      <SelectItem value="new">Create New Stop Point</SelectItem>
+                      {/* Client-linked stop points */}
+                      {selectedClient && getClientStopPoints().length > 0 && (
+                        <>
+                          <SelectItem disabled>--- Client Stop Points ---</SelectItem>
+                          {getClientStopPoints().map((stopPoint) => (
+                            <SelectItem key={`client-${stopPoint.id}`} value={`client-${stopPoint.id}`}>
+                              {stopPoint.name} (Client)
+                            </SelectItem>
+                          ))}
+                        </>
+                      )}
+                      {/* All stop points from database */}
+                      <SelectItem disabled>--- All Stop Points ---</SelectItem>
+                      {dbStopPoints.map((stopPoint) => (
+                        <SelectItem key={stopPoint.id} value={stopPoint.id.toString()}>
+                          {stopPoint.name} ({stopPoint.type})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -640,27 +690,27 @@ export function LocationsSection({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor={`stop-point-name-${index}`}>
-                    Stop Point Name
+                  <Label htmlFor={`waypoint-location-${index}`}>
+                    Location Name
                   </Label>
                   <Input
-                    id={`stop-point-name-${index}`}
-                    value={stopPoint.name}
+                    id={`waypoint-location-${index}`}
+                    value={waypoint.location || ''}
                     onChange={(e) =>
-                      handleStopPointChange(index, 'name', e.target.value)
+                      handleWaypointChange(index, 'location', e.target.value)
                     }
-                    placeholder="Enter stop point name"
+                    placeholder="Enter location name"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor={`stop-point-address-${index}`}>Address</Label>
+                <Label htmlFor={`waypoint-address-${index}`}>Address</Label>
                 <Textarea
-                  id={`stop-point-address-${index}`}
-                  value={stopPoint.address || ''}
+                  id={`waypoint-address-${index}`}
+                  value={waypoint.address || ''}
                   onChange={(e) =>
-                    handleStopPointChange(index, 'address', e.target.value)
+                    handleWaypointChange(index, 'address', e.target.value)
                   }
                   placeholder="Enter full address"
                   rows={2}
@@ -669,92 +719,88 @@ export function LocationsSection({
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor={`stop-point-contact-person-${index}`}>
+                  <Label htmlFor={`waypoint-contact-person-${index}`}>
                     Contact Person
                   </Label>
                   <Input
-                    id={`stop-point-contact-person-${index}`}
-                    value={stopPoint.contactPerson || ''}
+                    id={`waypoint-contact-person-${index}`}
+                    value={waypoint.contactPerson || ''}
                     onChange={(e) =>
-                      handleStopPointChange(
-                        index,
-                        'contactPerson',
-                        e.target.value
-                      )
+                      handleWaypointChange(index, 'contactPerson', e.target.value)
                     }
                     placeholder="Contact person name"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor={`stop-point-contact-number-${index}`}>
+                  <Label htmlFor={`waypoint-contact-number-${index}`}>
                     Contact Number
                   </Label>
                   <Input
-                    id={`stop-point-contact-number-${index}`}
-                    value={stopPoint.contactNumber || ''}
+                    id={`waypoint-contact-number-${index}`}
+                    value={waypoint.contactNumber || ''}
                     onChange={(e) =>
-                      handleStopPointChange(
-                        index,
-                        'contactNumber',
-                        e.target.value
-                      )
+                      handleWaypointChange(index, 'contactNumber', e.target.value)
                     }
                     placeholder="Phone number"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor={`stop-point-operating-hours-${index}`}>
+                  <Label htmlFor={`waypoint-operating-hours-${index}`}>
                     Operating Hours
                   </Label>
                   <Input
-                    id={`stop-point-operating-hours-${index}`}
-                    value={stopPoint.operatingHours || ''}
+                    id={`waypoint-operating-hours-${index}`}
+                    value={waypoint.operatingHours || ''}
                     onChange={(e) =>
-                      handleStopPointChange(
-                        index,
-                        'operatingHours',
-                        e.target.value
-                      )
+                      handleWaypointChange(index, 'operatingHours', e.target.value)
                     }
                     placeholder="e.g., 8:00 AM - 5:00 PM"
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor={`stop-point-time-${index}`}>
-                  Scheduled Time
-                </Label>
-                <Input
-                  id={`stop-point-time-${index}`}
-                  type="datetime-local"
-                  value={stopPoint.scheduledTime}
-                  onChange={(e) =>
-                    handleStopPointChange(
-                      index,
-                      'scheduledTime',
-                      e.target.value
-                    )
-                  }
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor={`waypoint-arrival-${index}`}>Arrival Time</Label>
+                  <Input
+                    id={`waypoint-arrival-${index}`}
+                    type="datetime-local"
+                    value={waypoint.arrivalTime || ''}
+                    onChange={(e) =>
+                      handleWaypointChange(index, 'arrivalTime', e.target.value)
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor={`waypoint-departure-${index}`}>Departure Time</Label>
+                  <Input
+                    id={`waypoint-departure-${index}`}
+                    type="datetime-local"
+                    value={waypoint.departureTime || ''}
+                    onChange={(e) =>
+                      handleWaypointChange(index, 'departureTime', e.target.value)
+                    }
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor={`stop-point-notes-${index}`}>Notes</Label>
+                <Label htmlFor={`waypoint-notes-${index}`}>Notes</Label>
                 <Textarea
-                  id={`stop-point-notes-${index}`}
-                  value={stopPoint.notes}
+                  id={`waypoint-notes-${index}`}
+                  value={waypoint.notes || ''}
                   onChange={(e) =>
-                    handleStopPointChange(index, 'notes', e.target.value)
+                    handleWaypointChange(index, 'notes', e.target.value)
                   }
-                  placeholder="Additional information about this stop point"
+                  placeholder="Special instructions for this waypoint"
                   rows={2}
                 />
               </div>
 
-              {index < formData.stopPoints.length - 1 && (
+              {index < formData.waypoints.length - 1 && (
                 <Separator className="my-4" />
               )}
             </div>
@@ -763,13 +809,24 @@ export function LocationsSection({
           <Button
             type="button"
             variant="outline"
-            className="w-full bg-transparent"
-            onClick={addStopPoint}
+            className="w-full"
+            onClick={addWaypoint}
           >
-            <Plus className="h-4 w-4 mr-2" /> Add Another Stop Point
+            <Plus className="h-4 w-4 mr-2" /> Add Waypoint
           </Button>
         </CardContent>
       </Card>
+
+      {/* Create Stop Point Modal */}
+      <CreateStopPointModal
+        isOpen={showCreateModal}
+        onClose={() => {
+          setShowCreateModal(false)
+          setCreatingForWaypointIndex(null)
+        }}
+        onStopPointCreated={handleStopPointCreated}
+        clientId={formData.selectedClient}
+      />
     </div>
   )
 }
