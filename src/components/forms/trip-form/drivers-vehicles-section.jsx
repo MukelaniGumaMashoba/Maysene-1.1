@@ -14,8 +14,6 @@ import { Separator } from '@/components/ui/separator'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Plus, Trash2, Users, Truck } from 'lucide-react'
 import DetailCard from '@/components/ui/detail-card'
-import { useAuth } from '@/context/auth-context/context'
-import { useGlobalContext } from '@/context/global-context/context'
 
 export function DriversVehiclesSection({
   formData,
@@ -30,22 +28,14 @@ export function DriversVehiclesSection({
   removeVehicle,
   drivers,
   vehicles,
+  trailer,
   t,
 }) {
-  const { current_user } = useAuth()
-  const { cost_centres } = useGlobalContext()
-
-  console.log('current_user', current_user?.currentUser?.costCentre)
-  const selectedCostCentre =
-    cost_centres?.data.find((c) => c.id === formData.costCentre)?.name ||
-    current_user?.currentUser?.costCentre
-
   // Show all vehicles and drivers from props (no filtering)
   const horses = vehicles || []
-  const trailers = vehicles ? vehicles.filter((v) => v.type === 'trailer') : []
+  const available_trailers = trailer || []
   const available_drivers = drivers || []
-  const available_vehicles = horses
-  const available_trailers = trailers
+  const available_vehicles = horses || []
 
   return (
     <div className="space-y-6">
@@ -100,7 +90,7 @@ export function DriversVehiclesSection({
                     </SelectTrigger>
                     <SelectContent>
                       {available_vehicles.map((v) => (
-                        <SelectItem key={v.id} value={v.id}>
+                        <SelectItem key={v.id} value={v.id} className='text-black'>
                           {v.model || v.make} ({v.regNumber || v.registration_number || v.reg_number}) - {v.type || 'Vehicle'}
                         </SelectItem>
                       ))}
@@ -227,7 +217,7 @@ export function DriversVehiclesSection({
                       <SelectContent>
                         {available_trailers.map((t) => (
                           <SelectItem key={t.id} value={t.id}>
-                            {t.model} ({t.regNumber}) - {t.type}
+                            ({t.registration}) - {t.fleet_number}
                           </SelectItem>
                         ))}
                       </SelectContent>

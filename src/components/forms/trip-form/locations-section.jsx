@@ -23,7 +23,6 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Plus, Trash2 } from 'lucide-react'
-import { useGlobalContext } from '@/context/global-context/context'
 import { CreateStopPointModal } from './create-stop-point-modal'
 import AddressAutocomplete from '@/components/ui/address-autocomplete'
 
@@ -42,7 +41,6 @@ export function LocationsSection({
   removeWaypoint,
   clients,
 }) {
-  const { stop_points } = useGlobalContext()
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [creatingForWaypointIndex, setCreatingForWaypointIndex] = useState(null)
   const [dbStopPoints, setDbStopPoints] = useState([])
@@ -52,6 +50,7 @@ export function LocationsSection({
   useEffect(() => {
     const fetchStopPoints = async () => {
       const { data, error } = await supabase.from('stop_points').select('*')
+      console.log('Fetched stop points:', data, error)
       if (error) {
         console.error('Error fetching stop points:', error)
       } else {

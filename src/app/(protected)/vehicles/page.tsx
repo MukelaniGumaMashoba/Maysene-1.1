@@ -19,7 +19,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Truck, Car, FileText, TruckElectricIcon, Image } from "lucide-react";
+import {
+  Plus,
+  Truck,
+  Car,
+  FileText,
+  TruckElectricIcon,
+  Image,
+} from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -169,15 +176,17 @@ export default function Vehicles() {
   //   return workshopId;
   // };
   // const workshopId = useWorkshopId();
-  
+
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [filteredTechs, setFilteredTechs] = useState<Technician[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [trailers, setTrailers] = useState([]);
   const [isAddingTrailer, setIsAddingTrailer] = useState(false);
-  const [trailerForm, setTrailerForm] = useState({ registration: '', fleet_number: '', image: null });
-  
-  
+  const [trailerForm, setTrailerForm] = useState({
+    registration: "",
+    fleet_number: "",
+    image: null,
+  });
 
   useEffect(() => {
     const getTechnician = async () => {
@@ -191,8 +200,8 @@ export default function Vehicles() {
       }
       const { data: techniciansData, error: techError } = await supabase
         .from("technicians")
-        .select("*")
-        // .eq("type", "internal");
+        .select("*");
+      // .eq("type", "internal");
 
       setTechnicians(techniciansData as []);
 
@@ -263,22 +272,22 @@ export default function Vehicles() {
   };
 
   const fetchTrailers = async () => {
-    const { data, error } = await supabase.from('trailer').select('*');
+    const { data, error } = await supabase.from("trailer").select("*");
     if (error) {
-      console.error('Error fetching trailers:', error);
+      console.error("Error fetching trailers:", error);
     } else {
       setTrailers(data || []);
     }
   };
 
   const handleAddTrailer = async () => {
-    const { error } = await supabase.from('trailer').insert([trailerForm]);
+    const { error } = await supabase.from("trailer").insert([trailerForm]);
     if (error) {
-      console.error('Error adding trailer:', error);
-      toast.error('Failed to add trailer');
+      console.error("Error adding trailer:", error);
+      toast.error("Failed to add trailer");
     } else {
-      toast.success('Trailer added successfully');
-      setTrailerForm({ registration: '', fleet_number: '', image: null });
+      toast.success("Trailer added successfully");
+      setTrailerForm({ registration: "", fleet_number: "", image: null });
       setIsAddingTrailer(false);
       fetchTrailers();
     }
@@ -503,15 +512,15 @@ export default function Vehicles() {
           <TabsTrigger value="vehicles">Vehicles</TabsTrigger>
           <TabsTrigger value="trailers">Trailers</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="vehicles" className="space-y-6">
           {/* Add Vehicle Form */}
-      {isAddingVehicle && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Add New Vehicle</CardTitle>
-          </CardHeader>
-          {/* <CardContent>
+          {isAddingVehicle && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Add New Vehicle</CardTitle>
+              </CardHeader>
+              {/* <CardContent>
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 mb-6 flex flex-col items-center bg-gray-50">
               <div className="flex flex-col items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
@@ -534,494 +543,507 @@ export default function Vehicles() {
             </div>
           </CardContent> */}
 
-          <CardContent>
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-6"
-              >
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {/* Vehicle Type Selection */}
-                  <FormField
-                    control={form.control}
-                    name="vehicle_type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Vehicle Type *</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select vehicle type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="vehicle">
-                              <div className="flex items-center gap-2">
-                                <Car className="w-4 h-4" />
-                                Vehicle
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="commercial">
-                              <div className="flex items-center gap-2">
-                                <Truck className="w-4 h-4" />
-                                Commercial
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="tanker">
-                              <div className="flex items-center gap-2">
-                                <TruckElectricIcon className="w-4 h-4" />
-                                Truck
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="truck">
-                              <div className="flex items-center gap-2">
-                                <Truck className="w-4 h-4" />
-                                Tanker
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="specialized">
-                              <div className="flex items-center gap-2">
-                                <Truck className="w-4 h-4" />
-                                Specialized
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="trailer">
-                              <div className="flex items-center gap-2">
-                                <Truck className="w-4 h-4" />
-                                Trailer
-                              </div>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              <CardContent>
+                <Form {...form}>
+                  <form
+                    onSubmit={form.handleSubmit(onSubmit)}
+                    className="space-y-6"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {/* Vehicle Type Selection */}
+                      <FormField
+                        control={form.control}
+                        name="vehicle_type"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Vehicle Type *</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select vehicle type" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="vehicle">
+                                  <div className="flex items-center gap-2">
+                                    <Car className="w-4 h-4" />
+                                    Vehicle
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="commercial">
+                                  <div className="flex items-center gap-2">
+                                    <Truck className="w-4 h-4" />
+                                    Commercial
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="tanker">
+                                  <div className="flex items-center gap-2">
+                                    <TruckElectricIcon className="w-4 h-4" />
+                                    Truck
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="truck">
+                                  <div className="flex items-center gap-2">
+                                    <Truck className="w-4 h-4" />
+                                    Tanker
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="specialized">
+                                  <div className="flex items-center gap-2">
+                                    <Truck className="w-4 h-4" />
+                                    Specialized
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="trailer">
+                                  <div className="flex items-center gap-2">
+                                    <Truck className="w-4 h-4" />
+                                    Trailer
+                                  </div>
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name="registration_number"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Registration Number *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="ABC 123 GP" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <FormField
+                        control={form.control}
+                        name="registration_number"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Registration Number *</FormLabel>
+                            <FormControl>
+                              <Input placeholder="ABC 123 GP" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name="make"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Make *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Toyota" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <FormField
+                        control={form.control}
+                        name="make"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Make *</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Toyota" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name="model"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Model *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Hilux" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <FormField
+                        control={form.control}
+                        name="model"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Model *</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Hilux" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name="sub_model"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Sub Model</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Double Cab" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <FormField
+                        control={form.control}
+                        name="sub_model"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Sub Model</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Double Cab" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name="manufactured_year"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Manufactured Year *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="2023" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <FormField
+                        control={form.control}
+                        name="manufactured_year"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Manufactured Year *</FormLabel>
+                            <FormControl>
+                              <Input placeholder="2023" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name="fuel_type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Fuel Type *</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select fuel type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="petrol">Petrol</SelectItem>
-                            <SelectItem value="diesel">Diesel</SelectItem>
-                            <SelectItem value="electric">Electric</SelectItem>
-                            <SelectItem value="hybrid">Hybrid</SelectItem>
-                            <SelectItem value="lpg">LPG</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <FormField
+                        control={form.control}
+                        name="fuel_type"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Fuel Type *</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select fuel type" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="petrol">Petrol</SelectItem>
+                                <SelectItem value="diesel">Diesel</SelectItem>
+                                <SelectItem value="electric">
+                                  Electric
+                                </SelectItem>
+                                <SelectItem value="hybrid">Hybrid</SelectItem>
+                                <SelectItem value="lpg">LPG</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name="transmission_type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Transmission *</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select transmission" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="manual">Manual</SelectItem>
-                            <SelectItem value="automatic">Automatic</SelectItem>
-                            <SelectItem value="cvt">CVT</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="boarding_km_hours"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Boarding KM/Hours</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., 1000" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <FormField
+                        control={form.control}
+                        name="transmission_type"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Transmission *</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select transmission" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="manual">Manual</SelectItem>
+                                <SelectItem value="automatic">
+                                  Automatic
+                                </SelectItem>
+                                <SelectItem value="cvt">CVT</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="boarding_km_hours"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Boarding KM/Hours</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g., 1000" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name="expected_boarding_date"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Expected Boarding Date</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <FormField
+                        control={form.control}
+                        name="expected_boarding_date"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Expected Boarding Date</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name="cost_centres"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Cost Centres</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., Admin Dept" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <FormField
+                        control={form.control}
+                        name="cost_centres"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Cost Centres</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="e.g., Admin Dept"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name="register_number"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Register Number</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., ZN123456" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <FormField
+                        control={form.control}
+                        name="register_number"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Register Number</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g., ZN123456" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name="tank_capacity"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Tank Capacity (L)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., 80" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <FormField
+                        control={form.control}
+                        name="tank_capacity"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Tank Capacity (L)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g., 80" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name="vehicle_priority"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Priority *</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select priority" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="low">Low</SelectItem>
-                            <SelectItem value="medium">Medium</SelectItem>
-                            <SelectItem value="high">High</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <FormField
+                        control={form.control}
+                        name="vehicle_priority"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Priority *</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select priority" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="low">Low</SelectItem>
+                                <SelectItem value="medium">Medium</SelectItem>
+                                <SelectItem value="high">High</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name="colour"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Colour *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="White" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <FormField
+                        control={form.control}
+                        name="colour"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Colour *</FormLabel>
+                            <FormControl>
+                              <Input placeholder="White" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name="purchase_price"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Purchase Price *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="R 500,000" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <FormField
+                        control={form.control}
+                        name="purchase_price"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Purchase Price *</FormLabel>
+                            <FormControl>
+                              <Input placeholder="R 500,000" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name="retail_price"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Retail Price *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="R 550,000" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <FormField
+                        control={form.control}
+                        name="retail_price"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Retail Price *</FormLabel>
+                            <FormControl>
+                              <Input placeholder="R 550,000" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name="take_on_kilometers"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Take On Kilometers *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="50,000" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <FormField
+                        control={form.control}
+                        name="take_on_kilometers"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Take On Kilometers *</FormLabel>
+                            <FormControl>
+                              <Input placeholder="50,000" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name="service_intervals"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Service Intervals *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="15,000 km" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                      <FormField
+                        control={form.control}
+                        name="service_intervals"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Service Intervals *</FormLabel>
+                            <FormControl>
+                              <Input placeholder="15,000 km" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="flex gap-4">
+                      <Button
+                        onClick={() => handleAddVehicle(form.getValues())}
+                        type="submit"
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        <FileText className="w-4 h-4 mr-2" />
+                        Save Vehicle
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsAddingVehicle(false)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Vehicle List */}
+          {vehicles.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Fleet Overview</CardTitle>
+                <div className="mt-2">
+                  <Input
+                    placeholder="Search by make, model, registration, or type..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="max-w-sm"
                   />
                 </div>
-
-                <div className="flex gap-4">
-                  <Button
-                    onClick={() => handleAddVehicle(form.getValues())}
-                    type="submit"
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <FileText className="w-4 h-4 mr-2" />
-                    Save Vehicle
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsAddingVehicle(false)}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Vehicle List */}
-      {vehicles.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Fleet Overview</CardTitle>
-            <div className="mt-2">
-              <Input
-                placeholder="Search by make, model, registration, or type..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="max-w-sm"
-              />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Make & Model</TableHead>
-                  <TableHead>Registration</TableHead>
-                  <TableHead>Year</TableHead>
-                  <TableHead>Fuel</TableHead>
-                  <TableHead>Color</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Priority</TableHead>
-                  <TableHead>Driver</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredVehicles.map((vehicle, index) => (
-                  <TableRow
-                    key={vehicle.id}
-                    className={getRowBg(vehicle?.vehicle_type)}
-                  >
-                    <TableCell className="flex items-center gap-2">
-                      {getVehicleTypeIcon(vehicle.vehicle_type)}
-                      <span>
-                        {vehicle.make} {vehicle.model}
-                      </span>
-                    </TableCell>
-                    <TableCell>{vehicle.registration_number}</TableCell>
-                    <TableCell>{vehicle.manufactured_year}</TableCell>
-                    <TableCell>{vehicle.fuel_type}</TableCell>
-                    <TableCell>{vehicle.colour}</TableCell>
-                    <TableCell className="capitalize">
-                      {vehicle.vehicle_type}
-                    </TableCell>
-                    <TableCell>
-                      {getPriorityBadge(vehicle.vehicle_priority)}
-                    </TableCell>
-                    {/* <TableCell>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Make & Model</TableHead>
+                      <TableHead>Registration</TableHead>
+                      <TableHead>Year</TableHead>
+                      <TableHead>Fuel</TableHead>
+                      <TableHead>Color</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Priority</TableHead>
+                      <TableHead>Driver</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredVehicles.map((vehicle, index) => (
+                      <TableRow
+                        key={vehicle.id}
+                        className={getRowBg(vehicle?.vehicle_type)}
+                      >
+                        <TableCell className="flex items-center gap-2">
+                          {getVehicleTypeIcon(vehicle.vehicle_type)}
+                          <span>
+                            {vehicle.make} {vehicle.model}
+                          </span>
+                        </TableCell>
+                        <TableCell>{vehicle.registration_number}</TableCell>
+                        <TableCell>{vehicle.manufactured_year}</TableCell>
+                        <TableCell>{vehicle.fuel_type}</TableCell>
+                        <TableCell>{vehicle.colour}</TableCell>
+                        <TableCell className="capitalize">
+                          {vehicle.vehicle_type}
+                        </TableCell>
+                        <TableCell>
+                          {getPriorityBadge(vehicle.vehicle_priority)}
+                        </TableCell>
+                        {/* <TableCell>
                       {technicians.find(tech => tech.id === vehicle.tech_id)?.name || " "}
                     </TableCell> */}
-                    <TableCell className="flex items-center gap-2">
-                      {drivers.find(
-                        (driver) => driver.id === vehicle.driver_id
-                      ) ? (
-                        <>
-                          <span>
-                            {
-                              drivers.find(
-                                (driver) => driver.id === vehicle.driver_id
-                              )?.first_name
-                            }{" "}
-                            {
-                              drivers.find(
-                                (driver) => driver.id === vehicle.driver_id
-                              )?.surname
-                            }
-                          </span>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="ml-2"
-                            onClick={async () => {
-                              // Clear driver assignment
-                              const { error } = await supabase
-                                .from("vehiclesc")
-                                .update({ driver_id: null })
-                                .eq("id", vehicle.id);
+                        <TableCell className="flex items-center gap-2">
+                          {drivers.find(
+                            (driver) => driver.id === vehicle.driver_id
+                          ) ? (
+                            <>
+                              <span>
+                                {
+                                  drivers.find(
+                                    (driver) => driver.id === vehicle.driver_id
+                                  )?.first_name
+                                }{" "}
+                                {
+                                  drivers.find(
+                                    (driver) => driver.id === vehicle.driver_id
+                                  )?.surname
+                                }
+                              </span>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="ml-2"
+                                onClick={async () => {
+                                  // Clear driver assignment
+                                  const { error } = await supabase
+                                    .from("vehiclesc")
+                                    .update({ driver_id: null })
+                                    .eq("id", vehicle.id);
 
-                              if (error) {
-                                alert(
-                                  "Failed to unassign driver: " + error.message
-                                );
-                                console.error(error);
-                              } else {
-                                toast.success("Driver unassigned successfully");
-                                alert("Driver unassigned successfully");
-                                fetchVehicles();
-                                router.refresh(); // refresh list to show update
-                              }
-                            }}
-                          >
-                            Unassign
-                          </Button>
-                        </>
-                      ) : (
-                        <span>Not Assigned</span>
-                      )}
-                    </TableCell>
+                                  if (error) {
+                                    alert(
+                                      "Failed to unassign driver: " +
+                                        error.message
+                                    );
+                                    console.error(error);
+                                  } else {
+                                    toast.success(
+                                      "Driver unassigned successfully"
+                                    );
+                                    alert("Driver unassigned successfully");
+                                    fetchVehicles();
+                                    router.refresh(); // refresh list to show update
+                                  }
+                                }}
+                              >
+                                Unassign
+                              </Button>
+                            </>
+                          ) : (
+                            <span>Not Assigned</span>
+                          )}
+                        </TableCell>
 
-                    <TableCell>
-                      <div className="flex flex-row gap-3">
-                        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                          <DialogTrigger asChild>
-                            {/* <Button
+                        <TableCell>
+                          <div className="flex flex-row gap-3">
+                            <Dialog
+                              open={dialogOpen}
+                              onOpenChange={setDialogOpen}
+                            >
+                              <DialogTrigger asChild>
+                                {/* <Button
                               variant="outline"
                               className="px-4 py-2"
                               onClick={() => {
@@ -1032,22 +1054,24 @@ export default function Vehicles() {
                             >
                               Assign
                             </Button> */}
-                          </DialogTrigger>
-                          <DialogContent className="sm:max-w-md w-full">
-                            <DialogTitle>Assign Driver</DialogTitle>
-                            <DialogDescription>
-                              Assign driver for vehicle with registration:{" "}
-                              <strong>{selectedVehicleReg}</strong>
-                            </DialogDescription>
-                            {/* technician search & list */}
-                            <Input
-                              placeholder="Search driver by name"
-                              value={searchTerm}
-                              onChange={(e) => setSearchTerm(e.target.value)}
-                              className="mb-4"
-                            />
-                            <div className="max-h-60 overflow-auto space-y-2">
-                              {/* {filteredTechs.length > 0 ? (
+                              </DialogTrigger>
+                              <DialogContent className="sm:max-w-md w-full">
+                                <DialogTitle>Assign Driver</DialogTitle>
+                                <DialogDescription>
+                                  Assign driver for vehicle with registration:{" "}
+                                  <strong>{selectedVehicleReg}</strong>
+                                </DialogDescription>
+                                {/* technician search & list */}
+                                <Input
+                                  placeholder="Search driver by name"
+                                  value={searchTerm}
+                                  onChange={(e) =>
+                                    setSearchTerm(e.target.value)
+                                  }
+                                  className="mb-4"
+                                />
+                                <div className="max-h-60 overflow-auto space-y-2">
+                                  {/* {filteredTechs.length > 0 ? (
                                 filteredTechs.map((tech, index) => (
                                   <button
                                     key={tech.id}
@@ -1065,67 +1089,60 @@ export default function Vehicles() {
                               ) : (
                                 <p className="text-center text-sm text-gray-500 py-4">No technicians found</p>
                               )} */}
-                              {filteredDrivers.length > 0 ? (
-                                filteredDrivers.map((driver) => (
-                                  <button
-                                    key={driver.id}
-                                    onClick={() => {
-                                      if (selectedVehicleId) {
-                                        handleAssignDriver(
-                                          selectedVehicleId,
-                                          driver.id
-                                        );
-                                        setDialogOpen(false);
-                                      }
-                                    }}
-                                    className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-                                  >
-                                    {driver.first_name} {driver.surname}
-                                  </button>
-                                ))
-                              ) : (
-                                <p className="text-center text-sm text-gray-500 py-4">
-                                  No drivers found
-                                </p>
-                              )}
-                            </div>
-                          </DialogContent>
-                        </Dialog>
+                                  {filteredDrivers.length > 0 ? (
+                                    filteredDrivers.map((driver) => (
+                                      <button
+                                        key={driver.id}
+                                        onClick={() => {
+                                          if (selectedVehicleId) {
+                                            handleAssignDriver(
+                                              selectedVehicleId,
+                                              driver.id
+                                            );
+                                            setDialogOpen(false);
+                                          }
+                                        }}
+                                        className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                                      >
+                                        {driver.first_name} {driver.surname}
+                                      </button>
+                                    ))
+                                  ) : (
+                                    <p className="text-center text-sm text-gray-500 py-4">
+                                      No drivers found
+                                    </p>
+                                  )}
+                                </div>
+                              </DialogContent>
+                            </Dialog>
 
-                        <Link href={`/vehicles/${vehicle.id}`}>
-                          <Button variant="default">View</Button>
-                        </Link>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
-
-          {columns && vehicles && vehicles.length > 0 && (
-            <DataTable
-              columns={columns()}
-              data={vehicles}
-              filterColumn={""}
-              filterPlaceholder={""}
-              href={`/vehicles`}
-            />
+                            <Link href={`/vehicles/${vehicle.id}`}>
+                              <Button variant="default">View</Button>
+                            </Link>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
-        
+
         <TabsContent value="trailers" className="space-y-6">
           {/* Add Trailer Button */}
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">Trailer Fleet</h2>
-            <Button onClick={() => setIsAddingTrailer(true)} className="bg-purple-600 hover:bg-purple-700">
+            <Button
+              onClick={() => setIsAddingTrailer(true)}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
               <Plus className="w-4 h-4 mr-2" />
               Add Trailer
             </Button>
           </div>
-          
+
           {/* Add Trailer Form */}
           {isAddingTrailer && (
             <Card>
@@ -1135,54 +1152,87 @@ export default function Vehicles() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Registration *</label>
+                    <label className="block text-sm font-medium mb-2">
+                      Registration *
+                    </label>
                     <Input
                       value={trailerForm.registration}
-                      onChange={(e) => setTrailerForm({...trailerForm, registration: e.target.value})}
+                      onChange={(e) =>
+                        setTrailerForm({
+                          ...trailerForm,
+                          registration: e.target.value,
+                        })
+                      }
                       placeholder="ABC 123 GP"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Fleet Number</label>
+                    <label className="block text-sm font-medium mb-2">
+                      Fleet Number
+                    </label>
                     <Input
                       value={trailerForm.fleet_number}
-                      onChange={(e) => setTrailerForm({...trailerForm, fleet_number: e.target.value})}
+                      onChange={(e) =>
+                        setTrailerForm({
+                          ...trailerForm,
+                          fleet_number: e.target.value,
+                        })
+                      }
                       placeholder="TRL-001"
                     />
                   </div>
                 </div>
                 <div className="flex gap-4">
-                  <Button onClick={handleAddTrailer} className="bg-purple-600 hover:bg-purple-700">
+                  <Button
+                    onClick={handleAddTrailer}
+                    className="bg-purple-600 hover:bg-purple-700"
+                  >
                     Save Trailer
                   </Button>
-                  <Button variant="outline" onClick={() => setIsAddingTrailer(false)}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsAddingTrailer(false)}
+                  >
                     Cancel
                   </Button>
                 </div>
               </CardContent>
             </Card>
           )}
-          
+
           {/* Trailers Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {trailers.map((trailer) => (
-              <Card key={trailer.id} className="hover:shadow-lg transition-shadow">
+              <Card
+                key={trailer.id}
+                className="hover:shadow-lg transition-shadow"
+              >
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <Truck className="w-5 h-5 text-purple-600" />
-                      <span className="font-semibold">{trailer.registration}</span>
+                      <span className="font-semibold">
+                        {trailer.registration}
+                      </span>
                     </div>
-                    <Badge className="bg-purple-100 text-purple-800">Trailer</Badge>
+                    <Badge className="bg-purple-100 text-purple-800">
+                      Trailer
+                    </Badge>
                   </div>
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Fleet Number:</span>
-                      <span className="text-sm font-medium">{trailer.fleet_number || 'N/A'}</span>
+                      <span className="text-sm text-gray-600">
+                        Fleet Number:
+                      </span>
+                      <span className="text-sm font-medium">
+                        {trailer.fleet_number || "N/A"}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Added:</span>
-                      <span className="text-sm font-medium">{new Date(trailer.created_at).toLocaleDateString()}</span>
+                      <span className="text-sm font-medium">
+                        {new Date(trailer.created_at).toLocaleDateString()}
+                      </span>
                     </div>
                   </div>
                   <div className="mt-4 h-32 bg-gray-100 rounded-lg flex items-center justify-center">
@@ -1201,14 +1251,21 @@ export default function Vehicles() {
               </Card>
             ))}
           </div>
-          
+
           {trailers.length === 0 && (
             <Card>
               <CardContent className="p-8 text-center">
                 <Truck className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No trailers found</h3>
-                <p className="text-gray-500 mb-4">Get started by adding your first trailer to the fleet.</p>
-                <Button onClick={() => setIsAddingTrailer(true)} className="bg-purple-600 hover:bg-purple-700">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No trailers found
+                </h3>
+                <p className="text-gray-500 mb-4">
+                  Get started by adding your first trailer to the fleet.
+                </p>
+                <Button
+                  onClick={() => setIsAddingTrailer(true)}
+                  className="bg-purple-600 hover:bg-purple-700"
+                >
                   <Plus className="w-4 h-4 mr-2" />
                   Add First Trailer
                 </Button>

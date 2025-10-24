@@ -30,6 +30,7 @@ import { createClient } from '@/lib/supabase/client'
 
 // hooks
 import { getAddressCoordinates } from '@/hooks/get-address-coordinates'
+import { AddressAutocomplete } from '@/components/ui/address-autocomplete'
 
 const TripForm = ({ onClose, id }) => {
   const supabase = createClient()
@@ -37,6 +38,7 @@ const TripForm = ({ onClose, id }) => {
   // Local state for fetched data
   const [drivers, setDrivers] = useState([])
   const [vehicles, setVehicles] = useState([])
+  const [trailer, setTrailer] = useState([])
   const [clients, setClients] = useState([])
   const [costCentres, setCostCentres] = useState([])
   const [stopPoints, setStopPoints] = useState([])
@@ -52,18 +54,21 @@ const TripForm = ({ onClose, id }) => {
         const [
           { data: driversData },
           { data: vehiclesData },
+          { data: trailerData },
           { data: clientsData },
           { data: costCentresData },
           { data: stopPointsData }
         ] = await Promise.all([
           supabase.from('drivers').select('*').eq('status', true),
           supabase.from('vehiclesc').select('*').eq('available', true),
+          supabase.from('trailer').select('*'),
           supabase.from('clients').select('*'),
           supabase.from('breakdown_cost_centers').select('*'),
           supabase.from('stop_points').select('*'),
         ])
         setDrivers(driversData || [])
         setVehicles(vehiclesData || [])
+        setTrailer(trailerData || [])
         setClients(clientsData || [])
         setCostCentres(costCentresData || [])
         setStopPoints(stopPointsData || [])
@@ -464,11 +469,11 @@ const TripForm = ({ onClose, id }) => {
     trailerIndex,
     trailerId
   ) => {
-    const selectedTrailer = vehicles.find(
+    const selectedTrailer = trailer.find(
       (trailer) => trailer.id === trailerId
     )
     const trailerName = selectedTrailer
-      ? `${selectedTrailer.model} (${selectedTrailer.regNumber})`
+      ? `${selectedTrailer.registration} (${selectedTrailer.fleet_number})`
       : ''
 
     setFormState((prev) => {
@@ -727,7 +732,7 @@ const TripForm = ({ onClose, id }) => {
   // Validation function
   const validateCurrentTab = () => {
     const errors = {}
-    
+
     if (currentTab === 0) { // Trip Information
       if (!formState.orderNumber) errors.orderNumber = 'Order number is required'
       if (!formState.rate) errors.rate = 'Rate is required'
@@ -741,7 +746,7 @@ const TripForm = ({ onClose, id }) => {
       if (!formState.clientDetails.phone) errors.clientPhone = 'Client phone is required'
       if (!formState.clientDetails.email) errors.clientEmail = 'Client email is required'
     }
-    
+
     if (currentTab === 1) { // Vehicle Information
       if (!formState.vehicleAssignments || formState.vehicleAssignments.length === 0) {
         errors.vehicles = 'At least one vehicle assignment is required'
@@ -756,7 +761,7 @@ const TripForm = ({ onClose, id }) => {
         })
       }
     }
-    
+
     if (currentTab === 2) { // Location Information
       if (!formState.pickupLocations || formState.pickupLocations.length === 0) {
         errors.pickupLocations = 'At least one pickup location is required'
@@ -766,7 +771,7 @@ const TripForm = ({ onClose, id }) => {
           if (!location.address) errors[`pickup_address_${index}`] = 'Address is required'
         })
       }
-      
+
       if (!formState.dropoffLocations || formState.dropoffLocations.length === 0) {
         errors.dropoffLocations = 'At least one dropoff location is required'
       } else {
@@ -776,26 +781,22 @@ const TripForm = ({ onClose, id }) => {
         })
       }
     }
-    
+
     setValidationErrors(errors)
     return Object.keys(errors).length === 0
   }
 
   // Handle next button with validation
   const handleNext = () => {
-    if (validateCurrentTab()) {
-      if (currentTab === 2) { // After locations tab, auto-submit
-        handleSubmit()
-      } else {
-        setCurrentTab(currentTab + 1)
-      }
-    }
+    setCurrentTab(currentTab + 1)
   }
+
+
 
   // Handle form submission
   const handleSubmit = async (e) => {
     if (e) e.preventDefault()
-    if (!validateCurrentTab()) return
+    if (validateCurrentTab()) return
     setLoading(true)
     try {
       // Normalize and resolve references for drivers, vehicles, costCentre, etc.
@@ -892,7 +893,6 @@ const TripForm = ({ onClose, id }) => {
         waypoints: resolvedWaypoints,
         // snake_case for DB compatibility
         vehicle_assignments: resolvedVehicleAssignments,
-        cost_centre: resolvedCostCentre,
         client_details: resolvedClientDetails,
         pickup_locations: resolvedPickupLocations,
         dropoff_locations: resolvedDropoffLocations,
@@ -958,17 +958,17 @@ const TripForm = ({ onClose, id }) => {
       type: 'number',
       required: true,
     },
-    {
-      type: 'select',
-      htmlFor: 'costCentre',
-      label: 'Cost Centre',
-      placeholder: 'Select cost centre',
-      value: formState.costCentre,
-      required: true,
-      options: costCentres?.map((cc) => {
-        return { value: cc.id, label: cc.name }
-      }),
-    },
+    // {
+    //   type: 'select',
+    //   htmlFor: 'costCentre',
+    //   label: 'Cost Centre',
+    //   placeholder: 'Select cost centre',
+    //   value: formState.costCentre,
+    //   required: true,
+    //   options: costCentres?.map((cc) => {
+    //     return { value: cc.id, label: cc.name }
+    //   }),
+    // },
 
     {
       htmlFor: 'startDate',
@@ -1183,6 +1183,7 @@ const TripForm = ({ onClose, id }) => {
               removeVehicle={removeVehicle}
               drivers={drivers}
               vehicles={vehicles}
+              trailers={trailer}
               handleVehicleDriverChange={handleVehicleDriverChange}
               addVehicleDriver={addVehicleDriver}
               removeVehicleDriver={removeVehicleDriver}
@@ -1275,6 +1276,7 @@ const TripForm = ({ onClose, id }) => {
           >
             Cancel
           </Button>
+
           <div className="flex gap-2">
             {currentTab > 0 && (
               <Button
@@ -1286,7 +1288,8 @@ const TripForm = ({ onClose, id }) => {
                 Previous
               </Button>
             )}
-            {currentTab < 2 ? (
+
+            {currentTab < 3 && (
               <Button
                 type="button"
                 onClick={handleNext}
@@ -1294,24 +1297,9 @@ const TripForm = ({ onClose, id }) => {
               >
                 Next
               </Button>
-            ) : currentTab === 2 ? (
-              <Button
-                type="button"
-                onClick={handleNext}
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-b-transparent"></span>
-                    Saving Trip...
-                  </>
-                ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" /> Save Trip
-                  </>
-                )}
-              </Button>
-            ) : (
+            )}
+
+            {currentTab >= 3 && (
               <Button
                 type="submit"
                 disabled={loading}
@@ -1330,6 +1318,7 @@ const TripForm = ({ onClose, id }) => {
             )}
           </div>
         </div>
+
       </form>
     </div>
   )

@@ -11,7 +11,7 @@ export function printInspectionDetails(inspection: any) {
         h1, h2, h3, h4 { color: #3b82f6; }
         .container { max-width: 800px; margin: 0 auto; }
         .section { border: 1px solid #ddd; background: #f9fafb; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; border-top: 1px solid #e5e7eb; padding-top: 15px; }
         p { margin: 6px 0; }
         .status-good { background: #d1fae5; color: #065f46; padding: 4px 8px; border-radius: 12px; font-weight: bold; }
         .status-faulty { background: #fee2e2; color: #991b1b; padding: 4px 8px; border-radius: 12px; font-weight: bold; }
@@ -20,6 +20,11 @@ export function printInspectionDetails(inspection: any) {
     </head>
     <body>
       <div class="container">
+        <div style="width:auto; text-align:center; margin-bottom:20px; height:auto;">
+          <img src="/logo.jpg" alt="Company Logo" style="max-width:150px; width:auto; margin-bottom:20px;" />
+          <img src="/maysene.jpg" alt="Truck Logo" style="max-width:150px; width:auto; margin-bottom:20px;" />
+        </div>
+
         <h1>Inspection #${inspection.id}</h1>
 
         <div class="section">
