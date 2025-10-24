@@ -6,22 +6,18 @@ import { createClient } from '@/lib/supabase/client'
 import StopPointDetails from '@/components/detail-pages/stop-point-details'
 import { Skeleton } from '@/components/ui/skeleton'
 
-export default function StopPointDetailPage() {
-  const params = useParams()
-  const id = params?.id
+export default function StopPointPage() {
+  const { id } = useParams() // get id from URL
   const [stopPoint, setStopPoint] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchStopPoint = async () => {
-      if (!id) return
-      
       const supabase = createClient()
       const { data, error } = await supabase
         .from('stop_points')
         .select('*')
         .eq('id', id)
-        .single()
 
       if (error) {
         console.error('Error fetching stop point:', error)
@@ -52,5 +48,5 @@ export default function StopPointDetailPage() {
     )
   }
 
-  return <StopPointDetails id={id} />
+  return <StopPointDetails stopPoint={id} />
 }

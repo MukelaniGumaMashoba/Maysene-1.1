@@ -16,11 +16,12 @@ export default function StopPointsPage() {
 
   useEffect(() => {
     const fetchStopPoints = async () => {
-      const { data, error } = await supabase.from("stop_points").select("*");
+      const { data, error } = (await supabase.from("stop_points").select("*"));
       if (error) {
         console.error("Error fetching stop points:", error);
       } else {
         setStopPoints(data as any);
+        console.log("Stop points fetched successfully:", data);
       }
     };
     fetchStopPoints();

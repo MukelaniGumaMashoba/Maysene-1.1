@@ -213,11 +213,11 @@ export default function FleetJobsPage() {
       .from("job_assignments")
       .select(
         `
-      *,
-      drivers (*),
-      vehiclesc (*),
-      technicians:technician_id(*)
-    `
+          *,
+          drivers (*),
+          vehiclesc (*),
+          technicians:technician_id(*)
+        `
       )
       .neq("status", "completed")
       .neq("status", "cancelled")
@@ -235,11 +235,11 @@ export default function FleetJobsPage() {
       .from("job_assignments")
       .select(
         `
-      *,
-      drivers (*),
-      vehiclesc (*),
-      technicians:technician_id(*)
-    `
+          *,
+          drivers (*),
+          vehiclesc (*),
+          technicians:technician_id(*)
+        `
       )
       .order("created_at", { ascending: false });
     if (error) {
@@ -489,17 +489,17 @@ export default function FleetJobsPage() {
               </SelectContent>
             </Select>
             {/* <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Priority" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Priority</SelectItem>
-                <SelectItem value="emergency">Emergency</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="low">Low</SelectItem>
-              </SelectContent>
-            </Select> */}
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Priority</SelectItem>
+                    <SelectItem value="emergency">Emergency</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="low">Low</SelectItem>
+                  </SelectContent>
+                </Select> */}
 
             {/* Refresh Button */}
             <div className="mt-4">
@@ -794,17 +794,17 @@ export default function FleetJobsPage() {
                         </div>
 
                         {/* <div>
-                            {!job.technician_id && (
-                              <Button
-                                onClick={() => {
-                                  setSelectedJobForTech(job);
-                                  setIsTechDialogOpen(true);
-                                }}
-                              >
-                                Assign Technician
-                              </Button>
-                            )}
-                          </div> */}
+                                {!job.technician_id && (
+                                  <Button
+                                    onClick={() => {
+                                      setSelectedJobForTech(job);
+                                      setIsTechDialogOpen(true);
+                                    }}
+                                  >
+                                    Assign Technician
+                                  </Button>
+                                )}
+                              </div> */}
 
                         {job.status === "awaiting-approval" &&
                           canApproveJobs && (
@@ -1028,7 +1028,7 @@ export default function FleetJobsPage() {
         </Tabs>
 
         {isModalOpen && selectedJob && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-transparent bg-opacity-50">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/40 backdrop-blur-md">
             <div
               className="bg-white rounded-lg shadow-lg w-full max-w-2xl p-6 relative"
               onClick={(e) => e.stopPropagation()}
