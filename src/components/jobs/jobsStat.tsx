@@ -162,7 +162,7 @@ export default function JobAssignmentsDashboard() {
             </div>
 
             {/* Chart Section */}
-            <Card className="max-w-full mx-auto rounded-2xl shadow-lg border border-gray-200 dark:border-gray-800">
+            {/* <Card className="max-w-full mx-auto rounded-2xl shadow-lg border border-gray-200 dark:border-gray-800">
                 <CardHeader>
                     <CardTitle className="text-xl font-semibold">Job Status Breakdown</CardTitle>
                     <CardDescription className="text-sm text-muted-foreground">
@@ -200,7 +200,7 @@ export default function JobAssignmentsDashboard() {
                         </ChartContainer>
                     </div>
                 </CardContent>
-            </Card>
+            </Card> */}
 
             {/* Job Table */}
             <Card className="rounded-2xl shadow-lg border border-gray-200 dark:border-gray-800">

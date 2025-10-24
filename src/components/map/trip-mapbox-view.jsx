@@ -12,21 +12,32 @@ if (typeof window !== 'undefined') {
 export default function TripMapboxView({ tripData }) {
   const mapContainer = useRef(null)
   const map = useRef(null)
-  const [loading, setLoading] = useState(true)
+  const [mapLoading, setMapLoading] = useState(true)
+  const [routeLoading, setRouteLoading] = useState(true)
   const [routeInfo, setRouteInfo] = useState(null)
 
   useEffect(() => {
     if (!tripData || !mapContainer.current || typeof window === 'undefined') return
 
-    // Initialize map
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: [28.0473, -26.2041], // Default to Johannesburg
-      zoom: 10
-    })
+    // Initialize map (avoid re-initializing if already created)
+    if (!map.current) {
+      try {
+        map.current = new mapboxgl.Map({
+          container: mapContainer.current,
+          style: 'mapbox://styles/mapbox/streets-v12',
+          center: [28.0473, -26.2041], // Default to Johannesburg
+          zoom: 10,
+        })
+      } catch (err) {
+        console.error('Error initializing Mapbox map', err)
+        setMapLoading(false)
+        setRouteLoading(false)
+        return
+      }
+    }
 
     const processLocations = async () => {
+      setRouteLoading(true)
       const markers = []
       const coordinates = []
 
@@ -320,31 +331,50 @@ export default function TripMapboxView({ tripData }) {
       setLoading(false)
     }
 
-    map.current.on('load', processLocations)
+    // When the map has finished loading, hide the map-level loader and start processing locations
+    const onLoad = () => {
+      setMapLoading(false)
+      processLocations().finally(() => {
+        setRouteLoading(false)
+      })
+    }
+
+    map.current.on('load', onLoad)
 
     return () => {
       if (map.current) {
+        try { map.current.off('load', onLoad) } catch (e) {}
         map.current.remove()
+        map.current = null
       }
     }
   }, [tripData])
 
   return (
     <div className="w-full h-full rounded-md overflow-hidden relative" style={{ minHeight: '400px' }}>
-      {routeInfo && (
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 bg-white/90 rounded-md shadow px-4 py-2 flex gap-4 items-center">
-          <div className="text-sm text-slate-700">Distance: <span className="font-medium">{routeInfo.distance}</span></div>
-          <div className="text-sm text-slate-700">Duration: <span className="font-medium">{routeInfo.duration}</span></div>
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20">
+        <div className="bg-white/90 rounded-md shadow px-4 py-2 flex gap-4 items-center">
+          {routeInfo ? (
+            <>
+              <div className="text-sm text-slate-700">Distance: <span className="font-medium">{routeInfo.distance}</span></div>
+              <div className="text-sm text-slate-700">Duration: <span className="font-medium">{routeInfo.duration}</span></div>
+            </>
+          ) : (
+            <div className="text-sm text-slate-700">Route info not ready</div>
+          )}
+          {routeLoading && (
+            <div className="ml-2 text-sm text-slate-500">Loading route…</div>
+          )}
         </div>
-      )}
+      </div>
 
       <div ref={mapContainer} className="w-full h-full" />
 
-      {loading && (
+      {mapLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-white/70 z-10">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-            <p className="text-gray-500">Loading trip route...</p>
+            <p className="text-gray-500">Loading map…</p>
           </div>
         </div>
       )}

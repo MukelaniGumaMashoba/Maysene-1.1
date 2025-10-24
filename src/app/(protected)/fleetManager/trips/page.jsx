@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/dialog";
 import TripForm from "../../../../components/forms/trip-form";
 import { createClient } from "@/lib/supabase/client";
+import LoadPlanPage from "../../load-plan/page";
+// import Dashboard from "@/components/dashboard/trips";
 
 export default function TripsPage() {
   const [open, setOpen] = useState(false);
@@ -142,7 +144,7 @@ export default function TripsPage() {
   ];
 
   const titleSection = { title: "Trips", description: "Manage your trips", button: { text: "Add Trip" } };
-  const tableInfo = { tabs: [{ value: "all", title: "All Trips" }] };
+  const tableInfo = { tabs: [{ value: "all", title: "All Trips" }]};
 
   // Define columns without edit functionality
   const tableColumns = [
@@ -262,6 +264,11 @@ export default function TripsPage() {
           />
         </div>
       </div>
+
+      <Tabs value="assigned-drivers">
+        <h3 className="text-lg font-semibold">Assigned Drivers</h3>
+        <LoadPlanPage />
+      </Tabs>
 
       {/* Trip Form Modal */}
       <Dialog open={open} onOpenChange={setOpen}>

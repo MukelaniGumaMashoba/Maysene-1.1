@@ -55,8 +55,8 @@ export default function LoadPlanPage() {
   const [etaDropoff, setEtaDropoff] = useState('')
   const [dropOffPoint, setDropOffPoint] = useState('')
   const [showSecondSection, setShowSecondSection] = useState(false)
-  const secondRef = useRef<HTMLDivElement | null>(null)
-  const [optimizedRoute, setOptimizedRoute] = useState<any>(null)
+  const secondRef = useRef(null)
+  const [optimizedRoute, setOptimizedRoute] = useState(null)
   const [showRouteModal, setShowRouteModal] = useState(false)
   const [isOptimizing, setIsOptimizing] = useState(false)
 
@@ -81,12 +81,12 @@ export default function LoadPlanPage() {
         supabase.from('drivers').select('*'),
         fetch('http://64.227.138.235:3000/api/eps-vehicles')
       ])
-      
+
       console.log('Supabase errors:', { loadsError, clientsError, vehiclesError, driversError })
-      
+
       const trackingData = await trackingResponse.json()
       const vehicleData = trackingData?.result?.data || trackingData?.data || trackingData || []
-      
+
       // Format drivers from drivers table
       const formattedDrivers = (driversData || []).map(driver => ({
         id: driver.id,
@@ -95,10 +95,10 @@ export default function LoadPlanPage() {
         surname: driver.surname || '',
         available: driver.available
       }))
-      
+
       // Filter available drivers
       const availableDriversList = formattedDrivers.filter(d => d.available === true)
-      
+
       // Helper function to parse JSON fields
       const parseJsonField = (field) => {
         if (!field) return null
@@ -109,13 +109,13 @@ export default function LoadPlanPage() {
           return null
         }
       }
-      
+
       // Convert trip data to load format for display
       const loadData = (loadsData || []).map(trip => {
         const clientDetails = parseJsonField(trip.clientdetails)
         const pickupLocations = parseJsonField(trip.pickuplocations)
         const dropoffLocations = parseJsonField(trip.dropofflocations)
-        
+
         return {
           ...trip,
           client: clientDetails?.name || '',
@@ -126,12 +126,12 @@ export default function LoadPlanPage() {
           dropOffPoint: trip.destination || ''
         }
       })
-      
+
       console.log('Raw loads data:', loadsData)
       console.log('Raw loads count:', loadsData?.length || 0)
       console.log('Processed load data:', loadData)
       console.log('Processed loads count:', loadData?.length || 0)
-      
+
       setLoads(loadData)
       setClients(clientsData || [])
       setVehicles(vehiclesData || [])
@@ -148,11 +148,11 @@ export default function LoadPlanPage() {
   }, [])
 
   // Memoized vehicle and driver lookups
-  const vehicleMap = useMemo(() => 
+  const vehicleMap = useMemo(() =>
     new Map(vehicles.map(v => [v.id, v.registration_number])), [vehicles]
   )
-  
-  const driverMap = useMemo(() => 
+
+  const driverMap = useMemo(() =>
     new Map(drivers.map(d => [d.id, `${d.first_name} ${d.surname}`])), [drivers]
   )
 
@@ -161,10 +161,10 @@ export default function LoadPlanPage() {
     const R = 6371 // Earth's radius in km
     const dLat = (lat2 - lat1) * Math.PI / 180
     const dLon = (lon2 - lon1) * Math.PI / 180
-    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-              Math.sin(dLon/2) * Math.sin(dLon/2)
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2)
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
     return R * c
   }, [])
 
@@ -174,7 +174,7 @@ export default function LoadPlanPage() {
     try {
       const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
       if (!mapboxToken) return null
-      
+
       const response = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(location)}.json?access_token=${mapboxToken}&country=za&limit=1`
       )
@@ -192,20 +192,20 @@ export default function LoadPlanPage() {
   // Get sorted drivers by distance from pickup location
   const getSortedDriversByDistance = useCallback(async (pickupLocation) => {
     if (!pickupLocation) return drivers
-    
+
     const pickupCoords = await getPickupCoordinates(pickupLocation)
     if (!pickupCoords) return drivers
-    
+
     // Use stored vehicle tracking data
     const driversWithDistance = drivers.map(driver => {
       // Find matching vehicle by driver name
       const trackingData = Array.isArray(vehicleTrackingData) ? vehicleTrackingData : []
       const driverFullName = `${driver.first_name} ${driver.surname}`.trim().toLowerCase()
-      const matchingVehicle = trackingData.find(vehicle => 
-        vehicle.driver_name && 
+      const matchingVehicle = trackingData.find(vehicle =>
+        vehicle.driver_name &&
         vehicle.driver_name.toLowerCase() === driverFullName
       )
-      
+
       if (matchingVehicle?.latitude && matchingVehicle?.longitude) {
         const distance = calculateDistance(
           pickupCoords.lat, pickupCoords.lon,
@@ -213,10 +213,10 @@ export default function LoadPlanPage() {
         )
         return { ...driver, distance: Math.round(distance * 10) / 10 }
       }
-      
+
       return { ...driver, distance: null }
     })
-    
+
     // Sort by distance (closest first, then drivers without coordinates)
     return driversWithDistance.sort((a, b) => {
       if (a.distance === null && b.distance === null) return 0
@@ -239,7 +239,7 @@ export default function LoadPlanPage() {
         setOptimizedRoute(null)
         return
       }
-      
+
       setIsOptimizing(true)
       try {
         const response = await fetch('/api/routes', {
@@ -252,7 +252,7 @@ export default function LoadPlanPage() {
             pickupTime: etaPickup
           })
         })
-        
+
         if (response.ok) {
           const routeData = await response.json()
           setOptimizedRoute(routeData)
@@ -262,7 +262,7 @@ export default function LoadPlanPage() {
       }
       setIsOptimizing(false)
     }
-    
+
     optimizeRoute()
   }, [loadingLocation, dropOffPoint, orderNumber, etaPickup])
 
@@ -280,8 +280,8 @@ export default function LoadPlanPage() {
     const selectedDriver = drivers.find(d => d.id === driverId)
     setDriverAssignments(prev => {
       const updated = [...prev]
-      updated[driverIndex] = { 
-        id: driverId, 
+      updated[driverIndex] = {
+        id: driverId,
         name: `${driverId} - ${selectedDriver?.surname || ''}`,
         first_name: selectedDriver?.first_name || '',
         surname: selectedDriver?.surname || ''
@@ -297,12 +297,12 @@ export default function LoadPlanPage() {
   // Auto-select closest driver when dropdown is opened
   const handleDriverDropdownOpen = useCallback(async (driverIndex) => {
     if (!loadingLocation) return
-    
+
     setIsCalculatingDistance(true)
     try {
       const sorted = await getSortedDriversByDistance(loadingLocation)
       setSortedDrivers(sorted)
-      
+
       // Auto-select closest driver if available
       const closestDriver = sorted.find(d => d.distance !== null)
       if (closestDriver) {
@@ -318,7 +318,7 @@ export default function LoadPlanPage() {
   const getAssignmentsDisplay = (load) => {
     const assignments = load.vehicleAssignments || load.vehicle_assignments || []
     if (!assignments.length) return 'Unassigned'
-    
+
     return assignments.map(assignment => {
       const vehicleName = assignment.vehicle?.name || 'Unknown Vehicle'
       const driverNames = assignment.drivers?.map(d => d.name).filter(Boolean).join(', ') || 'No Driver'
@@ -338,16 +338,16 @@ export default function LoadPlanPage() {
   }
 
   const [summaryOpen, setSummaryOpen] = useState(false)
-  const [selectedLoad, setSelectedLoad] = useState<any | null>(null)
+  const [selectedLoad, setSelectedLoad] = useState(null)
   // Routing assigned items
-  const [assignedItems, setAssignedItems] = useState<any[]>([])
+  // const [assignedItems, setAssignedItems] = useState<any[]>([])
   // Left items available to assign
-  const [leftItems, setLeftItems] = useState<any[]>([
+  const [leftItems, setLeftItems] = useState([
     { id: 'a', title: 'VINCEMUS INVESTMENTS (P...)', addr: 'Johannesburg, South Africa', addr2: 'Estcourt, 3310, South Africa' },
     { id: 'b', title: 'TRADELANDER 5 CC', addr: 'Randfontein, South Africa' }
   ])
 
-  const handleCreateClick = (e: React.FormEvent) => {
+  const handleCreateClick = (e) => {
     e.preventDefault()
     handleCreate()
   }
@@ -388,35 +388,35 @@ export default function LoadPlanPage() {
           vehicle: { id: '', name: '' }
         }]
       }
-      
+
       const { error } = await supabase.from('trips').insert([tripData])
       if (error) throw error
-      
+
       // Mark assigned drivers as unavailable
       const assignedDriverIds = driverAssignments
         .map(d => d.id)
         .filter(id => id)
-      
+
       if (assignedDriverIds.length > 0) {
         const { error: driverError } = await supabase
           .from('drivers')
           .update({ available: false })
           .in('id', assignedDriverIds)
-        
+
         if (driverError) {
           console.error('Error updating driver availability:', driverError)
         }
       }
-      
+
       // Reset form
       setClient(''); setCommodity(''); setRate(''); setOrderNumber(''); setComment('')
       setEtaPickup(''); setLoadingLocation(''); setEtaDropoff(''); setDropOffPoint('')
       setDriverAssignments([{ id: '', name: '' }])
       setShowSecondSection(false)
-      
+
       // Refresh data
       fetchData()
-      
+
       alert('Load created successfully!')
     } catch (err) {
       console.error('Error creating load:', err)
@@ -428,7 +428,7 @@ export default function LoadPlanPage() {
   return (
     <div className="p-6 space-y-6 w-full">
       <h1 className="text-2xl font-bold mb-6">Load Plan</h1>
-      
+
       <Tabs defaultValue="loads" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="loads">Loads</TabsTrigger>
@@ -523,9 +523,9 @@ export default function LoadPlanPage() {
                         <span className={cn(
                           "px-2 py-1 rounded-full text-xs font-medium",
                           row.status === "completed" ? "bg-green-100 text-green-800" :
-                          row.status === "in-transit" ? "bg-blue-100 text-blue-800" :
-                          row.status === "pending" ? "bg-yellow-100 text-yellow-800" :
-                          "bg-red-100 text-red-800"
+                            row.status === "in-transit" ? "bg-blue-100 text-blue-800" :
+                              row.status === "pending" ? "bg-yellow-100 text-yellow-800" :
+                                "bg-red-100 text-red-800"
                         )}>
                           {row.status || 'pending'}
                         </span>
@@ -555,10 +555,10 @@ export default function LoadPlanPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="client">Client</Label>
-                    <Input 
-                      value={client} 
-                      onChange={(e) => setClient(e.target.value)} 
-                      placeholder="Enter client name" 
+                    <Input
+                      value={client}
+                      onChange={(e) => setClient(e.target.value)}
+                      placeholder="Enter client name"
                     />
                   </div>
                   <div>
@@ -599,8 +599,8 @@ export default function LoadPlanPage() {
                         const selectedClient = clients.find(c => c.name === client)
                         if (!selectedClient) return []
                         try {
-                          return typeof selectedClient.pickupLocations === 'string' ? 
-                            JSON.parse(selectedClient.pickupLocations) : 
+                          return typeof selectedClient.pickupLocations === 'string' ?
+                            JSON.parse(selectedClient.pickupLocations) :
                             (selectedClient.pickupLocations || selectedClient.pickup_locations || [])
                         } catch { return [] }
                       }, [clients, client])
@@ -625,8 +625,8 @@ export default function LoadPlanPage() {
                         const selectedClient = clients.find(c => c.name === client)
                         if (!selectedClient) return []
                         try {
-                          return typeof selectedClient.dropoffLocations === 'string' ? 
-                            JSON.parse(selectedClient.dropoffLocations) : 
+                          return typeof selectedClient.dropoffLocations === 'string' ?
+                            JSON.parse(selectedClient.dropoffLocations) :
                             (selectedClient.dropoffLocations || selectedClient.dropoff_locations || [])
                         } catch { return [] }
                       }, [clients, client])
@@ -662,11 +662,11 @@ export default function LoadPlanPage() {
                       <Plus className="h-4 w-4 mr-1" /> Add Driver
                     </Button>
                   </div>
-                  
+
                   {driverAssignments.map((driver, driverIndex) => (
                     <div key={driverIndex} className="mb-2">
-                      <Select 
-                        value={driver.id} 
+                      <Select
+                        value={driver.id}
                         onValueChange={(value) => handleDriverChange(driverIndex, value)}
                         onOpenChange={(open) => {
                           if (open && loadingLocation && !driver.id) {
@@ -683,9 +683,8 @@ export default function LoadPlanPage() {
                               <div className="flex items-center justify-between w-full">
                                 <span>{d.first_name} {d.surname}</span>
                                 {d.distance !== null && (
-                                  <span className={`text-xs ml-2 px-2 py-1 rounded ${
-                                    index === 0 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-                                  }`}>
+                                  <span className={`text-xs ml-2 px-2 py-1 rounded ${index === 0 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                                    }`}>
                                     {d.distance}km
                                   </span>
                                 )}
@@ -731,7 +730,7 @@ export default function LoadPlanPage() {
                 const assignments = parseJsonField(trip.vehicleassignments) || []
                 const pickupLocations = parseJsonField(trip.pickuplocations) || []
                 const dropoffLocations = parseJsonField(trip.dropofflocations) || []
-                
+
                 return (
                   <Card key={trip.id}>
                     <CardHeader>
@@ -740,9 +739,9 @@ export default function LoadPlanPage() {
                         <span className={cn(
                           "px-3 py-1 rounded-full text-xs font-medium",
                           trip.status === "completed" ? "bg-green-100 text-green-800" :
-                          trip.status === "in-transit" ? "bg-blue-100 text-blue-800" :
-                          trip.status === "pending" ? "bg-yellow-100 text-yellow-800" :
-                          "bg-red-100 text-red-800"
+                            trip.status === "in-transit" ? "bg-blue-100 text-blue-800" :
+                              trip.status === "pending" ? "bg-yellow-100 text-yellow-800" :
+                                "bg-red-100 text-red-800"
                         )}>
                           {trip.status || 'pending'}
                         </span>
@@ -794,7 +793,7 @@ export default function LoadPlanPage() {
                               ]}
                             />
                           </div>
-                          
+
                           {/* Route Details */}
                           <div className="space-y-3">
                             {pickupLocations.map((pickup, index) => (
