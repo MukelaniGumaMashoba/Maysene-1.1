@@ -43,6 +43,32 @@ export default function TripsPage() {
       .join(", ");
   };
 
+  const getDropOffLocation = (trip) => {
+    if (!trip) return "-";
+    const dropoff =
+      parseJsonField(trip.dropoffLocations) ||
+      parseJsonField(trip.dropoff_locations) ||
+      [];
+    // Map to string like address or location before joining
+    return dropoff
+      .map(loc => loc.address || loc.location || "")
+      .filter(Boolean)
+      .join(", ") || "-";
+  };
+
+  const getPickupLocation = (trip) => {
+    if (!trip) return "-";
+    const pickup =
+      parseJsonField(trip.pickupLocations) ||
+      parseJsonField(trip.pickup_locations) ||
+      [];
+    // Map to string like address or location before joining
+    return pickup
+      .map(loc => loc.address || loc.location || "")
+      .filter(Boolean)
+      .join(", ") || "-";
+  };
+
   // Helper to get vehicle names (make + model) from vehicle assignments
   const getVehicleNames = (trip) => {
     if (!trip) return "";
@@ -72,7 +98,7 @@ export default function TripsPage() {
     try {
       const parsed = typeof val === "string" ? JSON.parse(val) : val;
       if (parsed && parsed.name) return parsed.name;
-    } catch {}
+    } catch { }
     return String(val);
   };
 
@@ -88,6 +114,8 @@ export default function TripsPage() {
           driversDisplay: getDriverNames(trip),
           vehiclesDisplay: getVehicleNames(trip),
           costCentreDisplay: displayCostCentre(trip.costCentre || trip.cost_centre),
+          pickupLocations: getPickupLocation(trip),
+          dropoffLocations: getDropOffLocation(trip),
         }));
         setTrips(parsedTrips);
       }
@@ -141,12 +169,12 @@ export default function TripsPage() {
     {
       accessorKey: "origin",
       header: "Origin",
-      cell: ({ row }) => row.original.origin || "-",
+      cell: ({ row }) => row.original.pickupLocations || "-",
     },
     {
       accessorKey: "destination",
       header: "Destination",
-      cell: ({ row }) => row.original.destination || "-",
+      cell: ({ row }) => row.original.dropoffLocations || "-",
     },
     {
       accessorKey: "status",
@@ -165,11 +193,6 @@ export default function TripsPage() {
           </span>
         );
       },
-    },
-    {
-      accessorKey: "costCentreDisplay",
-      header: "Cost Centre",
-      cell: ({ row }) => row.original.costCentreDisplay || "-",
     },
   ];
 
@@ -235,7 +258,7 @@ export default function TripsPage() {
             csv_headers={[]}
             csv_rows={[]}
             href="/fleetManager/trips"
-            downloadCSV={() => {}}
+            downloadCSV={() => { }}
           />
         </div>
       </div>

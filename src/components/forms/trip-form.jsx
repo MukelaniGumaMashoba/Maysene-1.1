@@ -796,7 +796,7 @@ const TripForm = ({ onClose, id }) => {
   // Handle form submission
   const handleSubmit = async (e) => {
     if (e) e.preventDefault()
-    if (validateCurrentTab()) return
+    if (!validateCurrentTab()) return
     setLoading(true)
     try {
       // Normalize and resolve references for drivers, vehicles, costCentre, etc.

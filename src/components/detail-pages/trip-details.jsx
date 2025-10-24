@@ -46,6 +46,7 @@ import {
   RefreshCw,
   Edit,
 } from 'lucide-react'
+import MapDirections from "@/components/map/MapDirections"
 
 import { Skeleton } from '@/components/ui/skeleton'
 import DetailActionBar from '@/components/layout/detail-action-bar'
@@ -209,6 +210,7 @@ export default function TripDetails({ id }) {
   const [updatingStatus, setUpdatingStatus] = useState(false)
   const [locations, setLocations] = useState([])
   const [routeCoordinates, setRouteCoordinates] = useState([])
+  const [mapVisible, setMapVisible] = useState(false)
 
   const handleGoBack = () => {
     router.back()
@@ -319,7 +321,6 @@ export default function TripDetails({ id }) {
     'weighing',        // Weighing in/out
     'delivered',       // Delivered
     'Accept',
-    'Reject',
     "arrived-at-loading",
     "staging-area",
     "on-trip",
@@ -391,6 +392,10 @@ export default function TripDetails({ id }) {
     }
     : null
 
+  // locations arrays used by the map component (normalize missing values)
+  const pickupLocations = parsedTrip?.pickupLocations || []
+  const dropoffLocations = parsedTrip?.dropoffLocations || []
+
   const trip_information = [
     { label: 'Start Date', value: formatDate(parsedTrip?.startDate) },
     { label: 'End Date', value: formatDate(parsedTrip?.endDate) },
@@ -398,7 +403,7 @@ export default function TripDetails({ id }) {
     { label: 'Origin', value: displayLocationsAddresses(parsedTrip?.pickupLocations) || 'N/A' },
     // { label: 'Destination', value: parsedTrip?.destination || 'N/A' },
     { label: 'Destination', value: displayLocationsAddresses(parsedTrip?.dropoffLocations) || 'N/A' },
-    { label: 'Cost Centre', value: displayCostCentre(parsedTrip?.costCentre) },
+    // { label: 'Cost Centre', value: displayCostCentre(parsedTrip?.costCentre) },
     { label: 'Cargo', value: parsedTrip?.cargo || 'N/A' },
     { label: 'Cargo Weight', value: parsedTrip?.cargoWeight || parsedTrip?.cargo_weight || 'N/A' },
     // { label: 'Pickup Locations', value: displayLocationsAddresses(parsedTrip?.pickupLocations) },
@@ -625,6 +630,34 @@ export default function TripDetails({ id }) {
             {typeof window !== 'undefined' && <TripMapboxView tripData={parsedTrip} />}
           </div>
 
+          {pickupLocations.length > 0 && dropoffLocations.length > 0 && (
+            <MapDirections
+              visible={mapVisible}
+              onClose={() => setMapVisible(false)}
+              pickupLocation={{
+                latitude: pickupLocations[0].latitude || 0,
+                longitude: pickupLocations[0].longitude || 0,
+                address: pickupLocations[0].address || pickupLocations[0].location,
+              }}
+              dropoffLocation={{
+                latitude: dropoffLocations[0].latitude || 0,
+                longitude: dropoffLocations[0].longitude || 0,
+                address: dropoffLocations[0].address || dropoffLocations[0].location,
+              }}
+            />
+          )}
+
+          <div className="mt-3 flex justify-end">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setMapVisible(true)}
+              disabled={!(pickupLocations.length > 0 && dropoffLocations.length > 0)}
+            >
+              <MapPin className="h-4 w-4 mr-2" /> View Route
+            </Button>
+          </div>
+
           <Separator className="my-4" />
 
           {/* <div className="mb-4">
@@ -640,7 +673,7 @@ export default function TripDetails({ id }) {
                 </dt>
                 <dd className="mt-1 text-sm text-gray-900">{displayValue(info.value)}</dd>
               </div>
-            ))}
+            ))}tr
           </div> */}
         </DetailCard>
       </div>
