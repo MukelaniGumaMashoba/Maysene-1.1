@@ -41,8 +41,6 @@ import RecentActivityList from "@/components/dashboard/recentActivities";
 import { SlidingNumber } from "@/components/ui/sliding-number";
 import CardDemo from "@/components/userAvatar";
 import Link from "next/link";
-import DetailCard from "@/components/ui/detail-card";
-import { onCreate } from "@/hooks/use-auth";
 import { useGlobalContext } from "@/context/global-context/context";
 
 interface DashboardStats {
@@ -75,7 +73,6 @@ function getCookie(name: string) {
 }
 
 export default function Dashboard() {
-  const { onCreate } = useGlobalContext();
   const [userRole, setUserRole] = useState<string>("");
   const [userEmail, setUserEmail] = useState<string>("");
   const [stats, setStats] = useState<DashboardStats>({
@@ -366,7 +363,7 @@ export default function Dashboard() {
       <div className="flex-1 space-y-4 p-4 pt-6">
         <div className="flex items-center justify-between">
           <h2 className="text-3xl font-bold tracking-tight">
-            Dashboard Overview
+            System Overview
           </h2>
           {/* <div className="text-sm text-gray-500">
             Last updated: {new Date().toLocaleString()}
@@ -539,24 +536,6 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Access Forms */}
-        <DetailCard
-          title={"Quick Access"}
-          description={"Create new entries in your fleet management system"}
-        >
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            {formLinks.map((link) => (
-              <Button
-                key={link.name}
-                variant="outline"
-                className="h-auto py-4 flex flex-col items-center gap-2 bg-transparent"
-                onClick={() => onCreate(link.href)}
-              >
-                <link.icon className="h-6 w-6" />
-                <span>{link.name}</span>
-              </Button>
-            ))}
-          </div>
-        </DetailCard>
         {/* <div>
           <CardDemo />
         </div> */}

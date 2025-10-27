@@ -855,11 +855,11 @@ export default function FleetJobsPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {[
                 "Breakdown Request",
+                "completed",
                 "inprogress",
                 "assigned",
                 "Technician accepted",
                 "Technician on site",
-                "completed",
               ].map((status) => (
                 <Card key={status}>
                   <CardHeader className="pb-3">
@@ -982,13 +982,14 @@ export default function FleetJobsPage() {
                 <div className="space-y-4">
                   {[
                     "Breakdown Request",
+                    "completed",
                     "assigned",
                     "Technician on site",
                     "Technician accepted",
                     "inprogress",
                     "awaiting-approval",
                     "approved",
-                    // "completed",
+
                     "cancelled",
                   ].map((status) => {
                     const count = jobs.filter(

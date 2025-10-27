@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import jsPDF from "jspdf";
 import { printInspectionDetails } from "@/hooks/printPDF";
-import Image from "next/image";
 
 export default function InspectionDetail() {
   const params = useParams();
@@ -97,15 +96,6 @@ export default function InspectionDetail() {
         </Button>
 
         <div ref={contentRef}>
-          <div className="w-screen flex justify-center mb-4">
-            <Image
-              src="/logo.jpg"
-              alt="Company Logo"
-              width={100}
-              height={100}
-              className="mx-auto"
-            />
-          </div>
           <h1 className="text-4xl font-extrabold text-gray-800 text-center drop-shadow-sm">
             Inspection #{inspection.id}
           </h1>
