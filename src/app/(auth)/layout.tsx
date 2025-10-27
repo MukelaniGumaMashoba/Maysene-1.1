@@ -31,7 +31,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
               <Image src="/Logo.png" alt="Eagle Eye" width={150} height={150} className="object-fill rounded-full" />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Breakdown Logistics</h1>
-            <p className="text-gray-600">Welcome back to your Breakdown Logistics</p>
+            <p className="text-gray-600">Welcome back to your Maysene Logistics</p>
           </div>
 
           {/* Auth form container */}
@@ -67,7 +67,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
           {/* Footer */}
           <div className="mt-8 text-center">
             <p className="text-sm text-gray-500">
-              © 2025 Breakdown Logistics. All rights reserved.
+              © 2025 Soltrack & Maysene Logistics. All rights reserved.
             </p>
           </div>
         </div>

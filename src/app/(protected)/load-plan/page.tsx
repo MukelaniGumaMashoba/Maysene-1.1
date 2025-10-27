@@ -124,7 +124,6 @@ export default function LoadPlanPage() {
   const [optimizedRoute, setOptimizedRoute] = useState<any>(null);
   const [showRouteModal, setShowRouteModal] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
-
   // Driver assignments state
   const [driverAssignments, setDriverAssignments] = useState([
     { id: "", name: "" },
@@ -248,7 +247,7 @@ export default function LoadPlanPage() {
     try {
       const { data: stopPointsData, error: stopPointsError } = await supabase
         .from("stop_points")
-        .select("id, name, name2, coordinates")
+        .select("*")
         .order("name")
         .limit(1000); // Limit to prevent large data loads
 

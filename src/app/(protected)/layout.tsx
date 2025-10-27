@@ -180,129 +180,206 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
     window.location.href = "/logout";
   };
   return (
-    <div className="bg-gray-50 w-full">
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden w-full"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+    // <div className="bg-gray-50 w-full">
+    //   {/* Mobile sidebar overlay */}
+    //   {sidebarOpen && (
+    //     <div
+    //       className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden w-full"
+    //       onClick={() => setSidebarOpen(false)}
+    //     />
+    //   )}
 
-      {/* Sidebar: this is sticky/fixed and does NOT move */}
-      <div
-        className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-slate-900 to-slate-800 shadow-2xl
-        transform transition-transform duration-300 ease-in-out
-        ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-        lg:translate-x-0
-        h-screen border-r border-slate-700
-      `}
+    //   {/* Sidebar: this is sticky/fixed and does NOT move */}
+    //   <div
+    //     className={`
+    //     fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-slate-900 to-slate-800 shadow-2xl
+    //     transform transition-transform duration-300 ease-in-out
+    //     ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+    //     lg:translate-x-0
+    //     h-screen border-r border-slate-700
+    //   `}
+    //   >
+    //     {/* Header, nav, footer go here */}
+    //     <div className="flex flex-col h-full">
+    //       {/* Header */}
+    //       <div className="flex items-center justify-between p-6 border-b border-slate-700">
+    //         <div className="flex items-center space-x-3">
+    //           <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+    //             <span className="text-white font-bold text-sm">BL</span>
+    //           </div>
+    //           <h1 className="text-lg font-bold text-white">
+    //             Maysene Logistics
+    //           </h1>
+    //         </div>
+    //         <Button
+    //           variant="ghost"
+    //           size="sm"
+    //           onClick={() => setSidebarOpen(false)}
+    //           className="lg:hidden text-gray-400 hover:text-white hover:bg-slate-700"
+    //         >
+    //           ✕
+    //         </Button>
+    //       </div>
+
+    //       {/* Navigation */}
+    //       <nav className="flex-1 p-4 space-y-1">
+    //         {navigation.map((item) => {
+    //           const isActive = pathname === item.href;
+
+    //           return (
+    //             <Link
+    //               key={item.name}
+    //               href={item.href}
+    //               className={`
+    //                 flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200
+    //                 ${
+    //                   isActive
+    //                     ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transform scale-105"
+    //                     : "text-gray-300 hover:bg-slate-700 hover:text-white hover:transform hover:scale-105"
+    //                 }
+    //               `}
+    //               onClick={() => setSidebarOpen(false)}
+    //             >
+    //               <span className="mr-3 text-lg">{item.Icon}</span>
+    //               {item.name}
+    //             </Link>
+    //           );
+    //         })}
+    //       </nav>
+
+    //       {/* Footer */}
+    //       <div className="p-4 border-t border-slate-700">
+    //         <div className="mb-3 p-3 bg-slate-800 rounded-lg">
+    //           <div className="text-xs text-gray-400 mb-1">Current Role</div>
+    //           <div className="text-sm font-medium text-white capitalize">
+    //             {userRole
+    //               ? userRole === "customer"
+    //                 ? "workshop"
+    //                 : userRole
+    //               : "No User"}
+    //           </div>
+    //         </div>
+    //         <Button
+    //           onClick={handleLogout}
+    //           variant="outline"
+    //           className="w-full bg-transparent border-slate-600 text-gray-300 hover:bg-slate-700 hover:text-white hover:border-slate-500"
+    //         >
+    //           🚪 Logout
+    //         </Button>
+    //       </div>
+    //     </div>
+    //   </div>
+
+    //   {/* Main content: this scrolls */}
+    //   <div className="ml-64 h-screen overflow-y-auto bg-gray-50">
+    //     {/* Top bar */}
+    //     <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm">
+    //       <div className="flex items-center justify-between px-6 py-4">
+    //         <Button
+    //           variant="ghost"
+    //           size="sm"
+    //           onClick={() => setSidebarOpen(true)}
+    //           className="lg:hidden hover:bg-gray-100"
+    //         >
+    //           ☰
+    //         </Button>
+
+    //         <div className="flex items-center space-x-6">
+    //           <div className="flex items-center space-x-3">
+    //             <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+    //               <span className="text-white font-medium text-sm">U</span>
+    //             </div>
+    //             <div>
+    //               <span className="text-sm font-medium text-gray-900">
+    //                 Welcome back
+    //               </span>
+    //               <div className="text-xs text-gray-500 capitalize">
+    //                 {userRole === "customer" ? "workshop" : userRole || "User"}
+    //               </div>
+    //             </div>
+    //           </div>
+    //         </div>
+    //       </div>
+    //     </div>
+
+    //     {/* Page content */}
+    //     <main className="p-6 w-full">
+    //       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    //         <GlobalProvider>{children}</GlobalProvider>
+    //       </div>
+    //     </main>
+    //   </div>
+    // </div>
+    <div className="flex min-h-screen bg-gray-50">
+      {/* Sidebar */}
+      <aside
+        className={`fixed inset-y-0 left-0 w-64 bg-white shadow-xl transform transition-transform duration-300 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } lg:translate-x-0 z-50`}
       >
-        {/* Header, nav, footer go here */}
         <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-slate-700">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">BL</span>
-              </div>
-              <h1 className="text-lg font-bold text-white">
-                Maysene Logistics
-              </h1>
-            </div>
+          {/* Logo */}
+          <div className="p-6 border-b flex items-center justify-center">
+            <h1 className="text-2xl font-bold text-blue-600">
+              Maysene Logistics
+            </h1>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden text-gray-400 hover:text-white hover:bg-slate-700"
+              className="lg:hidden text-gray-400 hover:text-gray-600"
             >
               ✕
             </Button>
           </div>
-
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-1">
-            {navigation.map((item) => {
-              const isActive = pathname === item.href;
-
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`
-                    flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200
-                    ${
-                      isActive
-                        ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transform scale-105"
-                        : "text-gray-300 hover:bg-slate-700 hover:text-white hover:transform hover:scale-105"
-                    }
-                  `}
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <span className="mr-3 text-lg">{item.Icon}</span>
-                  {item.name}
-                </Link>
-              );
-            })}
+          <nav className="flex-1 overflow-y-auto p-4 space-y-2">
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-transform duration-200 ${
+                  pathname === item.href
+                    ? "bg-blue-600 text-white shadow-lg scale-105"
+                    : "text-gray-700 hover:bg-gray-100 hover:scale-105"
+                }`}
+              >
+                <span className="mr-3">{item.Icon}</span>
+                {item.name}
+              </Link>
+            ))}
           </nav>
-
           {/* Footer */}
-          <div className="p-4 border-t border-slate-700">
-            <div className="mb-3 p-3 bg-slate-800 rounded-lg">
-              <div className="text-xs text-gray-400 mb-1">Current Role</div>
-              <div className="text-sm font-medium text-white capitalize">
-                {userRole
-                  ? userRole === "customer"
-                    ? "workshop"
-                    : userRole
-                  : "No User"}
-              </div>
-            </div>
-            <Button
-              onClick={handleLogout}
-              variant="outline"
-              className="w-full bg-transparent border-slate-600 text-gray-300 hover:bg-slate-700 hover:text-white hover:border-slate-500"
-            >
-              🚪 Logout
-            </Button>
+          <div className="p-4 border-t text-center text-xs text-gray-500">
+            We deliver - Kae Kapa Kae
           </div>
         </div>
-      </div>
+      </aside>
 
-      {/* Main content: this scrolls */}
-      <div className="ml-64 h-screen overflow-y-auto bg-gray-50">
-        {/* Top bar */}
-        <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between px-6 py-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSidebarOpen(true)}
-              className="lg:hidden hover:bg-gray-100"
-            >
-              ☰
-            </Button>
-
-            <div className="flex items-center space-x-6">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <span className="text-white font-medium text-sm">U</span>
-                </div>
-                <div>
-                  <span className="text-sm font-medium text-gray-900">
-                    Welcome back
-                  </span>
-                  <div className="text-xs text-gray-500 capitalize">
-                    {userRole === "customer" ? "workshop" : userRole || "User"}
-                  </div>
-                </div>
-              </div>
-            </div>
+      {/* Main Content */}
+      <div className="flex-1 lg:ml-64 overflow-y-auto">
+        {/* Hero Section */}
+        <section
+          className="relative h-64 md:h-80 lg:h-96 bg-cover bg-center"
+          style={{ backgroundImage: "url('/maysene.jpg')" }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent"></div>
+          <div className="absolute inset-0 flex items-center justify-center text-center text-white">
+            <h1 className="text-3xl md:text-5xl font-bold animate-fadeIn">
+              We deliver - Kae Kapa Kae
+            </h1>
           </div>
-        </div>
+        </section>
 
-        {/* Page content */}
+        {/* Top Bar */}
+        <header className="sticky top-0 bg-white shadow-sm p-4 flex justify-between items-center z-40">
+          <Button onClick={() => setSidebarOpen(true)} className="lg:hidden">
+            ☰
+          </Button>
+          <span className="text-gray-700 font-medium">Welcome back</span>
+        </header>
+
+        {/* Page Content */}
         <main className="p-6 w-full">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <GlobalProvider>{children}</GlobalProvider>

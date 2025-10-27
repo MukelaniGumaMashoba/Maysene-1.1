@@ -88,6 +88,7 @@ const StopPointForm = ({ onCancel, id }) => {
   const { stop_points, stopPointsDispatch, sp_api } = useGlobalContext()
   const stopPoint = stop_points.data.find((sp) => sp.id === id)
   const supabase = createClient()
+  const [isloading, setIsloading] = useState(false)
 
   const [formData, setFormData] = useState({
     id: stopPoint?.id || '',
@@ -158,16 +159,21 @@ const StopPointForm = ({ onCancel, id }) => {
 
   const onSubmit = async (data) => {
     // Build complete address from components
+
     const completeData = {
       ...data,
       address: `${data.street}, ${data.city}, ${data.state}, ${data.country}`,
     }
-    
+
     try {
+      setIsloading(true)
+
       await sp_api.upsertStopPoint(id, completeData, stopPointsDispatch)
       console.log('Stop point saved successfully')
+      window.reload();
       onCancel()
     } catch (error) {
+      setIsloading(false)
       console.error('Error saving stop point:', error)
       alert('There was an error saving the stop point. Please try again.')
     }
@@ -439,7 +445,7 @@ const StopPointForm = ({ onCancel, id }) => {
             handleChange={handleChange}
           />
           <Separator className="my-4" />
-          
+
           {/* Address Autocomplete */}
           <div className="mb-4">
             <AddressAutocomplete
@@ -493,7 +499,7 @@ const StopPointForm = ({ onCancel, id }) => {
             Cancel
           </Button>
           <Button type="submit">
-            <Save className="mr-2 h-4 w-4" /> Save Stop Point
+            <Save className="mr-2 h-4 w-4" />  {isloading ? "Save Stop Point" : "Saving"}
           </Button>
         </div>
       </div>
