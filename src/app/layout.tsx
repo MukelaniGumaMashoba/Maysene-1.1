@@ -17,11 +17,6 @@ export const metadata: Metadata = {
   title: "Breakdown",
   description: "Breakdown",
   authors: [{ name: "Kilig Mukelani", url: "" }],
-  icons: {
-    icon: "/favicon.png",
-    shortcut: "/favicon.png",
-    apple: "/favicon.png",
-  },
 };
 
 export default function RootLayout({
@@ -31,6 +26,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link
+          href="https://api.mapbox.com/mapbox-gl-js/v3.14.0/mapbox-gl.css"
+          rel="stylesheet"
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

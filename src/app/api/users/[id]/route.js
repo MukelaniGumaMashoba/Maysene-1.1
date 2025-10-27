@@ -1,25 +1,31 @@
-import { NextResponse } from 'next/server'
 // import * as dummy from '../../../../../dummy-data'
+
+// next
+import { NextResponse } from 'next/server'
+
 import { verifyAuth } from '@/utils/verify-auth'
 import { auth, db } from '@/lib/server-db'
 
 // Mock database
-// let stopPoints = dummy.stop_points_data
+// let users = dummy.users_data
 
 // *****************************
-// fetch stop point
+// get user
 // *****************************
 // export async function GET(request, { params }) {
-//   const { pageId, id } = await params
-//   let stopPoint = []
+//   const token = await verifyAuth(auth, db, request, 'verifyIdToken')
+//   const { id } = await params
+//   const user = users.find((u) => u.id === id)
 
-//   stopPoint = stopPoints.find((sp) => sp.id === id)
-//   // communicate with database
-//   return NextResponse.json(stopPoint)
+//   if (!user) {
+//     return NextResponse.json({ error: 'User not found' }, { status: 404 })
+//   }
+
+//   return NextResponse.json(user)
 // }
 
 // *****************************
-// update stop point
+// update user
 // *****************************
 export async function PUT(request, { params }) {
   const token = await verifyAuth(auth, db, request, 'verifyIdToken')
@@ -38,16 +44,16 @@ export async function PUT(request, { params }) {
   }
 
   try {
-    // Step 1: Query stop points by ID field
+    // Step 1: Query cost centre by ID field
     const querySnapshot = await db
-      .collection(`companies/${token.clientId}/stopPoints`)
+      .collection(`companies/${token.clientId}/users`)
       .where('id', '==', id)
       .limit(1)
       .get()
 
     if (querySnapshot.empty) {
       return NextResponse.json(
-        { error: `Stop point with id: ${id} was not found` },
+        { error: `User with id: ${id} was not found` },
         { status: 404 }
       )
     }
@@ -59,19 +65,22 @@ export async function PUT(request, { params }) {
     const updatedData = { ...doc.data(), ...body }
 
     // Step 3: Update document in Firestore
-    await docRef.set(updatedData)
+    await docRef.set(
+      updatedData
+      //  { merge: true }
+    )
 
     return NextResponse.json({ id, ...updatedData }, { status: 200 })
   } catch (error) {
     return NextResponse.json(
-      { error: `Failed to update stop point with id: ${id}` },
+      { error: `Failed to update user with id: ${id}` },
       { status: 500 }
     )
   }
 }
 
 // *****************************
-// delete stop points
+// delete user
 // *****************************
 export async function DELETE(request, { params }) {
   const token = await verifyAuth(auth, db, request, 'verifyIdToken')
@@ -82,27 +91,27 @@ export async function DELETE(request, { params }) {
   }
 
   if (!id) {
-    return NextResponse.json(
-      { error: 'MIssing stop point ID' },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: 'Missing user ID' }, { status: 400 })
   }
+
   try {
     const querySnapshot = await db
-      .collection(`companies/${token.clientId}/stopPoints`)
+      .collection(`companies/${token.clientId}/users`)
       .where('id', '==', id)
       .limit(1) // Optional: safety for unique IDs
       .get()
 
     if (querySnapshot.empty) {
-      return NextResponse.json(
-        { error: `Stop point with id: ${id} was not found` },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Cost user found' }, { status: 404 })
     }
 
     const doc = querySnapshot.docs[0]
-
+    if (token.uid == doc.uid) {
+      return NextResponse.json(
+        { error: 'Super admin can not be deleted' },
+        { status: 400 }
+      )
+    }
     await doc.ref.delete()
 
     return NextResponse.json(id, { status: 200 })

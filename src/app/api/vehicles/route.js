@@ -1,12 +1,14 @@
-import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { getUserScopedVehicles } from '@/utils/vehicles'
+import { supabase } from '@/lib/supabase-client'
 
 // Helper to get user from Supabase session
 async function getUser(request) {
-  const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session?.user) return null
-  return session.user
+  const { data, error } = await supabase.auth.getUser(
+    request.headers.get('Authorization')?.replace('Bearer ', '')
+  )
+  if (error || !data?.user) return null
+  return data.user
 }
 
 // *****************************
@@ -19,14 +21,8 @@ export async function GET(request) {
   }
 
   try {
-    const supabase = await createClient()
-    const { data: vehicles, error } = await supabase
-      .from('vehiclesc')
-      .select('*')
-      .eq('client_id', user.id)
-
-    if (error) throw error
-    return NextResponse.json(vehicles || [], { status: 200 })
+    const vehicles = await getUserScopedVehicles(user)
+    return NextResponse.json(vehicles)
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
@@ -42,7 +38,6 @@ export async function POST(request) {
   }
 
   try {
-    const supabase = await createClient()
     const body = await request.json()
     const clientId = user.id
 
@@ -102,7 +97,7 @@ export async function POST(request) {
 
     // Increment vehicle count on cost centre
     await supabase
-      .from('breakdown_cost_centres')
+      .from('cost_centres')
       .update({ vehicles: (costCentres.vehicles || 0) + 1 })
       .eq('id', costCentreId)
 

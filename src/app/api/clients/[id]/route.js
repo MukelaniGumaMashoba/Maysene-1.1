@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 
 // *****************************
 // update client
 // *****************************
 export async function PUT(request, { params }) {
-  const supabase = createClient()
+  const supabase = createRouteHandlerClient({ cookies })
   const { data: { session }, error: authError } = await supabase.auth.getSession()
   if (authError || !session) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
@@ -35,8 +36,8 @@ export async function PUT(request, { params }) {
     if (error) throw error
 
     const ip = request.headers.get('x-forwarded-for') ||
-      request.headers.get('x-real-ip') ||
-      'unknown'
+               request.headers.get('x-real-ip') ||
+               'unknown'
     await supabase.from('user_activities').insert({
       user_id: session.user.id,
       activity: 'Updated Client',
@@ -54,7 +55,7 @@ export async function PUT(request, { params }) {
 // delete client
 // *****************************
 export async function DELETE(request, { params }) {
-  const supabase = createClient()
+  const supabase = createRouteHandlerClient({ cookies })
   const { data: { session }, error: authError } = await supabase.auth.getSession()
   if (authError || !session) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
@@ -81,8 +82,8 @@ export async function DELETE(request, { params }) {
     if (error) throw error
 
     const ip = request.headers.get('x-forwarded-for') ||
-      request.headers.get('x-real-ip') ||
-      'unknown'
+               request.headers.get('x-real-ip') ||
+               'unknown'
     await supabase.from('user_activities').insert({
       user_id: session.user.id,
       activity: 'Deleted Client',

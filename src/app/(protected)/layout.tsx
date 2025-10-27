@@ -20,6 +20,7 @@ import {
   Users,
   Wrench,
   Route,
+  Construction,
 } from "lucide-react";
 import GlobalProvider from "@/context/global-context/provider";
 
@@ -43,6 +44,27 @@ const roleNavigation = {
     { name: "Stop Points", href: "/fleetManager/stop-points", Icon: <Route /> },
     { name: "Trips", href: "/fleetManager/trips", Icon: <Route /> },
     { name: "System Settings", href: "/settings", Icon: <Settings /> },
+    { name: "Dashboard", href: "/dashboard", Icon: <ChartBar /> },
+    // { name: "Jobs", href: "/jobs", Icon: <Briefcase /> },
+    // { name: "Fleet Jobs", href: "/jobsFleet", Icon: <Briefcase /> },
+    // { name: "Call Center", href: "/callcenter", Icon: <Phone /> },
+    { name: "Load Plan", href: "/load-plan", Icon: <Route /> },
+    { name: "Fuel Can Bus", href: "/fuel", Icon: <Truck /> },
+    // { name: "Equipment", href: "/equipment", Icon: <Settings /> },
+    // { name: "Fleet Manager", href: "/fleetManager", Icon: <Truck /> },
+    { name: "Drivers", href: "/drivers", Icon: <Users /> },
+    { name: "Vehicles", href: "/vehicles", Icon: <Car /> },
+    // { name: "Customers", href: "/customer", Icon: <Building2 /> },
+    { name: "Cost Centers", href: "/ccenter", Icon: <Construction /> },
+    { name: "Financials", href: "/audit", Icon: <Settings2Icon /> },
+    // { name: "Reports", href: "/reports", Icon: <ChartBar /> },
+    // { name: "User Management", href: "/userManagement", Icon: <PlusSquare /> },
+    // { name: "System Settings", href: "/settings", Icon: <Settings /> },
+    {
+      name: "Inspections",
+      href: "/fleetManager/inspections",
+      Icon: <QrCode />,
+    },
   ],
   fc: [
     { name: "Dashboard", href: "/dashboard", Icon: <ChartBar /> },
@@ -126,12 +148,33 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
       setUserRole(role);
       // Set navigation based on role
       const roleNav = roleNavigation[role as keyof typeof roleNavigation] || [];
-      setNavigation(roleNav);
+      
+      // Force fleet manager to only have 2 items
+      if (role === "fleet manager") {
+        const fleetManagerNav = [
+          { name: "Dashboard", href: "/dashboard", Icon: <ChartBar /> },
+          { name: "Load Plan", href: "/load-plan", Icon: <Route /> },
+        ];
+        setNavigation(fleetManagerNav);
+        console.log("Layout - Fleet Manager restricted to 2 items:", fleetManagerNav.length);
+      } else if (role === "customer") {
+        const customerNav = [
+          { name: "Drivers", href: "/drivers", Icon: <Users /> },
+          { name: "Vehicles", href: "/vehicles", Icon: <Car /> },
+          { name: "Inspections", href: "/fleetManager/inspections", Icon: <QrCode /> },
+          { name: "Fuel Can Bus", href: "/fuel", Icon: <Truck /> },
+        ];
+        setNavigation(customerNav);
+        console.log("Layout - Customer restricted to 4 items:", customerNav.length);
+      } else {
+        setNavigation(roleNav);
+      }
+      
       console.log(
         "Layout - Navigation set for role:",
         role,
         "Items:",
-        roleNav.length
+        navigation.length || roleNav.length
       );
     } else {
       console.log("Layout - No role found, redirecting to login");
@@ -142,7 +185,6 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const handleLogout = () => {
     window.location.href = "/logout";
   };
-
   return (
     <div className="bg-gray-50 w-full">
       {/* Mobile sidebar overlay */}
@@ -223,9 +265,9 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                   : "No User"}
               </div>
             </div>
-            <Button 
-              onClick={handleLogout} 
-              variant="outline" 
+            <Button
+              onClick={handleLogout}
+              variant="outline"
               className="w-full bg-transparent border-slate-600 text-gray-300 hover:bg-slate-700 hover:text-white hover:border-slate-500"
             >
               🚪 Logout
@@ -254,7 +296,9 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                   <span className="text-white font-medium text-sm">U</span>
                 </div>
                 <div>
-                  <span className="text-sm font-medium text-gray-900">Welcome back</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    Welcome back
+                  </span>
                   <div className="text-xs text-gray-500 capitalize">
                     {userRole === "customer" ? "workshop" : userRole || "User"}
                   </div>

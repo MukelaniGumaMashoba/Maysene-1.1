@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
-import {createClient} from '@/lib/supabase/server'
+import { supabase } from '@/lib/supabase'
+import { verifyAuth } from '@/utils/verify-auth'
+import { logUserActivity } from '@/utils/logUserActivity'
 
 // GET: List drivers for authenticated user
 export async function GET(request) {
-  const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  const token = session
+  const token = await verifyAuth(request)
   if (!token) {
     return NextResponse.json({ error: 'not a valid user' }, { status: 401 })
   }
@@ -24,9 +24,7 @@ export async function GET(request) {
 
 // POST: Add a new driver
 export async function POST(request) {
-  const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  const token = session
+  const token = await verifyAuth(request)
   if (!token) {
     return NextResponse.json({ error: 'not a valid user' }, { status: 401 })
   }
@@ -36,7 +34,7 @@ export async function POST(request) {
 
     // Find cost centre by name
     const { data: costCentre, error: ccError } = await supabase
-      .from('breakdown_cost_centres')
+      .from('cost_centres')
       .select('id')
       .eq('name', body.costCentre)
       .eq('client_id', token.clientId)
@@ -89,6 +87,11 @@ export async function POST(request) {
       request.headers.get('x-real-ip') ||
       request.ip ||
       'unknown'
+    await logUserActivity(supabase, token, {
+      timestamp: new Date().toISOString(),
+      activity: 'Added Driver',
+      ip: ip === '::1' ? 'localhost' : ip,
+    })
 
     return NextResponse.json(newDriver, { status: 201 })
   } catch (error) {

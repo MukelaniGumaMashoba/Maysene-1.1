@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
+import { createClient } from '@supabase/supabase-js'
 
 // *****************************
 // get all data for trip form
 // *****************************
 export async function GET() {
-  const supabase = createClient()
+  const supabase = createClient({ cookies })
   const { data: { session }, error: authError } = await supabase.auth.getSession()
   if (authError || !session) {
     return NextResponse.json({ error: 'not a valid user' }, { status: 401 })
@@ -13,7 +14,7 @@ export async function GET() {
 
   try {
     const { data: profile, error: profileError } = await supabase
-      .from('users')
+      .from('profiles')
       .select('client_id')
       .eq('id', session.user.id)
       .single()
