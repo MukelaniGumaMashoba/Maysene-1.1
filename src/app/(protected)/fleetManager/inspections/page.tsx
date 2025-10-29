@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -39,6 +39,12 @@ type Inspection = {
 
 export default function InspectionsPage() {
   const [inspections, setInspections] = useState<Inspection[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string>("All");
+  const [dateRange, setDateRange] = useState<string>("all"); // all, today, 7days, thisWeek, custom
+  const [customStart, setCustomStart] = useState<string>("");
+  const [customEnd, setCustomEnd] = useState<string>("");
+  const [templatesOpen, setTemplatesOpen] = useState(false);
+
   const supabase = createClient();
 
   useEffect(() => {
@@ -59,22 +65,166 @@ export default function InspectionsPage() {
     fetchInspections();
   }, []);
 
+  const startOfDay = (d: Date) => {
+    const dt = new Date(d);
+    dt.setHours(0, 0, 0, 0);
+    return dt;
+  };
+  const endOfDay = (d: Date) => {
+    const dt = new Date(d);
+    dt.setHours(23, 59, 59, 999);
+    return dt;
+  };
+
+  const getWeekBounds = (d: Date) => {
+    const dt = new Date(d);
+    const day = (dt.getDay() + 6) % 7; // make Monday=0
+    const monday = new Date(dt);
+    monday.setDate(dt.getDate() - day);
+    return {
+      start: startOfDay(monday),
+      end: endOfDay(new Date(monday.getTime() + 6 * 24 * 3600 * 1000)),
+    };
+  };
+
+  const filteredInspections = useMemo(() => {
+    let start: Date | null = null;
+    let end: Date | null = null;
+    const now = new Date();
+
+    if (dateRange === "today") {
+      start = startOfDay(now);
+      end = endOfDay(now);
+    } else if (dateRange === "7days") {
+      start = startOfDay(new Date(now.getTime() - 6 * 24 * 3600 * 1000)); // last 7 days including today
+      end = endOfDay(now);
+    } else if (dateRange === "thisWeek") {
+      const bounds = getWeekBounds(now);
+      start = bounds.start;
+      end = bounds.end;
+    } else if (dateRange === "custom") {
+      if (customStart) start = startOfDay(new Date(customStart));
+      if (customEnd) end = endOfDay(new Date(customEnd));
+    }
+
+    return inspections.filter((insp) => {
+      // status filter
+      if (statusFilter !== "All") {
+        if (statusFilter === "Unknown") {
+          if (insp.overall_status !== null) return false;
+        } else {
+          if (insp.overall_status !== statusFilter) return false;
+        }
+      }
+
+      // date filter
+      if (start || end) {
+        const inspDate = new Date(insp.inspection_date);
+        if (start && inspDate < start) return false;
+        if (end && inspDate > end) return false;
+      }
+
+      return true;
+    });
+  }, [inspections, statusFilter, dateRange, customStart, customEnd]);
+
   return (
     <div className="p-6 space-y-6">
-      <div className="max-w-3xl space-y-4">
-        <div>
-          <h1 className="text-2xl font-bold mb-4 text-gray-800">
-            Vehicle Inspections
-          </h1>
-          <p className="text-sm text-gray-600">
-            Below is a list of all vehicle inspections. Click{" "}
-            <strong>"View Full Inspection"</strong> to see detailed information
-            including the full checklist and any noted faults.
-          </p>
+      <div className="max-w-5xl space-y-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold mb-2 text-gray-800">
+              Vehicle Inspections
+            </h1>
+            <p className="text-sm text-gray-600">
+              Below is a list of vehicle inspections. Click{" "}
+              <strong>"View Full Inspection"</strong> to see the full checklist
+              and any noted faults.
+            </p>
+          </div>
         </div>
 
-        {/* Legend Section */}
-        <div className="mt-6 border border-gray-300 rounded-md p-4 bg-gray-50">
+        {/* Filters */}
+        <div className="flex flex-col md:flex-row md:items-end md:space-x-4 gap-3">
+          <div className="bg-gray-50 p-3 rounded-md border flex items-center gap-3">
+            <label className="text-sm font-medium text-gray-700">Status</label>
+            <select
+              className="px-3 py-1 rounded bg-white border"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="All">All</option>
+              <option value="Faulty">Faulty</option>
+              <option value="Passed">Passed</option>
+              <option value="Unknown">Unknown</option>
+            </select>
+          </div>
+
+          <div className="bg-gray-50 p-3 rounded-md border flex items-center gap-3">
+            <label className="text-sm font-medium text-gray-700">
+              Date Range
+            </label>
+            <select
+              className="px-3 py-1 rounded bg-white border"
+              value={dateRange}
+              onChange={(e) => setDateRange(e.target.value)}
+            >
+              <option value="all">All</option>
+              <option value="today">Today</option>
+              <option value="7days">Last 7 days</option>
+              <option value="thisWeek">This week</option>
+              <option value="custom">Custom</option>
+            </select>
+
+            {dateRange === "custom" && (
+              <div className="flex items-center gap-2 ml-2">
+                <input
+                  type="date"
+                  className="px-2 py-1 rounded border bg-white text-sm"
+                  value={customStart}
+                  onChange={(e) => setCustomStart(e.target.value)}
+                />
+                <span className="text-sm text-gray-500">to</span>
+                <input
+                  type="date"
+                  className="px-2 py-1 rounded border bg-white text-sm"
+                  value={customEnd}
+                  onChange={(e) => setCustomEnd(e.target.value)}
+                />
+                <Button
+                  onClick={() => {
+                    // if user clears custom, set to all
+                    if (!customStart && !customEnd) setDateRange("all");
+                  }}
+                  variant="ghost"
+                >
+                  Apply
+                </Button>
+              </div>
+            )}
+          </div>
+
+          <div className="ml-auto flex items-center gap-2">
+            <div className="text-sm text-gray-500">
+              Showing {filteredInspections.length} of {inspections.length}
+            </div>
+            <Button
+              onClick={() => {
+                setStatusFilter("All");
+                setDateRange("all");
+                setCustomStart("");
+                setCustomEnd("");
+              }}
+              variant="destructive"
+              className="bg-red-600 text-white"
+            >
+              Reset
+            </Button>
+          </div>
+        </div>
+
+        {/* Legend */}
+        <div className="mt-2 border border-gray-300 rounded-md p-4 bg-gray-50">
           <h2 className="text-md font-semibold text-gray-700 mb-2">
             Inspection Status Legend
           </h2>
@@ -93,11 +243,19 @@ export default function InspectionsPage() {
             </li>
           </ul>
         </div>
-
-        <InspectionTemplatesPage />
       </div>
 
-      {inspections.map((insp) => {
+      <div className="flex-shrink-0 space-y-2">
+        <Button
+          onClick={() => setTemplatesOpen(true)}
+          className="bg-white/10 hover:bg-white/20 text-white border border-white/20"
+        >
+          Manage Templates
+        </Button>
+      </div>
+
+      {/* Inspections list */}
+      {filteredInspections.map((insp) => {
         const isFaulty = insp.overall_status === "Faulty";
 
         return (
@@ -126,7 +284,7 @@ export default function InspectionsPage() {
                 }
               `}
                 >
-                  {insp.overall_status}
+                  {insp.overall_status ?? "Unknown"}
                 </span>
               </CardTitle>
             </CardHeader>
@@ -144,7 +302,7 @@ export default function InspectionsPage() {
                   <strong>Odometer:</strong> {insp.odo_reading}
                 </div>
                 <div>
-                  <strong>Category:</strong> {insp.category}
+                  <strong>Category:</strong> {insp.category ?? "N/A"}
                 </div>
                 <div>
                   <strong>Date:</strong>{" "}
@@ -188,7 +346,7 @@ export default function InspectionsPage() {
                                       : "text-green-500 font-semibold"
                                   }
                                 >
-                                  {item.status}
+                                  {item.status ?? "N/A"}
                                 </span>
                               </li>
                             ))}
@@ -216,6 +374,43 @@ export default function InspectionsPage() {
           </Card>
         );
       })}
+
+      {/* Modal for Templates */}
+      {templatesOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center px-4"
+        >
+          <div
+            className="fixed inset-0 bg-black/50"
+            onClick={() => setTemplatesOpen(false)}
+          />
+          <div className="relative z-10 w-full max-w-4xl bg-white rounded-lg shadow-lg overflow-auto max-h-[90vh]">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-lg font-semibold">Inspection Templates</h2>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => {
+                    setTemplatesOpen(false);
+                  }}
+                  className="bg-gray-100 text-gray-800"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+
+            <div className="p-4">
+              {/* You can style the wrapper or pass props to the component if needed.
+                  Here we just render it inside a nicely padded modal. */}
+              <div className="bg-gray-50 p-4 rounded-md border">
+                <InspectionTemplatesPage />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

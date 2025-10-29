@@ -351,7 +351,14 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
           </nav>
           {/* Footer */}
           <div className="p-4 border-t text-center text-xs text-gray-500">
-            We deliver - Kae Kapa Kae
+            <p className="m-3">{userRole === "customer" ? "workshop" : userRole || "User"}</p>
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="w-full bg-transparent border-slate-600 text-gray-300 hover:bg-slate-700 hover:text-white hover:border-slate-500"
+            >
+              🚪 Logout
+            </Button>
           </div>
         </div>
       </aside>

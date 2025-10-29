@@ -597,197 +597,181 @@ export default function Drivers() {
 
             {/* Driver Details Sheet */}
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                <SheetContent className="p-4 w-11/12 md:w-2/4 h-screen overflow-y-auto">
-                    <SheetHeader>
-                        <SheetTitle>Driver Details</SheetTitle>
+                <SheetContent className="p-6 w-11/12 md:w-2/4 h-screen overflow-y-auto">
+                    <SheetHeader className="mb-4">
+                        <SheetTitle className="text-xl font-semibold">Driver Details</SheetTitle>
                     </SheetHeader>
 
-                    {selectedDriver && (
-                        <div className="space-y-4 mt-6 pb-20">
+                    {selectedDriver ? (
+                        <div className="space-y-6">
+                            {/* Top summary */}
+                            <Card>
+                                <CardContent className="flex items-center gap-4">
+                                    <div className="flex-1">
+                                        <p className="text-sm text-gray-500">Name</p>
+                                        <p className="text-lg font-semibold text-gray-900">{selectedDriver.first_name} {selectedDriver.surname}</p>
+                                        <p className="text-sm text-gray-500 mt-1">ID: {selectedDriver.id_or_passport_number}</p>
+                                    </div>
+
+                                    <div className="text-right">
+                                        <p className="text-sm text-gray-500">Status</p>
+                                        <div className="mt-2">{getStatusBadge(selectedDriver.sa_issued)}</div>
+                                        <p className="text-sm text-gray-500 mt-3">PDP</p>
+                                        <div className="mt-1">{getPDPStatusBadge(selectedDriver.professional_driving_permit)}</div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
                             {/* Personal Information */}
-                            <div className="space-y-4">
-                                <h3 className="text-lg font-semibold text-gray-900">
-                                    Personal Information
-                                </h3>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">First Name</p>
-                                        <p className="text-gray-900">{selectedDriver.first_name}</p>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-sm">Personal Information</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <p className="text-xs text-gray-500">First Name</p>
+                                            <p className="text-sm text-gray-900">{selectedDriver.first_name || '—'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-gray-500">Surname</p>
+                                            <p className="text-sm text-gray-900">{selectedDriver.surname || '—'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-gray-500">Email</p>
+                                            <p className="text-sm text-gray-900 text-wrap">{selectedDriver.email_address || 'Not provided'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-gray-500">Cell</p>
+                                            <p className="text-sm text-gray-900">{selectedDriver.cell_number || 'Not provided'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-gray-500">Created At</p>
+                                            <p className="text-sm text-gray-900">{formatDate(selectedDriver.created_at)}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-gray-500">Created By</p>
+                                            <p className="text-sm text-gray-900">{selectedDriver.created_by || '—'}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">Surname</p>
-                                        <p className="text-gray-900">{selectedDriver.surname}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">ID Number</p>
-                                        <p className="text-gray-900">{selectedDriver.id_or_passport_number}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">Email</p>
-                                        <p className="text-gray-900">
-                                            {selectedDriver.email_address || "Not provided"}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">Cell Number</p>
-                                        <p className="text-gray-900">
-                                            {selectedDriver.cell_number || "Not provided"}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
+                                </CardContent>
+                            </Card>
 
                             {/* License Information */}
-                            <div className="space-y-4">
-                                <h3 className="text-lg font-semibold text-gray-900">
-                                    License Information
-                                </h3>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">License Number</p>
-                                        <p className="text-gray-900">
-                                            {selectedDriver.license_number || "Not provided"}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">License Code</p>
-                                        <p className="text-gray-900">
-                                            {selectedDriver.license_code || "Not set"}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">License Expiry</p>
-                                        <p className="text-gray-900">
-                                            {formatDate(selectedDriver.license_expiry_date)}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">SA Issued</p>
-                                        <div className="mt-1">
-                                            {getStatusBadge(selectedDriver.sa_issued)}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-sm">License Information</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <p className="text-xs text-gray-500">License Number</p>
+                                            <p className="text-sm text-gray-900">{selectedDriver.license_number || 'Not provided'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-gray-500">License Code</p>
+                                            <p className="text-sm text-gray-900">{selectedDriver.license_code || 'Not set'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-gray-500">License Expiry</p>
+                                            <p className="text-sm text-gray-900">{formatDate(selectedDriver.license_expiry_date)}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-gray-500">Restriction Code</p>
+                                            <p className="text-sm text-gray-900">{selectedDriver.driver_restriction_code || 'Not set'}</p>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
+                                </CardContent>
+                            </Card>
 
                             {/* Professional Driving Permit */}
-                            <div className="space-y-4">
-                                <h3 className="text-lg font-semibold text-gray-900">
-                                    Professional Driving Permit
-                                </h3>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">Has PDP</p>
-                                        <div className="mt-1">
-                                            {getPDPStatusBadge(
-                                                selectedDriver.professional_driving_permit
-                                            )}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-sm">Professional Driving Permit (PDP)</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                                        <div>
+                                            <p className="text-xs text-gray-500">Has PDP</p>
+                                            <div className="mt-1">{getPDPStatusBadge(selectedDriver.professional_driving_permit)}</div>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-gray-500">PDP Expiry</p>
+                                            <p className="text-sm text-gray-900">{formatDate(selectedDriver.pdp_expiry_date)}</p>
                                         </div>
                                     </div>
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">PDP Expiry</p>
-                                        <p className="text-gray-900">
-                                            {formatDate(selectedDriver.pdp_expiry_date)}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Restriction Codes */}
-                            <div className="space-y-4">
-                                <h3 className="text-lg font-semibold text-gray-900">
-                                    Restriction Codes
-                                </h3>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">
-                                            Driver Restriction
-                                        </p>
-                                        <p className="text-gray-900">
-                                            {selectedDriver.driver_restriction_code || "Not set"}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">
-                                            Vehicle Restriction
-                                        </p>
-                                        <p className="text-gray-900">
-                                            {selectedDriver.vehicle_restriction_code || "Not set"}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
+                                </CardContent>
+                            </Card>
 
                             {/* Documents */}
-                            <div className="space-y-4">
-                                <h3 className="text-lg font-semibold text-gray-900">Documents</h3>
-                                <div className="space-y-2">
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">Work Permit</p>
-                                        {selectedDriver.work_permit_upload ? (
-                                            <a
-                                                href={selectedDriver.work_permit_upload}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="text-blue-600 hover:underline"
-                                            >
-                                                📄 View Work Permit
-                                            </a>
-                                        ) : (
-                                            <p className="text-gray-500">Not uploaded</p>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">
-                                            Front of License
-                                        </p>
-                                        {selectedDriver.front_of_driver_pic ? (
-                                            <img
-                                                src={selectedDriver.front_of_driver_pic}
-                                                alt="Front of License"
-                                                className="w-40 rounded-lg border shadow-sm"
-                                            />
-                                        ) : (
-                                            <p className="text-gray-500">Not uploaded</p>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">
-                                            Rear of License
-                                        </p>
-                                        {selectedDriver.rear_of_driver_pic ? (
-                                            <img
-                                                src={selectedDriver.rear_of_driver_pic}
-                                                alt="Rear of License"
-                                                className="w-40 rounded-lg border shadow-sm"
-                                            />
-                                        ) : (
-                                            <p className="text-gray-500">Not uploaded</p>
-                                        )}
-                                    </div>
-                                </div>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-sm">Documents & Photos</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <p className="text-xs text-gray-500">Work Permit</p>
+                                            {selectedDriver.work_permit_upload ? (
+                                                <a href={selectedDriver.work_permit_upload} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline inline-flex items-center gap-2">
+                                                    <span>📄 View Work Permit</span>
+                                                </a>
+                                            ) : (
+                                                <p className="text-sm text-gray-500">Not uploaded</p>
+                                            )}
+                                        </div>
 
-                                <div className="flex gap-2 pt-4">
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => {
-                                            startEditDriver(selectedDriver);
-                                            setIsSheetOpen(false);
-                                        }}
-                                    >
-                                        Edit
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        onClick={() =>
-                                            selectedDriver.id && handleDeleteDriver(selectedDriver.id)
-                                        }
-                                    >
-                                        Delete
-                                    </Button>
-                                </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <p className="text-xs text-gray-500">Front of License</p>
+                                                {selectedDriver.front_of_driver_pic ? (
+                                                    <img src={selectedDriver.front_of_driver_pic} alt="Front of License" className="mt-2 w-full max-w-[240px] rounded-lg border shadow-sm object-cover" />
+                                                ) : (
+                                                    <p className="text-sm text-gray-500 mt-1">Not uploaded</p>
+                                                )}
+                                            </div>
+
+                                            <div>
+                                                <p className="text-xs text-gray-500">Rear of License</p>
+                                                {selectedDriver.rear_of_driver_pic ? (
+                                                    <img src={selectedDriver.rear_of_driver_pic} alt="Rear of License" className="mt-2 w-full max-w-[240px] rounded-lg border shadow-sm object-cover" />
+                                                ) : (
+                                                    <p className="text-sm text-gray-500 mt-1">Not uploaded</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Actions */}
+                            <div className="flex justify-end gap-2">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        startEditDriver(selectedDriver)
+                                        setIsSheetOpen(false)
+                                    }}
+                                >
+                                    Edit
+                                </Button>
+
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => selectedDriver.id && handleDeleteDriver(selectedDriver.id)}
+                                >
+                                    Delete
+                                </Button>
+
+                                <Button
+                                    onClick={() => setIsSheetOpen(false)}
+                                >
+                                    Close
+                                </Button>
                             </div>
                         </div>
+                    ) : (
+                        <div className="py-8 text-center text-gray-500">No driver selected</div>
                     )}
                 </SheetContent>
             </Sheet>

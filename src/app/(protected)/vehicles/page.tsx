@@ -119,7 +119,7 @@ export default function Vehicles() {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [filteredDrivers, setFilteredDrivers] = useState<Driver[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
+  // const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
 
   useEffect(() => {
     const getDrivers = async () => {
@@ -132,21 +132,21 @@ export default function Vehicles() {
       setDrivers(data as []);
     };
     
-    const getCostCenters = async () => {
-      const { data, error } = await supabase
-        .from("level_3_cost_centers")
-        .select("id, company, cost_code")
-        .order("company");
-      if (error) {
-        console.error("Error fetching cost centers:", error);
-        setCostCenters([]);
-        return;
-      }
-      setCostCenters(data as CostCenter[]);
-    };
+    // const getCostCenters = async () => {
+    //   const { data, error } = await supabase
+    //     .from("level_3_cost_centers")
+    //     .select("id, company, cost_code")
+    //     .order("company");
+    //   if (error) {
+    //     console.error("Error fetching cost centers:", error);
+    //     setCostCenters([]);
+    //     return;
+    //   }
+    //   setCostCenters(data as CostCenter[]);
+    // };
     
     getDrivers();
-    getCostCenters();
+    // getCostCenters();
   }, []);
 
   useEffect(() => {
@@ -165,9 +165,9 @@ export default function Vehicles() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingVehicleId, setEditingVehicleId] = useState<number | null>(null);
-  const [equipmentData, setEquipmentData] = useState<any[]>([]);
+  // const [equipmentData, setEquipmentData] = useState<any[]>([]);
   const [isEquipmentSheetOpen, setIsEquipmentSheetOpen] = useState(false);
-  const [equipmentVehicleReg, setEquipmentVehicleReg] = useState("");
+  // const [equipmentVehicleReg, setEquipmentVehicleReg] = useState("");
   
   
 
@@ -245,8 +245,6 @@ export default function Vehicles() {
     const { data: vehicles, error } = await supabase
       .from("vehiclesc")
       .select("*")
-      .or("type.is.null,type.eq.internal")
-      .neq("department_name", "SOLD");
     if (error) {
       console.error("the error is", error.name, error.message);
     } else {
@@ -362,6 +360,8 @@ export default function Vehicles() {
     
     const { error } = await supabase
       .from("vehiclesc")
+
+      // @ts-expect-error
       .update(vehicleData)
       .eq("id", editingVehicleId);
     
@@ -432,27 +432,6 @@ export default function Vehicles() {
     }
     console.log("Technician assigned successfully:", datav);
   }
-
-  const fetchEquipmentData = async (registration: string) => {
-    console.log('Searching for equipment with registration:', registration);
-    
-    const { data, error } = await supabase
-      .from('equipment')
-      .select('*')
-      .ilike('reg', registration.trim());
-    
-    if (error) {
-      console.error('Error fetching equipment:', error);
-      toast.error('Failed to fetch equipment data');
-      return;
-    }
-    
-    console.log('Equipment data found:', data);
-    setEquipmentData(data || []);
-  };
-
-  const { columns } = initialVehiclesState;
-  // console.log("The vehicles are", columns)
 
   return (
     <div className="space-y-6">
@@ -841,7 +820,7 @@ export default function Vehicles() {
                     )}
                   />
 
-                  <FormField
+                  {/* <FormField
                     control={form.control}
                     name="cost_centres"
                     render={({ field }) => (
@@ -864,7 +843,7 @@ export default function Vehicles() {
                         <FormMessage />
                       </FormItem>
                     )}
-                  />
+                  /> */}
 
                   <FormField
                     control={form.control}
@@ -1156,7 +1135,7 @@ export default function Vehicles() {
                           >
                             View
                           </Button>
-                          <Button 
+                          {/* <Button 
                             variant="outline" 
                             size="sm"
                             className="h-7 px-2 text-xs"
@@ -1167,7 +1146,7 @@ export default function Vehicles() {
                             }}
                           >
                             Equipment
-                          </Button>
+                          </Button> */}
                           <Link href={`/vehicles/${vehicle.id}`}>
                             <Button variant="default" size="sm" className="h-7 px-2 text-xs bg-slate-700 hover:bg-slate-800">Details</Button>
                           </Link>
@@ -1339,73 +1318,6 @@ export default function Vehicles() {
               </div>
             </>
           )}
-        </SheetContent>
-      </Sheet>
-
-      {/* Equipment Sheet */}
-      <Sheet open={isEquipmentSheetOpen} onOpenChange={setIsEquipmentSheetOpen}>
-        <SheetContent className="w-[600px] max-w-[90vw] p-0 bg-white">
-          <div className="bg-slate-50 border-b border-slate-200 p-6">
-            <SheetTitle className="text-xl font-bold text-slate-900">
-              Equipment for {equipmentVehicleReg}
-            </SheetTitle>
-          </div>
-          
-          <div className="overflow-y-auto h-[calc(100vh-140px)] p-6">
-            {equipmentData.length === 0 ? (
-              <div className="text-center py-8 text-slate-500">
-                No equipment found for this vehicle
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {equipmentData.map((equipment) => (
-                  <Card key={equipment.id} className="bg-slate-50 border border-slate-200">
-                    <CardContent className="p-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Registration</p>
-                          <p className="text-sm font-medium text-slate-900 mt-1">{equipment.reg || '-'}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Skylink Pro IP</p>
-                          <p className="text-sm text-slate-700 mt-1">{equipment.skylink_pro_ip || '-'}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Industrial Panic</p>
-                          <p className="text-sm text-slate-700 mt-1">{equipment.industrial_panic || '-'}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Keypad</p>
-                          <p className="text-sm text-slate-700 mt-1">{equipment.keypad || '-'}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Beame</p>
-                          <p className="text-sm text-slate-700 mt-1">{equipment.beame_1 || '-'}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Fuel Probe</p>
-                          <p className="text-sm text-slate-700 mt-1">{equipment.fuel_probe_1 || '-'}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-          
-          <div className="border-t border-slate-200 p-4 bg-white">
-            <div className="flex justify-end">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsEquipmentSheetOpen(false)}
-                className="text-slate-600 border-slate-300"
-              >
-                Close
-              </Button>
-            </div>
-          </div>
         </SheetContent>
       </Sheet>
 
