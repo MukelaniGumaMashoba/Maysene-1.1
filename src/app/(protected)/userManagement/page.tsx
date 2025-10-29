@@ -178,7 +178,7 @@ export default function SettingsPage() {
                     email: formData.get('email') as string,
                     role: formData.get('role') as string,
                     phone_number: formData.get('phone') as string,
-                    department: formData.get('department') as string
+                    // department: formData.get('department') as string
                 })
             })
             
@@ -298,7 +298,7 @@ export default function SettingsPage() {
                                             </Select>
                                         </div>
                                         <div className="bg-blue-50 p-3 rounded">
-                                            <p className="text-sm text-blue-800">Company: Klaver (Auto-assigned)</p>
+                                            <p className="text-sm text-blue-800">Company: Maysene (Auto-assigned)</p>
                                         </div>
                                         <Button type="submit" className="w-full" disabled={loading}>
                                             {loading ? 'Creating...' : 'Create User'}
@@ -325,13 +325,13 @@ export default function SettingsPage() {
                                         {loading ? (
                                             <TableRow>
                                                 <TableCell colSpan={6} className="text-center py-8">
-                                                    Loading Klaver users...
+                                                    Loading Maysene users...
                                                 </TableCell>
                                             </TableRow>
                                         ) : users.length === 0 ? (
                                             <TableRow>
                                                 <TableCell colSpan={6} className="text-center py-8">
-                                                    No Klaver users found
+                                                    No Maysene users found
                                                 </TableCell>
                                             </TableRow>
                                         ) : (

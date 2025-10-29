@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { full_name, email, role, phone_number, department } = body;
+    const { full_name, email, role, phone_number  } = body;
 
     if (!full_name || !email || !role || !phone_number) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -29,15 +29,15 @@ export async function POST(request: NextRequest) {
 
     // Create profile with auth user UUID
     const { error: profileError } = await supabase
-      .from('profiles')
+      .from('users')
       .insert({
         id: authData.user?.id,
         full_name,
         email,
         role,
-        company_name: 'Klaver',
-        phone_number,
-        department
+        company_name: 'Maysene',
+        // phone_number,
+        // department
       });
 
     if (profileError) {
@@ -60,9 +60,9 @@ export async function GET(request: NextRequest) {
     }
 
     const { data: users, error } = await supabase
-      .from('profiles')
+      .from('users')
       .select('*')
-      .eq('company_name', 'Klaver')
+      .eq('company', 'Maysene')
       .order('created_at', { ascending: false });
 
     if (error) {
