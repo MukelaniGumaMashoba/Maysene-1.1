@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardContent, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
@@ -22,6 +22,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import VehicleHistory from "@/components/dashboard/vehicleHistory";
+import Link from "next/link";
+import { Nav } from "react-day-picker";
+import NavigationButtons from "@/components/navigationBtn";
 
 interface Vehicle {
   id: number;
@@ -112,21 +116,21 @@ export default function VehicleDetailsPage() {
   // Updating the vehicle details
   const handleUpdate = async () => {
     if (!editData) return;
-    
+
     // Remove id from update data to avoid conflicts
     const { id, created_at, updated_at, ...updateData } = editData;
-    
+
     const { error } = await supabase
       .from("vehiclesc")
       .update(updateData)
       .eq("id", id);
-    
+
     if (error) {
       console.error("Error updating vehicle:", error);
       toast.error("Failed to update vehicle details");
       return;
     }
-    
+
     setVehicle(editData);
     toast.success("Vehicle details updated");
     setEditing(false);
@@ -478,6 +482,17 @@ export default function VehicleDetailsPage() {
               />
             </motion.div>
           </CardContent>
+
+          <CardFooter>
+            <div>
+                <button
+                  onClick={() => router.push(`/vehicles/${vehicle.id}/history`)}
+                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none"
+                >
+                  {loading ? "History" : "Loading..."}
+                </button>
+              </div>
+          </CardFooter>
         </Card>
       </div>
     </motion.div>

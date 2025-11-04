@@ -108,11 +108,12 @@ export default function LoadPlanPage() {
   const [commodity, setCommodity] = useState("");
   const [costCenter, setCostCenter] = useState("");
   const [rate, setRate] = useState("");
-  const [orderNumber, setOrderNumber] = useState(
-    `ORD-${Math.floor(Math.random() * 100000)
-      .toString()
-      .padStart(5, "0")}`
-  );
+  // const [orderNumber, setOrderNumber] = useState(
+  //   `ORD-${Math.floor(Math.random() * 100000)
+  //     .toString()
+  //     .padStart(5, "0")}`
+  // );
+    const [orderNumber, setOrderNumber] = useState("");
   const [comment, setComment] = useState("");
   // Address & ETA section
   const [etaPickup, setEtaPickup] = useState("");
@@ -1125,7 +1126,8 @@ export default function LoadPlanPage() {
       }
 
       const tripData = {
-        trip_id: `LOAD-${Date.now()}`,
+        // trip_id: `LOAD-${Date.now()}`,
+        trip_id : "",
         ordernumber: orderNumber,
         rate: rate,
         cargo: commodity,
@@ -2182,7 +2184,7 @@ export default function LoadPlanPage() {
                                 {trip.trip_id}
                               </h3>
                               <p className="text-sm text-slate-500">
-                                {trip.ordernumber}
+                                {trip?.ordernumber}
                               </p>
                             </div>
                           </div>

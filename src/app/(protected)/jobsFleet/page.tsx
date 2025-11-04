@@ -72,6 +72,7 @@ interface Job {
     registration_number: string | null;
     make: string | null;
     model: string | null;
+    fleet_number: string;
   } | null;
   location: string;
   coordinates: { lat: number; lng: number };
@@ -88,6 +89,7 @@ interface Job {
   attachments: string[];
   completed_at: string;
   eta: string;
+  service: string;
 }
 
 interface Technician {
@@ -110,6 +112,7 @@ export default function FleetJobsPage() {
   const [userRole, setUserRole] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [serviceFilter, setServiceFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
@@ -372,10 +375,17 @@ export default function FleetJobsPage() {
       filtered = filtered.filter((job) => job.status === statusFilter);
     }
 
+    // service  filter
+    if (serviceFilter !== "all") {
+      filtered = filtered.filter((job) => job.service === serviceFilter);
+    }
+
+
     // Priority filter
     if (priorityFilter !== "all") {
       filtered = filtered.filter((job) => job.priority === priorityFilter);
     }
+
 
     setFilteredJobs(filtered);
   }, [jobs, searchTerm, statusFilter, priorityFilter]);
@@ -425,6 +435,14 @@ export default function FleetJobsPage() {
     setIsModalOpen(true);
   };
 
+  const getDays = (createdDate: string) => {
+  const start = new Date(createdDate);
+  const end = new Date(); 
+  const diffTime = Math.abs(end.getTime() - start.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+}
+
   return (
     <>
       <div className="flex-1 space-y-4 p-4 pt-6">
@@ -461,7 +479,18 @@ export default function FleetJobsPage() {
                 <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
-
+            <Select value={serviceFilter} onValueChange={setServiceFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Service" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Services</SelectItem>
+                <SelectItem value="Mechanical Failure">Mechanical Failure</SelectItem>
+                <SelectItem value="Electrical Issue">Electrical Issue</SelectItem>
+                <SelectItem value="Bodywork Repair">Bodywork Repair</SelectItem>
+              </SelectContent>
+            </Select>
+  
             <div className="mt-4">
               <button onClick={handleRefreshClick}>
                 <RefreshCcw />
@@ -492,12 +521,13 @@ export default function FleetJobsPage() {
                             <FileText className="h-5 w-5 text-blue-500" />
                             <CardTitle className="text-lg">
                               {job.job_id} :{" "}
-                              {job?.vehiclesc?.registration_number ||
-                                "No vehicle allocated"}{" "}
+                              {/* {job?.vehiclesc?.registration_number ||
+                                "No vehicle allocated"}{" "} */}
+                              {job?.vehiclesc?.fleet_number}
                             </CardTitle>
                           </div>
                           <Badge className={getPriorityColor(job.priority)}>
-                            {job.priority}
+                            {job.priority} : {job.service}
                           </Badge>
                           <Badge className={getStatusColor(job.status)}>
                             {job.status}
@@ -509,8 +539,9 @@ export default function FleetJobsPage() {
                         <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4 text-gray-500" />
                           <span className="text-sm text-gray-500">
-                            {new Date(job.created_at).toLocaleDateString()}{" "}
-                            {new Date(job.created_at).toLocaleTimeString()}
+                            {/* {new Date(job.created_at).toLocaleDateString()}{" "} */}
+                            {/* {new Date(job.created_at).toLocaleTimeString()} */}
+                            {getDays(job.created_at)} days ago
                           </span>
                         </div>
                       </div>
@@ -582,7 +613,9 @@ export default function FleetJobsPage() {
                             <MapPin className="h-4 w-4" />
                             Location
                           </h4>
-                          <p className="text-sm text-gray-600">{job.location}</p>
+                          <p className="text-sm text-gray-600">
+                            {job.location}
+                          </p>
                           {job.technicians ? (
                             <>
                               <p className="text-sm">
@@ -606,7 +639,8 @@ export default function FleetJobsPage() {
                             Time
                           </h4>
                           <p className="text-sm">
-                            <strong>Arrival Est. Time:</strong> {job.eta || "TBC"}
+                            <strong>Arrival Est. Time:</strong>{" "}
+                            {job.eta || "TBC"}
                           </p>
 
                           <p className="text-sm">
@@ -615,13 +649,16 @@ export default function FleetJobsPage() {
                             {new Date(job.created_at).toLocaleTimeString()}
                           </p>
                           <p className="text-sm">
-                            <strong>Time Completed:</strong> {job.completed_at || "TBC"}
+                            <strong>Time Completed:</strong>{" "}
+                            {job.completed_at || "TBC"}
                           </p>
                         </div>
                       </div>
 
                       <div className="mb-4">
-                        <p className="text-sm text-gray-600">{job.description}</p>
+                        <p className="text-sm text-gray-600">
+                          {job.description}
+                        </p>
                       </div>
                       {job.notes && job.notes.length > 0 && (
                         <div className="bg-gray-100 p-3 rounded-md flex items-center gap-2 mb-4">
@@ -745,38 +782,39 @@ export default function FleetJobsPage() {
                           </Button>
                         </div>
 
-                        {job.status === "awaiting-approval" && canApproveJobs && (
-                          <div className="flex gap-2">
-                            <Button
-                              onClick={() =>
-                                handleUpdateJobStatus(
-                                  job.id,
-                                  "approved",
-                                  "Job approved by fleet manager"
-                                )
-                              }
-                              className="bg-green-600 hover:bg-green-700"
-                              size="sm"
-                            >
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Approve
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              onClick={() =>
-                                handleUpdateJobStatus(
-                                  job.id,
-                                  "cancelled",
-                                  "Job rejected by fleet manager"
-                                )
-                              }
-                              size="sm"
-                            >
-                              <XCircle className="h-4 w-4 mr-2" />
-                              Reject
-                            </Button>
-                          </div>
-                        )}
+                        {job.status === "awaiting-approval" &&
+                          canApproveJobs && (
+                            <div className="flex gap-2">
+                              <Button
+                                onClick={() =>
+                                  handleUpdateJobStatus(
+                                    job.id,
+                                    "approved",
+                                    "Job approved by fleet manager"
+                                  )
+                                }
+                                className="bg-green-600 hover:bg-green-700"
+                                size="sm"
+                              >
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                Approve
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                onClick={() =>
+                                  handleUpdateJobStatus(
+                                    job.id,
+                                    "cancelled",
+                                    "Job rejected by fleet manager"
+                                  )
+                                }
+                                size="sm"
+                              >
+                                <XCircle className="h-4 w-4 mr-2" />
+                                Reject
+                              </Button>
+                            </div>
+                          )}
                       </div>
                     </CardContent>
                   </Card>
@@ -818,7 +856,9 @@ export default function FleetJobsPage() {
                         >
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                              <p className="text-sm font-medium">{job.job_id}</p>
+                              <p className="text-sm font-medium">
+                                {job.job_id}
+                              </p>
                               <Badge className={getPriorityColor(job.priority)}>
                                 {job.priority}
                               </Badge>
@@ -827,7 +867,9 @@ export default function FleetJobsPage() {
                               {job.description}
                             </p>
                             <div className="flex items-center justify-between text-xs text-gray-500">
-                              {job.estimatedCost && <span>R {job.estimatedCost}</span>}
+                              {job.estimatedCost && (
+                                <span>R {job.estimatedCost}</span>
+                              )}
                             </div>
                           </div>
                         </Card>
@@ -861,7 +903,10 @@ export default function FleetJobsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {allJobs.filter((job) => job.status === "inprogress").length}
+                    {
+                      allJobs.filter((job) => job.status === "inprogress")
+                        .length
+                    }
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Active jobs being worked on
@@ -884,9 +929,11 @@ export default function FleetJobsPage() {
                   </p>
                 </CardContent>
               </Card>
-              <Card>
+              {/* <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Avg. Cost</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Avg. Cost
+                  </CardTitle>
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -895,7 +942,7 @@ export default function FleetJobsPage() {
                     Average job cost
                   </p>
                 </CardContent>
-              </Card>
+              </Card> */}
             </div>
 
             <Card>
@@ -916,7 +963,9 @@ export default function FleetJobsPage() {
                     "approved",
                     "cancelled",
                   ].map((status) => {
-                    const count = allJobs.filter((job) => job.status === status).length;
+                    const count = allJobs.filter(
+                      (job) => job.status === status
+                    ).length;
                     const percentage =
                       allJobs.length > 0 ? (count / allJobs.length) * 100 : 0;
                     return (
@@ -925,7 +974,9 @@ export default function FleetJobsPage() {
                         className="flex items-center justify-between"
                       >
                         <div className="flex items-center gap-2">
-                          <Badge className={getStatusColor(status)}>{status}</Badge>
+                          <Badge className={getStatusColor(status)}>
+                            {status}
+                          </Badge>
                           <span className="text-sm">{count} jobs</span>
                         </div>
                         <div className="flex items-center gap-2">
