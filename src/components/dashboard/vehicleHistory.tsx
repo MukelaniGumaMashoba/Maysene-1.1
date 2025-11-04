@@ -37,7 +37,7 @@ export default function VehicleHistory({ vehicleId }: VehicleHistoryProps) {
       if (jobError) {
         console.error("Error fetching jobs:", jobError.message);
       } else if (jobData) {
-        setJobs(jobData);
+        setJobs(jobData as any);
       }
     }
     fetchData();
