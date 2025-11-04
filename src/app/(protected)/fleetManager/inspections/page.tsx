@@ -12,6 +12,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import InspectionTemplatesPage from "@/components/pages/InspectionTemplates";
+import getExt from "@/hooks/timeHook";
 
 type InspectionItem = {
   label: string;
@@ -321,7 +322,7 @@ export default function InspectionsPage() {
                   {insp.timing && (
                     <span>
                       {" "}
-                      | Time Taken: {insp.timing?.duration_seconds} seconds
+                      | Time Taken: {getExt(insp.timing?.duration_seconds)}{" "}
                     </span>
                   )}
                 </div>

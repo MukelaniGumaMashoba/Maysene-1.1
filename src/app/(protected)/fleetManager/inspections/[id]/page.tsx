@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import jsPDF from "jspdf";
 import { printInspectionDetails } from "@/hooks/printPDF";
+import getExt from "@/hooks/timeHook";
 
 export default function InspectionDetail() {
   const params = useParams();
@@ -77,14 +78,6 @@ export default function InspectionDetail() {
     }
   };
 
-  // const pad = (n: number) => n.toString().padStart(2, "0");
-
-  // const hours = Math.floor(inspection.timing / 3600);
-  // const minutes = Math.floor((duration_seconds % 3600) / 60);
-  // const seconds = duration_seconds % 60;
-
-  // const hhmmss = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-white to-pink-100 p-8">
       <div className="max-w-5xl mx-auto space-y-8">
@@ -139,16 +132,16 @@ export default function InspectionDetail() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-white/80 backdrop-blur-md shadow-xl rounded-2xl mb-3 mt-3">
             <CardContent>
               <div className="mt-3 text-sm text-gray-600 mb-3">
-                Location : {inspection.location}
+                <strong>Location:</strong> {inspection.location}
               </div>
             </CardContent>
           </Card>
 
           {/* Driver Info */}
-          <Card className="bg-white/80 backdrop-blur-md shadow-xl rounded-2xl">
+          <Card className="bg-white/80 backdrop-blur-md shadow-xl rounded-2xl mb-3 mt-3">
             <CardHeader>
               <CardTitle className="text-xl font-semibold text-indigo-700">
                 Driver Info
@@ -175,7 +168,7 @@ export default function InspectionDetail() {
           </Card>
 
           {/* Inspection Details */}
-          <Card className="bg-white/90 backdrop-blur-md shadow-xl rounded-2xl">
+          <Card className="bg-white/90 backdrop-blur-md shadow-xl rounded-2xl mb-3 mt-3">
             <CardHeader>
               <CardTitle className="text-xl font-semibold text-indigo-700">
                 Inspection Details
@@ -206,7 +199,11 @@ export default function InspectionDetail() {
                   {new Date(inspection.inspection_date).toLocaleString()}
                 </div>
 
-                <div></div>
+                <div>
+                  <strong>Time Taken:</strong>{" "}
+                  <p>{inspection.timing?.duration_seconds || "N/A"} seconds</p>
+                  <p>{getExt(inspection.timing?.duration_seconds)}</p>
+                </div>
               </div>
 
               <div>

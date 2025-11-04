@@ -58,7 +58,7 @@ export function printInspectionDetails(inspection: any) {
             </p>
             <p><strong>Category:</strong> ${inspection.category || 'N/A'}</p>
             <p><strong>Location:</strong> ${inspection.location || 'N/A'}</p>
-            <p><strong>Time Taken:</strong> ${inspection.timing || 'N/A'}</p>
+            <p><strong>Time Taken:</strong> ${inspection.timing.duration_seconds || 'N/A'}: seconds</p>
             <p><strong>Date:</strong> ${inspection.inspection_date ? new Date(inspection.inspection_date).toLocaleString() : 'N/A'}</p>
           </div>
 
