@@ -51,7 +51,7 @@ export default function VehicleHistory({ vehicleId }: VehicleHistoryProps) {
     return <div className="p-6 text-center">Loading vehicle history...</div>;
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white rounded-md shadow-md">
+    <div className="mx-auto p-6 bg-white rounded-md shadow-md">
       <h1 className="text-3xl font-semibold mb-4 text-indigo-700">
         Vehicle History: {vehicle.fleet_number} : {vehicle.registration_number}
       </h1>
@@ -98,7 +98,7 @@ export default function VehicleHistory({ vehicleId }: VehicleHistoryProps) {
                 <div className="flex justify-between items-center">
                   <div>
                     <div className="font-semibold text-indigo-600">
-                      {job.created_at?.slice(0, 10)} 
+                      {job.created_at?.slice(0, 10)} - {job.job_id}
                     </div>
                     <div className="text-gray-700">{job.description} : <LocateIcon /> {job.location}</div>
                   </div>
@@ -120,12 +120,12 @@ export default function VehicleHistory({ vehicleId }: VehicleHistoryProps) {
       </div>
 
       <div className="flex justify-between">
-        <button
+        {/* <button
           onClick={downloadHistory}
           className="bg-indigo-600 text-white px-5 py-2 rounded-md hover:bg-indigo-700 focus:outline-none"
         >
           Download History
-        </button>
+        </button> */}
 
         <button
           onClick={() => router.push("/vehicles")}

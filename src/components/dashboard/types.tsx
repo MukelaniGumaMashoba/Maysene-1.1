@@ -15,6 +15,7 @@ export interface Vehicle {
 
 export interface JobAssignment {
   id: number;
+  job_id: string;
   created_at: string | null;
   description: string;
   status: string | null;

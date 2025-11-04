@@ -1204,9 +1204,10 @@ export default function Drivers() {
 
                 <button
                   onClick={() => router.push(`/drivers/${selectedDriver.id}/history`)}
-                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none"
+                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none disabled:opacity-50"
+                  disabled={isLoading}
                 >
-                  {isLoading ? "Go to Driver History" : "Loading..."}
+                  {isLoading ? "Loading..." : "Go to Driver History"}
                 </button>
               </div>
 

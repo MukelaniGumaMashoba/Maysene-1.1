@@ -8,6 +8,7 @@ import type {
   JobAssignment,
 } from "@/components/dashboard/types";
 import { createClient } from "@/lib/supabase/client";
+import { ArrowLeftIcon } from "lucide-react";
 
 interface DriverVehicleHistoryProps {
   driverId: number;
@@ -53,7 +54,7 @@ export default function DriverVehicleHistory({
       if (jobError) {
         console.error("Error fetching jobs:", jobError.message);
       } else if (jobData) {
-        setJobHistory(jobData);
+        setJobHistory(jobData as any);
       }
     }
     fetchData();
@@ -63,10 +64,19 @@ export default function DriverVehicleHistory({
     return <div className="p-6 text-center">Loading driver data...</div>;
 
   return (
-    <div className="max-w-5xl mx-auto p-6 bg-white rounded-md shadow-md">
-      <h1 className="text-3xl font-semibold mb-6 text-indigo-700">
-        {driver.first_name}'s Vehicle & Issue History
-      </h1>
+    <div className="mx-auto p-6 bg-white rounded-md shadow-md">
+              <div>
+                <div>
+                  <ArrowLeftIcon
+                    className="h-6 w-6 text-indigo-600 cursor-pointer mb-4"
+                    onClick={() => router.back()}
+                  />
+                  <h1 className="text-3xl font-semibold mb-6 text-indigo-700">
+                    {driver.first_name}'s Vehicle & Issue History
+                  </h1>
+                </div>
+              </div>
+
 
       <section className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">Vehicles Assigned</h2>
@@ -111,7 +121,7 @@ export default function DriverVehicleHistory({
                 <div className="flex justify-between items-center">
                   <div>
                     <div className="font-semibold text-indigo-600">
-                      {job.created_at?.slice(0, 10)}
+                      {job.created_at?.slice(0, 10)} - {job.job_id}
                     </div>
                     <div className="text-gray-700">{job.description}</div>
                   </div>

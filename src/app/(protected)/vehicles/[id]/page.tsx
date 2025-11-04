@@ -489,7 +489,7 @@ export default function VehicleDetailsPage() {
                   onClick={() => router.push(`/vehicles/${vehicle.id}/history`)}
                   className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none"
                 >
-                  {loading ? "History" : "Loading..."}
+                  {!loading ? "History" : "Loading..."}
                 </button>
               </div>
           </CardFooter>
