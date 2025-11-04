@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/server';
 import { verifyAuth } from '@/lib/utils/verify-auth'
 import { logUserActivity } from '@/lib/utils/logUserActivity'
+
+const supabase = createClient()
 
 // GET: List drivers for authenticated user
 export async function GET(request) {

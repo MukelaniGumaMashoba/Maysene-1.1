@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/server';
 import { logUserActivity } from '@/lib/utils/logUserActivity'
 
 // *****************************

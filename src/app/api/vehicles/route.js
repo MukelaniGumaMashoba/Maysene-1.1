@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
-import { getUserScopedVehicles } from '@/utils/vehicles'
-import { supabase } from '@/lib/supabase-client'
+import { getUserScopedVehicles } from '@/lib/utils/vehicles'
+import { createClient } from '@/lib/supabase/server';
+
+const supabase = createClient();
 
 // Helper to get user from Supabase session
 async function getUser(request) {
