@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase'
-import { logUserActivity } from '@/utils/logUserActivity'
+import { createClient } from '@/lib/supabase'
+import { logUserActivity } from '@/lib/utils/logUserActivity'
 
 // *****************************
 // update driver

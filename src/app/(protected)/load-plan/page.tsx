@@ -1125,9 +1125,11 @@ export default function LoadPlanPage() {
         }
       }
 
+      const generatedTripId = `LOAD-${Date.now()}`;
+
       const tripData = {
-        // trip_id: `LOAD-${Date.now()}`,
-        trip_id : "",
+        // automated trip id
+        trip_id: generatedTripId,
         ordernumber: orderNumber,
         rate: rate,
         cargo: commodity,

@@ -72,6 +72,14 @@ export default function StopPointDetails({ id }) {
   }, [id])
 
 
+  if (!stopPoint) {
+    return (
+      <div className="p-8 text-center text-muted-foreground">
+        Loading stop point details...
+      </div>
+    )
+  }
+
   const stop_point_information = [
     { label: 'ID', value: stopPoint.id },
     { label: 'Name', value: stopPoint.name },

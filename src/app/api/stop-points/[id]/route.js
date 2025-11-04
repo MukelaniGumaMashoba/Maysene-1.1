@@ -1,29 +1,18 @@
 import { NextResponse } from 'next/server'
-// import * as dummy from '../../../../../dummy-data'
+import { createClient } from '@supabase/supabase-js'
 import { verifyAuth } from '@/utils/verify-auth'
-import { auth, db } from '@/lib/server-db'
 
-// Mock database
-// let stopPoints = dummy.stop_points_data
-
-// *****************************
-// fetch stop point
-// *****************************
-// export async function GET(request, { params }) {
-//   const { pageId, id } = await params
-//   let stopPoint = []
-
-//   stopPoint = stopPoints.find((sp) => sp.id === id)
-//   // communicate with database
-//   return NextResponse.json(stopPoint)
-// }
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+)
 
 // *****************************
-// update stop point
+// update stop point 
 // *****************************
 export async function PUT(request, { params }) {
-  const token = await verifyAuth(auth, db, request, 'verifyIdToken')
-  const { id } = await params
+  const token = await verifyAuth(request)
+  const { id } = params
   const body = await request.json()
 
   if (!token || !token.clientId) {
@@ -38,30 +27,30 @@ export async function PUT(request, { params }) {
   }
 
   try {
-    // Step 1: Query stop points by ID field
-    const querySnapshot = await db
-      .collection(`companies/${token.clientId}/stopPoints`)
-      .where('id', '==', id)
-      .limit(1)
-      .get()
+    // Update stop point in Supabase
+    const { data, error } = await supabase
+      .from('stop_points')
+      .update(body)
+      .eq('id', id)
+      .eq('client_id', token.clientId)
+      .select()
+      .single()
 
-    if (querySnapshot.empty) {
+    if (error) {
+      return NextResponse.json(
+        { error: `Failed to update stop point with id: ${id}` },
+        { status: 500 }
+      )
+    }
+
+    if (!data) {
       return NextResponse.json(
         { error: `Stop point with id: ${id} was not found` },
         { status: 404 }
       )
     }
 
-    const doc = querySnapshot.docs[0]
-    const docRef = doc.ref
-
-    // Step 2: Merge existing data with new data
-    const updatedData = { ...doc.data(), ...body }
-
-    // Step 3: Update document in Firestore
-    await docRef.set(updatedData)
-
-    return NextResponse.json({ id, ...updatedData }, { status: 200 })
+    return NextResponse.json(data, { status: 200 })
   } catch (error) {
     return NextResponse.json(
       { error: `Failed to update stop point with id: ${id}` },
@@ -74,38 +63,44 @@ export async function PUT(request, { params }) {
 // delete stop points
 // *****************************
 export async function DELETE(request, { params }) {
-  const token = await verifyAuth(auth, db, request, 'verifyIdToken')
-  const { id } = await params
+  const token = await verifyAuth(request)
+  const { id } = params
 
-  if (!token && !token.clientId) {
+  if (!token || !token.clientId) {
     return NextResponse.json({ error: 'Not a valid user' }, { status: 401 })
   }
 
   if (!id) {
     return NextResponse.json(
-      { error: 'MIssing stop point ID' },
+      { error: 'Missing stop point ID' },
       { status: 400 }
     )
   }
-  try {
-    const querySnapshot = await db
-      .collection(`companies/${token.clientId}/stopPoints`)
-      .where('id', '==', id)
-      .limit(1) // Optional: safety for unique IDs
-      .get()
 
-    if (querySnapshot.empty) {
+  try {
+    const { data, error } = await supabase
+      .from('stop_points')
+      .delete()
+      .eq('id', id)
+      .eq('client_id', token.clientId)
+      .select()
+      .single()
+
+    if (error) {
+      return NextResponse.json(
+        { error: `Failed to delete stop point with id: ${id}` },
+        { status: 500 }
+      )
+    }
+
+    if (!data) {
       return NextResponse.json(
         { error: `Stop point with id: ${id} was not found` },
         { status: 404 }
       )
     }
 
-    const doc = querySnapshot.docs[0]
-
-    await doc.ref.delete()
-
-    return NextResponse.json(id, { status: 200 })
+    return NextResponse.json({ message: 'Stop point deleted', data }, { status: 200 })
   } catch (error) {
     return NextResponse.json(
       { error: 'Something went wrong...' },
