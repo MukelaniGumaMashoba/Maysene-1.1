@@ -57,6 +57,8 @@ export function printInspectionDetails(inspection: any) {
               <span class="${inspection.overall_status === 'Faulty' ? 'status-faulty' : 'status-good'}">${inspection.overall_status || 'N/A'}</span>
             </p>
             <p><strong>Category:</strong> ${inspection.category || 'N/A'}</p>
+            <p><strong>Location:</strong> ${inspection.location || 'N/A'}</p>
+            <p><strong>Time Taken:</strong> ${inspection.timing || 'N/A'}</p>
             <p><strong>Date:</strong> ${inspection.inspection_date ? new Date(inspection.inspection_date).toLocaleString() : 'N/A'}</p>
           </div>
 

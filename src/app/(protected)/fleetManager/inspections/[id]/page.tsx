@@ -77,6 +77,14 @@ export default function InspectionDetail() {
     }
   };
 
+  // const pad = (n: number) => n.toString().padStart(2, "0");
+
+  // const hours = Math.floor(inspection.timing / 3600);
+  // const minutes = Math.floor((duration_seconds % 3600) / 60);
+  // const seconds = duration_seconds % 60;
+
+  // const hhmmss = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-white to-pink-100 p-8">
       <div className="max-w-5xl mx-auto space-y-8">
@@ -109,8 +117,8 @@ export default function InspectionDetail() {
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-6 text-sm text-gray-700">
               <div>
-                <strong>Registration:</strong>{" "}
-                {inspection.vehicle.fleet_number} : {inspection.vehicle?.registration_number}
+                <strong>Registration:</strong> {inspection.vehicle.fleet_number}{" "}
+                : {inspection.vehicle?.registration_number}
               </div>
               <div>
                 <strong>Make/Model:</strong> {inspection.vehicle?.make}{" "}
@@ -130,7 +138,7 @@ export default function InspectionDetail() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent>
               <div className="mt-3 text-sm text-gray-600 mb-3">
@@ -197,6 +205,8 @@ export default function InspectionDetail() {
                   <strong>Date:</strong>{" "}
                   {new Date(inspection.inspection_date).toLocaleString()}
                 </div>
+
+                <div></div>
               </div>
 
               <div>

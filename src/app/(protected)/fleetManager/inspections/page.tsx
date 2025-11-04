@@ -36,6 +36,11 @@ type Inspection = {
   vehicle: { registration_number: string; make: string; model: string; fleet_number: string } | null;
   driver: { first_name: string; surname: string } | null;
   location: string | null;
+  timing: {
+    end: string;
+    start: string;
+    duration_seconds: number;
+  }
 };
 
 
@@ -285,7 +290,11 @@ export default function InspectionsPage() {
                 }
               `}
                 >
-                  {insp.overall_status ?? "Unknown"} : Location : {insp.location}
+                  {insp.overall_status ?? "Unknown"}
+                </span>
+                <span className="px-3 py-1 rounded-full text-xs uppercase shadow-sm bg-white/20 text-white border border-white/30"
+                >
+                Location : {insp.location}
                 </span>
               </CardTitle>
             </CardHeader>
@@ -308,6 +317,13 @@ export default function InspectionsPage() {
                 <div>
                   <strong>Date:</strong>{" "}
                   {new Date(insp.inspection_date).toLocaleDateString()}
+
+                  {insp.timing && (
+                    <span>
+                      {" "}
+                      | Time Taken: {insp.timing?.duration_seconds} seconds
+                    </span>
+                  )}
                 </div>
               </div>
 
