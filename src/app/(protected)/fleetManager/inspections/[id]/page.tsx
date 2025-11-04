@@ -110,7 +110,7 @@ export default function InspectionDetail() {
             <CardContent className="grid grid-cols-2 gap-6 text-sm text-gray-700">
               <div>
                 <strong>Registration:</strong>{" "}
-                {inspection.vehicle?.registration_number}
+                {inspection.vehicle.fleet_number} : {inspection.vehicle?.registration_number}
               </div>
               <div>
                 <strong>Make/Model:</strong> {inspection.vehicle?.make}{" "}
@@ -127,6 +127,14 @@ export default function InspectionDetail() {
               </div>
               <div>
                 <strong>Year:</strong> {inspection.vehicle?.manufactured_year}
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent>
+              <div className="mt-3 text-sm text-gray-600 mb-3">
+                Location : {inspection.location}
               </div>
             </CardContent>
           </Card>

@@ -33,9 +33,11 @@ type Inspection = {
   category: string | null;
   checklist: InspectionSection[];
   inspection_date: string;
-  vehicle: { registration_number: string; make: string; model: string } | null;
+  vehicle: { registration_number: string; make: string; model: string; fleet_number: string } | null;
   driver: { first_name: string; surname: string } | null;
+  location: string | null;
 };
+
 
 export default function InspectionsPage() {
   const [inspections, setInspections] = useState<Inspection[]>([]);
@@ -54,7 +56,7 @@ export default function InspectionsPage() {
         .select(
           `
           *,
-          vehicle:vehicle_id (registration_number, make, model),
+          vehicle:vehicle_id (registration_number, make, model, fleet_number),
           driver:driver_id (first_name, surname)
         `
         )
@@ -272,8 +274,7 @@ export default function InspectionsPage() {
             <CardHeader>
               <CardTitle className="flex justify-between items-center text-lg font-semibold">
                 <span className="tracking-wide">
-                  {insp.vehicle?.registration_number} – {insp.vehicle?.make}{" "}
-                  {insp.vehicle?.model}
+                  {insp.vehicle?.fleet_number} : {insp.vehicle?.registration_number} – {insp.vehicle?.make}{" "}
                 </span>
                 <span
                   className={`px-3 py-1 rounded-full text-xs uppercase shadow-sm
@@ -284,7 +285,7 @@ export default function InspectionsPage() {
                 }
               `}
                 >
-                  {insp.overall_status ?? "Unknown"}
+                  {insp.overall_status ?? "Unknown"} : Location : {insp.location}
                 </span>
               </CardTitle>
             </CardHeader>

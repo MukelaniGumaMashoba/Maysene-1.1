@@ -308,6 +308,16 @@ export default function Drivers() {
     );
   };
 
+  const getPIDBadge = (saIssued?: boolean) => {
+    return saIssued ? (
+      <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+        ID
+      </Badge>
+    ) : (
+      <Badge variant="secondary">Passport</Badge>
+    );
+  };
+
   const getPDPStatusBadge = (hasPDP?: boolean) => {
     return hasPDP ? (
       <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">
@@ -896,7 +906,7 @@ export default function Drivers() {
                             {driver.first_name} {driver.surname}
                           </p>
                           <p className="text-sm text-gray-500">
-                            ID: {driver.id_or_passport_number}
+                           {getPIDBadge(driver.sa_issued)} {driver.id_or_passport_number}
                           </p>
                         </div>
                       </TableCell>
