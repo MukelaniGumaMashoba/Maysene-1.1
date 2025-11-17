@@ -100,9 +100,10 @@ export async function middleware(req: NextRequest) {
         const role = decodeURIComponent(userRecord?.role || '')
         if (role) {
           const allowedPaths = getAllowedPaths(role)
+          console.log('Checking access - Role:', role, 'Path:', path, 'Allowed paths:', allowedPaths)
           const isAllowed = allowedPaths.some(p => path.startsWith(p))
           if (!isAllowed) {
-            console.log('Access denied for role - redirecting to login')
+            console.log('Access denied for role:', role, 'trying to access:', path)
             return NextResponse.redirect(new URL('/login', req.url))
           }
           // switch (role) {

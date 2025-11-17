@@ -20,20 +20,17 @@ import {
 } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Settings, MapPin, Plus, Edit, Trash2 } from "lucide-react"
+import { Settings, MapPin, Plus, Edit, Trash2, Key } from "lucide-react"
 import { toast } from "sonner"
 import { createClient } from '@/lib/supabase/client'
 
 interface User {
     id: string
-    full_name: string
     email: string
     role: string
-    company_name: string
-    phone_number: string
-    department: string
+    company: string
     created_at: string
-    status?: string
+    last_sign_in_at: string | null
 }
 
 interface Role {
@@ -174,11 +171,9 @@ export default function SettingsPage() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    full_name: formData.get('name') as string,
                     email: formData.get('email') as string,
                     role: formData.get('role') as string,
-                    phone_number: formData.get('phone') as string,
-                    // department: formData.get('department') as string
+                    phone_number: formData.get('phone') as string
                 })
             })
             
@@ -209,6 +204,29 @@ export default function SettingsPage() {
                 user.id === userId ? { ...user, status: user.status === "active" ? "inactive" : "active" } : user,
             ),
         )
+    }
+
+    const handleResetPassword = async (userId: string) => {
+        setLoading(true)
+        try {
+            const response = await fetch('/api/users/reset-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId })
+            })
+            
+            const result = await response.json()
+            
+            if (!response.ok) {
+                throw new Error(result.error)
+            }
+            
+            toast.success('Password reset and credentials sent via email')
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to reset password')
+        } finally {
+            setLoading(false)
+        }
     }
 
     const getRoleBadgeColor = (role: string) => {
@@ -267,21 +285,12 @@ export default function SettingsPage() {
                                     </DialogHeader>
                                     <form onSubmit={handleAddUser} className="space-y-4">
                                         <div>
-                                            <Label htmlFor="name">Full Name</Label>
-                                            <Input id="name" name="name" required />
-                                        </div>
-                                        <div>
                                             <Label htmlFor="email">Email Address</Label>
                                             <Input id="email" name="email" type="email" required />
                                         </div>
-
                                         <div>
                                             <Label htmlFor="phone">Phone Number</Label>
-                                            <Input id="phone" name="phone" />
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="department">Department</Label>
-                                            <Input id="department" name="department" />
+                                            <Input id="phone" name="phone" required />
                                         </div>
                                         <div>
                                             <Label htmlFor="role">Role</Label>
@@ -291,6 +300,7 @@ export default function SettingsPage() {
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="fleet manager">Fleet Manager</SelectItem>
+                                                    <SelectItem value="driver">Driver</SelectItem>
                                                     <SelectItem value="call centre">Administrator & Parts</SelectItem>
                                                     <SelectItem value="Technician">Technician</SelectItem>
                                                     <SelectItem value="Supervisor">Supervisor</SelectItem>
@@ -313,12 +323,12 @@ export default function SettingsPage() {
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Name</TableHead>
                                             <TableHead>Email</TableHead>
                                             <TableHead>Role</TableHead>
-                                            <TableHead>Department</TableHead>
                                             <TableHead>Company</TableHead>
                                             <TableHead>Created</TableHead>
+                                            <TableHead>Last Login</TableHead>
+                                            <TableHead>Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -337,16 +347,28 @@ export default function SettingsPage() {
                                         ) : (
                                             users.map((user) => (
                                                 <TableRow key={user.id}>
-                                                    <TableCell className="font-medium">{user.full_name}</TableCell>
-                                                    <TableCell>{user.email}</TableCell>
+                                                    <TableCell className="font-medium">{user.email}</TableCell>
                                                     <TableCell>
                                                         <Badge variant="outline" className={getRoleBadgeColor(user.role)}>{user.role}</Badge>
                                                     </TableCell>
-                                                    <TableCell>{user.department || '-'}</TableCell>
                                                     <TableCell>
-                                                        <Badge className="bg-blue-100 text-blue-800">{user.company_name}</Badge>
+                                                        <Badge className="bg-blue-100 text-blue-800">{user.company}</Badge>
                                                     </TableCell>
                                                     <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                                                    <TableCell>
+                                                        {user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString() : 'Never'}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleResetPassword(user.id)}
+                                                            disabled={loading}
+                                                        >
+                                                            <Key className="h-4 w-4 mr-2" />
+                                                            Reset
+                                                        </Button>
+                                                    </TableCell>
                                                 </TableRow>
                                             ))
                                         )}
