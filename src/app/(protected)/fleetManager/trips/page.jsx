@@ -104,7 +104,7 @@ export default function TripsPage() {
     return String(val);
   };
 
-  const [lastFetch, setLastFetch] = React.useState<number>(0);
+  const [lastFetch, setLastFetch] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
 
