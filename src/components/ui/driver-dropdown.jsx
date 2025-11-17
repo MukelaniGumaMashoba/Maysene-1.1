@@ -52,15 +52,59 @@ export function DriverDropdown({
 
   const selectedDriver = drivers.find(d => d.id === value)
   
+  // Calculate similarity between two strings
+  const calculateSimilarity = (str1, str2) => {
+    const longer = str1.length > str2.length ? str1 : str2
+    const shorter = str1.length > str2.length ? str2 : str1
+    if (longer.length === 0) return 1.0
+    
+    const editDistance = (s1, s2) => {
+      const costs = []
+      for (let i = 0; i <= s2.length; i++) {
+        let lastValue = i
+        for (let j = 0; j <= s1.length; j++) {
+          if (i === 0) costs[j] = j
+          else if (j > 0) {
+            let newValue = costs[j - 1]
+            if (s1.charAt(j - 1) !== s2.charAt(i - 1))
+              newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1
+            costs[j - 1] = lastValue
+            lastValue = newValue
+          }
+        }
+        if (i > 0) costs[s1.length] = lastValue
+      }
+      return costs[s1.length]
+    }
+    
+    return (longer.length - editDistance(longer, shorter)) / longer.length
+  }
+
   // Get plate for selected driver
   const getDriverPlate = (driver) => {
     if (!driver) return ''
-    const driverFullName = `${driver.first_name} ${driver.surname}`.trim().toLowerCase()
-    const matchingVehicle = vehicleTrackingData.find(vehicle => 
-      vehicle.driver_name && 
-      vehicle.driver_name.toLowerCase() === driverFullName
-    )
-    return matchingVehicle?.plate || 'No Vehicle'
+    
+    const driverFullName = `${driver.first_name} ${driver.surname}`.toLowerCase()
+    let bestMatch = null
+    let bestSimilarity = 0
+    
+    vehicleTrackingData.forEach(vehicle => {
+      if (!vehicle.driver_name || vehicle.driver_name === 'UNKNOWN') return
+      
+      // Remove all numbers and extra spaces from tracking name
+      const cleanTrackingName = vehicle.driver_name.replace(/\d+/g, '').replace(/\s+/g, ' ').trim().toLowerCase()
+      
+      // Calculate similarity
+      const similarity = calculateSimilarity(driverFullName, cleanTrackingName)
+      
+      // Consider it a match if similarity is above 70%
+      if (similarity > 0.7 && similarity > bestSimilarity) {
+        bestMatch = vehicle
+        bestSimilarity = similarity
+      }
+    })
+    
+    return bestMatch?.plate || 'No Vehicle'
   }
   
   const displayValue = selectedDriver ? 

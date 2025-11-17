@@ -292,7 +292,7 @@ export default function LoadPlanPage() {
           ),
         supabase.from("drivers").select("*"),
         supabase.from("cost_centers").select("*"),
-        fetch("http://64.227.138.235:3000/api/eps-vehicles"),
+        fetch("/api/vehicles"),
       ]);
 
       console.log("Supabase errors:", {
@@ -485,11 +485,51 @@ export default function LoadPlanPage() {
         const driverFullName = `${driver.first_name} ${driver.surname}`
           .trim()
           .toLowerCase();
-        const matchingVehicle = trackingData.find(
-          (vehicle) =>
-            vehicle.driver_name &&
-            vehicle.driver_name.toLowerCase() === driverFullName
-        );
+        // Calculate similarity between two strings
+        const calculateSimilarity = (str1, str2) => {
+          const longer = str1.length > str2.length ? str1 : str2;
+          const shorter = str1.length > str2.length ? str2 : str1;
+          if (longer.length === 0) return 1.0;
+          
+          const editDistance = (s1, s2) => {
+            const costs = [];
+            for (let i = 0; i <= s2.length; i++) {
+              let lastValue = i;
+              for (let j = 0; j <= s1.length; j++) {
+                if (i === 0) costs[j] = j;
+                else if (j > 0) {
+                  let newValue = costs[j - 1];
+                  if (s1.charAt(j - 1) !== s2.charAt(i - 1))
+                    newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                  costs[j - 1] = lastValue;
+                  lastValue = newValue;
+                }
+              }
+              if (i > 0) costs[s1.length] = lastValue;
+            }
+            return costs[s1.length];
+          };
+          
+          return (longer.length - editDistance(longer, shorter)) / longer.length;
+        };
+
+        const dbDriverName = `${driver.first_name} ${driver.surname}`.toLowerCase();
+        let bestVehicleMatch = null;
+        let bestMatchScore = 0;
+        
+        trackingData.forEach(vehicle => {
+          if (!vehicle.driver_name || vehicle.driver_name === 'UNKNOWN') return;
+          
+          const cleanTrackingName = vehicle.driver_name.replace(/\d+/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+          const similarity = calculateSimilarity(dbDriverName, cleanTrackingName);
+          
+          if (similarity > 0.7 && similarity > bestMatchScore) {
+            bestVehicleMatch = vehicle;
+            bestMatchScore = similarity;
+          }
+        });
+        
+        const matchingVehicle = bestVehicleMatch;
 
         if (matchingVehicle?.latitude && matchingVehicle?.longitude) {
           const distance = calculateDistance(
@@ -958,11 +998,51 @@ export default function LoadPlanPage() {
         const trackingData = Array.isArray(vehicleTrackingData)
           ? vehicleTrackingData
           : [];
-        const matchingVehicle = trackingData.find(
-          (vehicle) =>
-            vehicle.driver_name &&
-            vehicle.driver_name.toLowerCase() === driverFullName
-        );
+        // Calculate similarity between two strings
+        const calculateSimilarity = (str1, str2) => {
+          const longer = str1.length > str2.length ? str1 : str2;
+          const shorter = str1.length > str2.length ? str2 : str1;
+          if (longer.length === 0) return 1.0;
+          
+          const editDistance = (s1, s2) => {
+            const costs = [];
+            for (let i = 0; i <= s2.length; i++) {
+              let lastValue = i;
+              for (let j = 0; j <= s1.length; j++) {
+                if (i === 0) costs[j] = j;
+                else if (j > 0) {
+                  let newValue = costs[j - 1];
+                  if (s1.charAt(j - 1) !== s2.charAt(i - 1))
+                    newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                  costs[j - 1] = lastValue;
+                  lastValue = newValue;
+                }
+              }
+              if (i > 0) costs[s1.length] = lastValue;
+            }
+            return costs[s1.length];
+          };
+          
+          return (longer.length - editDistance(longer, shorter)) / longer.length;
+        };
+
+        const selectedDriverName = `${selectedDriver.first_name} ${selectedDriver.surname}`.toLowerCase();
+        let bestDriverMatch = null;
+        let bestDriverScore = 0;
+        
+        trackingData.forEach(vehicle => {
+          if (!vehicle.driver_name || vehicle.driver_name === 'UNKNOWN') return;
+          
+          const cleanTrackingName = vehicle.driver_name.replace(/\d+/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+          const similarity = calculateSimilarity(selectedDriverName, cleanTrackingName);
+          
+          if (similarity > 0.7 && similarity > bestDriverScore) {
+            bestDriverMatch = vehicle;
+            bestDriverScore = similarity;
+          }
+        });
+        
+        const matchingVehicle = bestDriverMatch;
 
         if (matchingVehicle?.latitude && matchingVehicle?.longitude) {
           setSelectedDriverLocation({

@@ -58,8 +58,8 @@ import {
 import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { FuelGaugesView } from "@/components/fuelGauge/FuelGaugesView";
-import FuelCanBusDisplay from "@/components/FuelCanBusDisplay";
+
+
 import DriverPerformanceDashboard from "@/components/dashboard/DriverPerformanceDashboard";
 
 // Enhanced routing components with proper waypoints

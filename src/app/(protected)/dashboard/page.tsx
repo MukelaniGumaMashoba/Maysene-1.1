@@ -59,7 +59,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FuelGaugesView } from "@/components/fuelGauge/FuelGaugesView";
-import FuelCanBusDisplay from "@/components/FuelCanBusDisplay";
+// import FuelCanBusDisplay from "@/components/FuelCanBusDisplay";
 import DriverPerformanceDashboard from "@/components/dashboard/DriverPerformanceDashboard";
 import TestRouteMap from "@/components/map/test-route-map";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
@@ -112,14 +112,25 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
           // Fetch vehicle location from EPS API
           if (driver) {
             try {
-              const response = await fetch('http://64.227.138.235:3000/api/eps-vehicles')
+              const response = await fetch('/api/vehicles')
               const result = await response.json()
               const vehicles = result.data || []
               
               const vehicle = vehicles.find((v: any) => {
-                const vehicleDriverName = v.driver_name?.toLowerCase() || ''
-                const searchName = `${driver.first_name} ${driver.surname}`.toLowerCase()
-                return vehicleDriverName.includes(searchName) || searchName.includes(vehicleDriverName)
+                // First priority: match by plate number
+                if (vehicleInfo?.registration_number && v.plate) {
+                  return v.plate.toLowerCase() === vehicleInfo.registration_number.toLowerCase()
+                }
+                
+                // Second priority: match by driver name using fuzzy matching
+                if (v.driver_name && v.driver_name !== 'UNKNOWN') {
+                  const cleanTrackingName = v.driver_name.replace(/\d+/g, '').replace(/\s+/g, ' ').trim().toLowerCase()
+                  const driverFullName = `${driver.first_name} ${driver.surname}`.toLowerCase()
+                  return cleanTrackingName.includes(driver.first_name.toLowerCase()) && 
+                         cleanTrackingName.includes(driver.surname.toLowerCase())
+                }
+                
+                return false
               })
               
               if (vehicle) {
@@ -213,7 +224,7 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
         </div>
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-slate-900 truncate">
-            {vehicleLocation?.plate || vehicleInfo?.registration_number || 'Not assigned'}
+            {vehicleInfo?.registration_number || vehicleLocation?.plate || 'Not assigned'}
           </span>
           <span className={cn(
             "px-2 py-1 rounded-full text-xs font-semibold uppercase tracking-wide",
@@ -229,6 +240,13 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
         )}
       </div>
 
+      {/* Fuel Can Bus Display */}
+      {/* {vehicleInfo?.registration_number && (
+        // <div className="mb-2">
+        //   <FuelCanBusDisplay vehiclePlate={vehicleInfo.registration_number} />
+        // </div>
+      )} */}
+
       <div className="grid grid-cols-2 gap-1">
         <Button 
           size="sm" 
@@ -238,6 +256,25 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
             const supabase = createClient();
             let routeCoords = null;
             let stopPoints = [];
+            let trackingVehicle = null;
+            
+            // Get vehicle plate to match with tracking data
+            const vehiclePlate = vehicleInfo?.registration_number;
+            
+            if (vehiclePlate) {
+              try {
+                const response = await fetch('/api/vehicles');
+                const result = await response.json();
+                const vehicles = result.data || [];
+                
+                // Find vehicle by plate number
+                trackingVehicle = vehicles.find(v => 
+                  v.plate && v.plate.toLowerCase() === vehiclePlate.toLowerCase()
+                );
+              } catch (error) {
+                console.error('Error fetching tracking data:', error);
+              }
+            }
             
             if (trip.route) {
               const { data: route, error } = await supabase
@@ -287,7 +324,7 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
               }).filter(Boolean);
             }
             
-            handleViewMap(driverName, { ...trip, vehicleLocation, routeCoords, stopPoints });
+            handleViewMap(driverName, { ...trip, vehicleLocation: trackingVehicle, routeCoords, stopPoints });
           }}
         >
           <MapPin className="w-3 h-3" />Track

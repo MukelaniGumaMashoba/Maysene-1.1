@@ -104,8 +104,18 @@ export default function TripsPage() {
     return String(val);
   };
 
-  const fetchTrips = async () => {
+  const [lastFetch, setLastFetch] = React.useState<number>(0);
+  const [loading, setLoading] = React.useState(true);
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+
+  const fetchTrips = React.useCallback(async (forceRefresh = false) => {
+    const now = Date.now();
+    if (!forceRefresh && now - lastFetch < CACHE_DURATION && trips.length > 0) {
+      return; // Use cached data
+    }
+
     try {
+      setLoading(true);
       const { data, error } = await supabase.from('trips').select('*');
       if (error) {
         console.error('Error fetching trips:', error);
@@ -120,15 +130,45 @@ export default function TripsPage() {
           dropoffLocations: getDropOffLocation(trip),
         }));
         setTrips(parsedTrips);
+        setLastFetch(now);
       }
     } catch (error) {
       console.error('Unexpected error fetching trips:', error);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [lastFetch, trips.length, supabase]);
 
   React.useEffect(() => {
     fetchTrips();
-  }, []);
+    
+    // Set up periodic refresh every 2 minutes
+    const interval = setInterval(() => {
+      fetchTrips(true);
+    }, 2 * 60 * 1000);
+    
+    // Real-time subscription with smart debouncing
+    let debounceTimer;
+    const channel = supabase
+      .channel('trips-realtime')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'trips' },
+        () => {
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => {
+            setLastFetch(0); // Force refresh
+            fetchTrips(true);
+          }, 5000); // 5 second debounce for faster updates
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      clearInterval(interval);
+      clearTimeout(debounceTimer);
+      supabase.removeChannel(channel);
+    };
+  }, [fetchTrips, supabase]);
 
   // Calculate stats from actual data
   const totalTrips = trips.length;
@@ -206,13 +246,22 @@ export default function TripsPage() {
           <h1 className="text-2xl font-bold">{titleSection?.title}</h1>
           <p className="text-gray-500">{titleSection?.description}</p>
         </div>
-        <button
-          onClick={() => setOpen(true)}
-          className="flex items-center px-4 py-2 bg-primary text-white rounded-lg shadow hover:bg-primary/90"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          {titleSection?.button?.text}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => fetchTrips(true)}
+            disabled={loading}
+            className="px-3 py-2 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+          >
+            {loading ? 'Refreshing...' : 'Refresh'}
+          </button>
+          <button
+            onClick={() => setOpen(true)}
+            className="flex items-center px-4 py-2 bg-primary text-white rounded-lg shadow hover:bg-primary/90"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            {titleSection?.button?.text}
+          </button>
+        </div>
       </div>
 
       {/* Stats Section */}
@@ -249,19 +298,32 @@ export default function TripsPage() {
 
       <div className="bg-white rounded-xl border shadow-sm hover:shadow-md transition-shadow">
         <div className="p-6">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">All Trips</h3>
-            <p className="text-sm text-gray-500">View and manage all your trips</p>
+          <div className="mb-4 flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">All Trips</h3>
+              <p className="text-sm text-gray-500">View and manage all your trips</p>
+            </div>
+            <button
+              onClick={() => fetchTrips(true)}
+              disabled={loading}
+              className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+            >
+              {loading ? 'Refreshing...' : 'Refresh'}
+            </button>
           </div>
-          <DataTable
-            columns={tableColumns}
-            data={trips || []}
-            filterColumn={[]}
-            csv_headers={[]}
-            csv_rows={[]}
-            href="/fleetManager/trips"
-            downloadCSV={() => { }}
-          />
+          {loading && trips.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">Loading trips...</div>
+          ) : (
+            <DataTable
+              columns={tableColumns}
+              data={trips || []}
+              filterColumn={[]}
+              csv_headers={[]}
+              csv_rows={[]}
+              href="/fleetManager/trips"
+              downloadCSV={() => { }}
+            />
+          )}
         </div>
       </div>
 

@@ -42,8 +42,8 @@ import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 
 
-// Driver Card Component with fetched driver info
-function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setNoteText, setNoteOpen, setAvailableDrivers, setCurrentTripForChange, setChangeDriverOpen }: any) {
+// Driver Card Component with cached driver info
+function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setNoteText, setNoteOpen, setAvailableDrivers, setCurrentTripForChange, setChangeDriverOpen, driversCache, vehiclesCache, epsVehiclesCache, fetchEpsVehiclesWithCache }: any) {
   const [driverInfo, setDriverInfo] = useState<any>(null)
   const [vehicleInfo, setVehicleInfo] = useState<any>(null)
   const [loading, setLoading] = useState(false)
@@ -56,47 +56,61 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
 
       setLoading(true)
       try {
-        const supabase = createClient()
         const assignment = assignments[0]
         
-        // Fetch driver info by ID
+        // Use cached driver info or fetch if not cached
         if (assignment.drivers?.[0]?.id) {
-          const { data: driver } = await supabase
-            .from('drivers')
-            .select('*')
-            .eq('id', assignment.drivers[0].id)
-            .single()
+          const driverId = assignment.drivers[0].id
+          let driver = driversCache.get(driverId)
+          
+          if (!driver) {
+            const supabase = createClient()
+            const { data } = await supabase
+              .from('drivers')
+              .select('*')
+              .eq('id', driverId)
+              .single()
+            driver = data
+            if (driver) {
+              driversCache.set(driverId, driver)
+            }
+          }
+          
           setDriverInfo(driver)
           
-          // Fetch vehicle location from EPS API
+          // Use cached EPS vehicles or fetch if needed
           if (driver) {
-            try {
-              const response = await fetch('http://64.227.138.235:3000/api/eps-vehicles')
-              const result = await response.json()
-              const vehicles = result.data || []
-              
-              const vehicle = vehicles.find((v: any) => {
-                const vehicleDriverName = v.driver_name?.toLowerCase() || ''
-                const searchName = `${driver.first_name} ${driver.surname}`.toLowerCase()
-                return vehicleDriverName.includes(searchName) || searchName.includes(vehicleDriverName)
-              })
-              
-              if (vehicle) {
-                setVehicleLocation(vehicle)
-              }
-            } catch (error) {
-              console.error('Error fetching vehicle location:', error)
+            const vehicles = await fetchEpsVehiclesWithCache()
+            const vehicle = vehicles.find((v: any) => {
+              const vehicleDriverName = v.driver_name?.toLowerCase() || ''
+              const searchName = `${driver.first_name} ${driver.surname}`.toLowerCase()
+              return vehicleDriverName.includes(searchName) || searchName.includes(vehicleDriverName)
+            })
+            
+            if (vehicle) {
+              setVehicleLocation(vehicle)
             }
           }
         }
         
-        // Fetch vehicle info by ID
+        // Use cached vehicle info or fetch if not cached
         if (assignment.vehicle?.id) {
-          const { data: vehicle } = await supabase
-            .from('vehiclesc')
-            .select('*')
-            .eq('id', assignment.vehicle.id)
-            .single()
+          const vehicleId = assignment.vehicle.id
+          let vehicle = vehiclesCache.get(vehicleId)
+          
+          if (!vehicle) {
+            const supabase = createClient()
+            const { data } = await supabase
+              .from('vehiclesc')
+              .select('*')
+              .eq('id', vehicleId)
+              .single()
+            vehicle = data
+            if (vehicle) {
+              vehiclesCache.set(vehicleId, vehicle)
+            }
+          }
+          
           setVehicleInfo(vehicle)
         }
       } catch (err) {
@@ -106,7 +120,7 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
     }
 
     fetchAssignmentInfo()
-  }, [trip.vehicleassignments, trip.vehicle_assignments])
+  }, [trip.vehicleassignments, trip.vehicle_assignments, driversCache, vehiclesCache])
 
   const driverName = driverInfo ? `${driverInfo.first_name} ${driverInfo.surname}`.trim() : 'Unassigned'
   const initials = driverName !== 'Unassigned' ? driverName.split(' ').map((s: string) => s[0]).slice(0,2).join('') : 'DR'
@@ -291,35 +305,78 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
 function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNoteText, setNoteOpen, setAvailableDrivers, setCurrentTripForChange, setChangeDriverOpen, refreshTrigger, setRefreshTrigger, setPickupTimeOpen, setDropoffTimeOpen, setCurrentTripForTime, setTimeType, setSelectedTime }: any) {
   const [trips, setTrips] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [lastFetch, setLastFetch] = useState<number>(0)
+  const [driversCache, setDriversCache] = useState<Map<string, any>>(new Map())
+  const [vehiclesCache, setVehiclesCache] = useState<Map<string, any>>(new Map())
+  const [epsVehiclesCache, setEpsVehiclesCache] = useState<any[]>([])
+  const [lastEpsFetch, setLastEpsFetch] = useState<number>(0)
+
+  // Cache duration in milliseconds (5 minutes)
+  const CACHE_DURATION = 5 * 60 * 1000
+  const EPS_CACHE_DURATION = 2 * 60 * 1000 // 2 minutes for EPS data
+
+  const fetchTripsWithCache = async () => {
+    const now = Date.now()
+    if (now - lastFetch < CACHE_DURATION && trips.length > 0) {
+      return // Use cached data
+    }
+
+    try {
+      const supabase = createClient()
+      const { data, error } = await supabase.from('trips').select('*')
+      if (error) throw error
+      setTrips(data || [])
+      setLastFetch(now)
+    } catch (err) {
+      console.error('Error fetching trips:', err)
+      setTrips([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchEpsVehiclesWithCache = async () => {
+    const now = Date.now()
+    if (now - lastEpsFetch < EPS_CACHE_DURATION && epsVehiclesCache.length > 0) {
+      return epsVehiclesCache
+    }
+
+    try {
+      const response = await fetch('http://64.227.138.235:3000/api/eps-vehicles')
+      const result = await response.json()
+      const vehicles = result.data || []
+      setEpsVehiclesCache(vehicles)
+      setLastEpsFetch(now)
+      return vehicles
+    } catch (error) {
+      console.error('Error fetching EPS vehicles:', error)
+      return epsVehiclesCache
+    }
+  }
 
   useEffect(() => {
-    async function fetchTrips() {
-      try {
-        const supabase = createClient()
-        const { data, error } = await supabase.from('trips').select('*')
-        if (error) throw error
-        setTrips(data || [])
-      } catch (err) {
-        console.error('Error fetching trips:', err)
-        setTrips([])
-      } finally {
-        setLoading(false)
-      }
-    }
+    fetchTripsWithCache()
     
-    fetchTrips()
-    
-    // Real-time subscription
+    // Debounced real-time subscription - only update every 30 seconds
     const supabase = createClient()
+    let debounceTimer: NodeJS.Timeout
+    
     const channel = supabase
       .channel('trips-changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'trips' },
-        () => fetchTrips()
+        () => {
+          clearTimeout(debounceTimer)
+          debounceTimer = setTimeout(() => {
+            setLastFetch(0) // Force refresh
+            fetchTripsWithCache()
+          }, 30000) // 30 second debounce
+        }
       )
       .subscribe()
     
     return () => {
+      clearTimeout(debounceTimer)
       supabase.removeChannel(channel)
     }
   }, [refreshTrigger])
@@ -421,6 +478,10 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
               setAvailableDrivers={setAvailableDrivers}
               setCurrentTripForChange={setCurrentTripForChange}
               setChangeDriverOpen={setChangeDriverOpen}
+              driversCache={driversCache}
+              vehiclesCache={vehiclesCache}
+              epsVehiclesCache={epsVehiclesCache}
+              fetchEpsVehiclesWithCache={fetchEpsVehiclesWithCache}
             />
 
             {/* Trip Card - 70% */}

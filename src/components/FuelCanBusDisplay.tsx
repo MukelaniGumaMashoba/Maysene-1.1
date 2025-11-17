@@ -7,21 +7,18 @@ import { RefreshCw, Fuel } from 'lucide-react'
 import { formatForDisplay } from '@/lib/utils/date-formatter'
 
 interface FuelData {
-  id: number
-  plate: string
-  driver_name: string | null
-  fuel_level: string
-  fuel_volume: string | null
-  fuel_temperature: string
-  fuel_percentage: number
-  engine_status: string | null
-  loc_time: string | null
-  latitude: string | null
-  longitude: string | null
-  created_at: string
+  vehicleId: string
+  registrationNumber: string
+  fuelLevel: number
+  fuelCapacity: number
+  timestamp: string
 }
 
-export default function FuelCanBusDisplay() {
+interface Props {
+  vehiclePlate?: string
+}
+
+export default function FuelCanBusDisplay({ vehiclePlate }: Props) {
   const [vehicles, setVehicles] = useState<FuelData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -30,10 +27,11 @@ export default function FuelCanBusDisplay() {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch('http://64.227.138.235:3000/api/eps-vehicles/fuel-data')
+      const response = await fetch('/api/fuel')
       if (!response.ok) throw new Error('Failed to fetch fuel data')
       const result = await response.json()
-      setVehicles(result.data || [])
+      if (result.error) throw new Error(result.error)
+      setVehicles(Array.isArray(result) ? result : [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
@@ -45,25 +43,27 @@ export default function FuelCanBusDisplay() {
     fetchVehicles()
   }, [])
 
-  // Convert EPS fuel data to fuel gauge format
+  // Convert CAN bus fuel data to fuel gauge format
   const getFuelGaugeData = () => {
-    return vehicles.map((vehicle) => {
-      const fuelPercentage = vehicle.fuel_percentage || 0
-      const fuelLevel = parseFloat(vehicle.fuel_level) || 0
-      const fuelTemp = parseFloat(vehicle.fuel_temperature) || 25
-      const fuelVolume = vehicle.fuel_volume ? parseFloat(vehicle.fuel_volume) : 0
-      const isEngineOn = vehicle.engine_status === 'on'
+    const filteredVehicles = vehiclePlate 
+      ? vehicles.filter(v => v.registrationNumber?.toLowerCase() === vehiclePlate.toLowerCase())
+      : vehicles
+      
+    return filteredVehicles.map((vehicle) => {
+      const fuelPercentage = vehicle.fuelLevel || 0
+      const fuelCapacity = vehicle.fuelCapacity || 100
+      const currentFuel = (fuelPercentage / 100) * fuelCapacity
 
       return {
-        id: vehicle.plate || `vehicle-${vehicle.id}`,
-        location: vehicle.plate || 'Unknown Plate',
+        id: vehicle.registrationNumber || vehicle.vehicleId,
+        location: vehicle.registrationNumber || 'Unknown Plate',
         fuelLevel: Math.max(0, Math.min(100, fuelPercentage)),
-        temperature: Math.max(0, fuelTemp),
-        volume: Math.max(0, fuelLevel),
-        remaining: `${fuelLevel.toFixed(1)}L / ${fuelVolume.toFixed(1)}L`,
-        status: isEngineOn ? 'Active' : 'Engine Off',
-        lastUpdated: formatForDisplay(vehicle.created_at),
-        updated_at: vehicle.created_at
+        temperature: 25, // Default temperature
+        volume: Math.max(0, currentFuel),
+        remaining: `${currentFuel.toFixed(1)}L / ${fuelCapacity.toFixed(1)}L`,
+        status: 'Active',
+        lastUpdated: formatForDisplay(vehicle.timestamp),
+        updated_at: vehicle.timestamp
       }
     })
   }
@@ -132,7 +132,7 @@ export default function FuelCanBusDisplay() {
             <div className="text-center">
               <Fuel className="mx-auto mb-4 w-16 h-16 text-gray-400" />
               <p className="text-gray-500 text-lg">No fuel data available</p>
-              <p className="text-gray-400 text-sm">Check your connection to the EPS server</p>
+              <p className="text-gray-400 text-sm">Check your connection to the CAN bus server</p>
             </div>
           </div>
         )}

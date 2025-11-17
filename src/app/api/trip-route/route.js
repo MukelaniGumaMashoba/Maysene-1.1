@@ -3,17 +3,16 @@ import { NextResponse } from 'next/server'
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url)
-    const endpoint = searchParams.get('endpoint')
+    const tripId = searchParams.get('tripId')
     
-    if (!endpoint) {
+    if (!tripId) {
       return NextResponse.json(
-        { error: 'Endpoint parameter is required' },
+        { error: 'Trip ID is required' },
         { status: 400 }
       )
     }
     
-    const baseUrl = 'http://64.227.126.176:3001/api/maysene-rewards'
-    const response = await fetch(`${baseUrl}/${endpoint}`, {
+    const response = await fetch(`http://64.227.126.176:3001/api/trips/${tripId}/route?company=maysene`, {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
@@ -28,9 +27,9 @@ export async function GET(request) {
     const data = await response.json()
     return NextResponse.json(data)
   } catch (error) {
-    console.error('Error fetching EPS rewards data:', error)
+    console.error('Error fetching trip route:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch EPS rewards data', details: error.message },
+      { error: 'Failed to fetch trip route', details: error.message },
       { status: 500 }
     )
   }
