@@ -3,7 +3,9 @@ const nextConfig = {
   experimental: {
     // Reduce memory usage during build
     workerThreads: false,
-    cpus: 1
+    cpus: 1,
+    // Disable memory-intensive features
+    optimizePackageImports: ['@mui/x-charts']
   },
   // Optimize build performance
   swcMinify: true,
