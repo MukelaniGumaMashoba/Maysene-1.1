@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import notificationapi from 'notificationapi-node-server-sdk';
+import { encrypt } from '@/lib/crypto';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,17 +13,35 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { email, role, phone_number } = body;
+    const { email, role, phone_number, driver_code } = body;
 
     if (!email || !role || !phone_number) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Use admin client to create user without starting session
+    if (role === 'driver' && !driver_code) {
+      return NextResponse.json({ error: 'Driver code is required for driver role' }, { status: 400 });
+    }
+
+    // Use service role key to create user without session
     const adminSupabase = await createClient(true);
+    
+    // Check if user already exists
+    const { data: existingUser } = await adminSupabase
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .single();
+
+    if (existingUser) {
+      return NextResponse.json({ error: 'User with this email already exists' }, { status: 400 });
+    }
+
+    const driverPassword = role === 'driver' ? `M${driver_code}` : phone_number;
+    
     const { data: authData, error: signUpError } = await adminSupabase.auth.admin.createUser({
       email,
-      password: phone_number,
+      password: driverPassword,
       email_confirm: true
     });
 
@@ -31,26 +50,95 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: signUpError.message }, { status: 400 });
     }
 
-    const { error: profileError } = await adminSupabase
-      .from('users')
-      .update({ role, company: 'Maysene', phone: phone_number })
-      .eq('id', authData.user?.id);
+    // Wait 5 seconds then update role with retry logic
+    await new Promise(resolve => setTimeout(resolve, 5000));
 
-    if (profileError) {
-      console.error('Users table error:', profileError);
-      return NextResponse.json({ error: profileError.message }, { status: 400 });
+    const updateUserRole = async (retryCount = 0) => {
+      try {
+        // Create a direct service role client to bypass RLS
+        const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+        const serviceClient = createSupabaseClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          {
+            auth: {
+              autoRefreshToken: false,
+              persistSession: false
+            }
+          }
+        );
+        
+        // Always try to upsert the user record
+        const { data: upsertData, error: upsertError } = await serviceClient
+          .from('users')
+          .upsert({ 
+            id: authData.user?.id,
+            email,
+            role, 
+            company: 'Maysene', 
+            phone: phone_number 
+          }, { 
+            onConflict: 'id',
+            ignoreDuplicates: false 
+          })
+          .select();
+
+        if (upsertError) throw upsertError;
+        console.log('User upserted:', upsertData);
+      } catch (error) {
+        if (retryCount < 1) {
+          console.log('Retrying user role update after 2 seconds...');
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          return updateUserRole(retryCount + 1);
+        }
+        throw error;
+      }
+    };
+
+    try {
+      await updateUserRole();
+    } catch (error) {
+      console.error('Failed to update user role:', error);
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    // If driver role, update drivers table
+    // If driver role, check and insert into drivers table
     if (role === 'driver') {
-      const { error: driverError } = await adminSupabase
+      const { data: existingDriver } = await adminSupabase
         .from('drivers')
-        .update({ user_id: authData.user?.id, cell_number: phone_number })
-        .eq('email_address', email);
+        .select('id')
+        .eq('email_address', email)
+        .single();
 
-      if (driverError) {
-        console.error('Drivers table error:', driverError);
-        return NextResponse.json({ error: driverError.message }, { status: 400 });
+      if (!existingDriver) {
+        const { error: driverError } = await adminSupabase
+          .from('drivers')
+          .insert({ 
+            user_id: authData.user?.id,
+            first_name: email,
+            email_address: email,
+            cell_number: phone_number,
+            driver_code: encrypt(driver_code)
+          });
+
+        if (driverError) {
+          console.error('Drivers table error:', driverError);
+          return NextResponse.json({ error: driverError.message }, { status: 400 });
+        }
+      } else {
+        const { error: driverUpdateError } = await adminSupabase
+          .from('drivers')
+          .update({ 
+            user_id: authData.user?.id, 
+            first_name: email,
+            cell_number: phone_number,
+            driver_code: encrypt(driver_code)
+          })
+          .eq('email_address', email);
+
+        if (driverUpdateError) {
+          console.error('Drivers table update error:', driverUpdateError);
+        }
       }
     }
 
@@ -59,7 +147,9 @@ export async function POST(request: NextRequest) {
     
     const formattedPhone = phone_number.startsWith('0') 
       ? '+27' + phone_number.slice(1) 
-      : phone_number;
+      : phone_number.startsWith('+') 
+      ? phone_number 
+      : '+27' + phone_number;
 
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 50%, #fce7f3 100%); padding: 40px 20px;">
@@ -78,7 +168,7 @@ export async function POST(request: NextRequest) {
               <p style="margin: 0 0 10px 0; color: #64748b; font-size: 14px;">Email</p>
               <p style="margin: 0 0 20px 0; color: #1e293b; font-size: 16px; font-weight: 600;">${email}</p>
               <p style="margin: 0 0 10px 0; color: #64748b; font-size: 14px;">Password</p>
-              <p style="margin: 0; color: #1e293b; font-size: 16px; font-weight: 600;">${phone_number}</p>
+              <p style="margin: 0; color: #1e293b; font-size: 16px; font-weight: 600;">${driverPassword}</p>
             </div>
             <p style="color: #475569; margin: 20px 0 0 0; line-height: 1.6;">Role: <strong>${role}</strong></p>
           </div>
@@ -91,8 +181,8 @@ export async function POST(request: NextRequest) {
 
     await notificationapi.send({
       notificationId: 'user_created',
-      user: { id: authData.user?.id, email },
-      mergeTags: { email, password: phone_number, role },
+      user: { id: authData.user?.id, email, number: formattedPhone },
+      mergeTags: { email, password: driverPassword, role },
       email: {
         subject: 'Welcome to Maysene - Your Account Details',
         html: emailHtml,
@@ -100,8 +190,7 @@ export async function POST(request: NextRequest) {
         senderEmail: process.env.EMAIL_FROM!
       },
       sms: {
-        message: `Welcome to Maysene! Login: ${email} Password: ${phone_number}`,
-        phoneNumber: formattedPhone
+        message: `Welcome to Maysene! Login: ${email} Password: ${driverPassword}`
       }
     });
 
@@ -142,6 +231,88 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ users: usersWithAuth });
   } catch (error) {
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { userId, ...updateData } = body;
+
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    }
+
+    const adminSupabase = await createClient(true);
+    
+    // Update user in users table
+    const { data: updatedUser, error: updateError } = await adminSupabase
+      .from('users')
+      .update(updateData)
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error('Users table update error:', updateError);
+      return NextResponse.json({ error: updateError.message }, { status: 400 });
+    }
+
+    return NextResponse.json({ success: true, data: updatedUser });
+  } catch (error) {
+    console.error('Server error:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { userId } = body;
+
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    }
+
+    const adminSupabase = await createClient(true);
+    
+    // Delete from auth table first
+    const { error: authDeleteError } = await adminSupabase.auth.admin.deleteUser(userId);
+
+    if (authDeleteError) {
+      console.error('Auth deletion error:', authDeleteError);
+      // Continue with users table deletion even if auth deletion fails
+    }
+
+    // Delete from users table
+    const { error: usersError } = await adminSupabase
+      .from('users')
+      .delete()
+      .eq('id', userId);
+
+    if (usersError) {
+      console.error('Users table deletion error:', usersError);
+      return NextResponse.json({ error: usersError.message }, { status: 400 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Server error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

@@ -162,6 +162,9 @@ export default function SettingsPage() {
 
     const handleAddUser = async (e: React.FormEvent) => {
         e.preventDefault()
+        
+        if (loading) return // Prevent double submission
+        
         setLoading(true)
         
         const formData = new FormData(e.target as HTMLFormElement)
@@ -173,7 +176,8 @@ export default function SettingsPage() {
                 body: JSON.stringify({
                     email: formData.get('email') as string,
                     role: formData.get('role') as string,
-                    phone_number: formData.get('phone') as string
+                    phone_number: formData.get('phone') as string,
+                    driver_code: formData.get('driver_code') as string
                 })
             })
             
@@ -224,6 +228,34 @@ export default function SettingsPage() {
             toast.success('Password reset and credentials sent via email')
         } catch (error: any) {
             toast.error(error.message || 'Failed to reset password')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleDeleteAccount = async (userId: string, userEmail: string) => {
+        if (!confirm(`Are you sure you want to delete the account for ${userEmail}? This action cannot be undone.`)) {
+            return
+        }
+        
+        setLoading(true)
+        try {
+            const response = await fetch('/api/users', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId })
+            })
+            
+            const result = await response.json()
+            
+            if (!response.ok) {
+                throw new Error(result.error)
+            }
+            
+            toast.success('Account deleted successfully')
+            fetchKlavaUsers()
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to delete account')
         } finally {
             setLoading(false)
         }
@@ -294,7 +326,13 @@ export default function SettingsPage() {
                                         </div>
                                         <div>
                                             <Label htmlFor="role">Role</Label>
-                                            <Select name="role" required>
+                                            <Select name="role" required onValueChange={(value) => {
+                                                const form = document.querySelector('form');
+                                                const driverCodeField = form?.querySelector('#driver-code-field');
+                                                if (driverCodeField) {
+                                                    driverCodeField.style.display = value === 'driver' ? 'block' : 'none';
+                                                }
+                                            }}>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Select a role" />
                                                 </SelectTrigger>
@@ -307,10 +345,20 @@ export default function SettingsPage() {
                                                 </SelectContent>
                                             </Select>
                                         </div>
+                                        <div id="driver-code-field" style={{display: 'none'}}>
+                                            <Label htmlFor="driver_code">Driver Code</Label>
+                                            <Input id="driver_code" name="driver_code" placeholder="Enter driver code" />
+                                        </div>
                                         <div className="bg-blue-50 p-3 rounded">
                                             <p className="text-sm text-blue-800">Company: Maysene (Auto-assigned)</p>
                                         </div>
                                         <Button type="submit" className="w-full" disabled={loading}>
+                                            {loading && (
+                                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                            )}
                                             {loading ? 'Creating...' : 'Create User'}
                                         </Button>
                                     </form>
@@ -359,15 +407,27 @@ export default function SettingsPage() {
                                                         {user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString() : 'Never'}
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => handleResetPassword(user.id)}
-                                                            disabled={loading}
-                                                        >
-                                                            <Key className="h-4 w-4 mr-2" />
-                                                            Reset
-                                                        </Button>
+                                                        <div className="flex gap-2">
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => handleResetPassword(user.id)}
+                                                                disabled={loading}
+                                                            >
+                                                                <Key className="h-4 w-4 mr-2" />
+                                                                Reset
+                                                            </Button>
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => handleDeleteAccount(user.id, user.email)}
+                                                                disabled={loading}
+                                                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                            >
+                                                                <Trash2 className="h-4 w-4 mr-2" />
+                                                                Delete
+                                                            </Button>
+                                                        </div>
                                                     </TableCell>
                                                 </TableRow>
                                             ))
