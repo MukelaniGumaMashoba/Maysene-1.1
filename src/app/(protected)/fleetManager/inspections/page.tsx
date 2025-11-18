@@ -256,7 +256,7 @@ export default function InspectionsPage() {
       <div className="flex-shrink-0 space-y-2">
         <Button
           onClick={() => setTemplatesOpen(true)}
-          className="bg-white/10 hover:bg-white/20 text-white border border-white/20"
+          className="bg-white/10 hover:bg-white/20 text-black border border-black"
         >
           Manage Templates
         </Button>
