@@ -87,10 +87,6 @@ const columns = () => [
     header: createSortableHeader('Order #'),
   },
   {
-    accessorKey: 'cost_centre',
-    header: createSortableHeader('Cost Centre'),
-  },
-  {
     accessorKey: 'selectedClient',
     header: createSortableHeader('Client'),
     cell: ({ row }) => {
@@ -99,12 +95,22 @@ const columns = () => [
     },
   },
   {
-    accessorKey: 'origin',
-    header: createSortableHeader('Origin'),
+    accessorKey: "origin",
+    header: "Origin",
+    cell: ({ row }) => {
+      const pickupLocations = row.original.pickupLocations || row.original.pickuplocation || [];
+      if (!Array.isArray(pickupLocations)) return "-";
+      return pickupLocations.map(loc => loc.address || loc.location || "").filter(Boolean).join(", ") || "-";
+    },
   },
   {
-    accessorKey: 'destination',
-    header: createSortableHeader('Destination'),
+    accessorKey: "destination",
+    header: "Destination",
+    cell: ({ row }) => {
+      const dropoffLocations = row.original.dropoffLocations || row.original.dropofflocation || [];
+      if (!Array.isArray(dropoffLocations)) return "-";
+      return dropoffLocations.map(loc => loc.address || loc.location || "").filter(Boolean).join(", ") || "-";
+    },
   },
   {
     accessorKey: 'cargo',
@@ -159,7 +165,6 @@ const data = []
 const headers = [
   'Trip ID',
   'Order #',
-  'Cost Centre',
   'Client',
   'Origin',
   'Destination',
@@ -177,14 +182,13 @@ const rows = (data) => {
     const vehicles = Array.isArray(item.vehicles)
       ? item.vehicles.length
       : Array.isArray(item.vehicleAssignments)
-      ? item.vehicleAssignments.length
-      : 0
+        ? item.vehicleAssignments.length
+        : 0
     const drivers = Array.isArray(item.drivers) ? item.drivers.length : 0
 
     return [
       item.trip_id || '',
       item.orderNumber || '',
-      item.cost_centre || '',
       item.clientDetails?.name || item.selectedClient || '',
       item.origin || '',
       item.destination || '',

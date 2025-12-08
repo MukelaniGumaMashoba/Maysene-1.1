@@ -46,13 +46,14 @@ import {
   RefreshCw,
   Edit,
 } from 'lucide-react'
+import MapDirections from "@/components/map/MapDirections"
 
 import { Skeleton } from '@/components/ui/skeleton'
 import DetailActionBar from '@/components/layout/detail-action-bar'
 import { ProgressWithWaypoints } from '@/components/ui/progress-with-waypoints'
 import DetailCard from '../ui/detail-card'
 import { Separator } from '../ui/separator'
-import DisplayMap from '../map/display-map'
+import TripMapboxView from '../map/trip-mapbox-view'
 
 // Helper function to format date
 const formatDate = (dateString) => {
@@ -158,7 +159,8 @@ const displayValue = (val) => {
     }
     // If it's an object with name
     if (val.name) return val.name
-    // Otherwise, show JSON
+    // Otherwise, show object type
+    // return '[Object]'
     return JSON.stringify(val)
   }
   return String(val)
@@ -186,7 +188,7 @@ const displayCostCentre = (val) => {
     // If it's a JSON string, parse and get name
     const parsed = typeof val === "string" ? JSON.parse(val) : val;
     if (parsed && parsed.name) return parsed.name;
-  } catch {}
+  } catch { }
   return String(val);
 };
 
@@ -207,6 +209,8 @@ export default function TripDetails({ id }) {
   })
   const [updatingStatus, setUpdatingStatus] = useState(false)
   const [locations, setLocations] = useState([])
+  const [routeCoordinates, setRouteCoordinates] = useState([])
+  const [mapVisible, setMapVisible] = useState(false)
 
   const handleGoBack = () => {
     router.back()
@@ -317,7 +321,6 @@ export default function TripDetails({ id }) {
     'weighing',        // Weighing in/out
     'delivered',       // Delivered
     'Accept',
-    'Reject',
     "arrived-at-loading",
     "staging-area",
     "on-trip",
@@ -389,17 +392,23 @@ export default function TripDetails({ id }) {
     }
     : null
 
+  // locations arrays used by the map component (normalize missing values)
+  const pickupLocations = parsedTrip?.pickupLocations || []
+  const dropoffLocations = parsedTrip?.dropoffLocations || []
+
   const trip_information = [
     { label: 'Start Date', value: formatDate(parsedTrip?.startDate) },
     { label: 'End Date', value: formatDate(parsedTrip?.endDate) },
-    { label: 'Origin', value: parsedTrip?.origin || 'N/A' },
-    { label: 'Destination', value: parsedTrip?.destination || 'N/A' },
-    { label: 'Cost Centre', value: displayCostCentre(parsedTrip?.costCentre) },
+    // { label: 'Origin', value: parsedTrip?.origin || 'N/A' },
+    { label: 'Origin', value: displayLocationsAddresses(parsedTrip?.pickupLocations) || 'N/A' },
+    // { label: 'Destination', value: parsedTrip?.destination || 'N/A' },
+    { label: 'Destination', value: displayLocationsAddresses(parsedTrip?.dropoffLocations) || 'N/A' },
+    // { label: 'Cost Centre', value: displayCostCentre(parsedTrip?.costCentre) },
     { label: 'Cargo', value: parsedTrip?.cargo || 'N/A' },
     { label: 'Cargo Weight', value: parsedTrip?.cargoWeight || parsedTrip?.cargo_weight || 'N/A' },
-    { label: 'Pickup Locations', value: displayLocationsAddresses(parsedTrip?.pickupLocations) },
-    { label: 'Dropoff Locations', value: displayLocationsAddresses(parsedTrip?.dropoffLocations) },
-    { label: 'Waypoints', value: displayValue(parsedTrip?.waypoints) },
+    // { label: 'Pickup Locations', value: displayLocationsAddresses(parsedTrip?.pickupLocations) },
+    // { label: 'Dropoff Locations', value: displayLocationsAddresses(parsedTrip?.dropoffLocations) },
+    // { label: 'Waypoints', value: displayValue(parsedTrip?.waypoints) },
     { label: 'Notes', value: parsedTrip?.notes || 'N/A' },
   ]
   const client_information = [
@@ -414,27 +423,94 @@ export default function TripDetails({ id }) {
     { label: 'Total Expenses', value: calculateTotalExpenses() },
   ]
 
-  // useEffect(() => {
-  //   // If trip is not found, redirect to trips list
-  //   if (!trip) {
-  //     return []
-  //   }
+  // Extract coordinates from all trip locations
+  useEffect(() => {
+    if (!parsedTrip) return;
 
-  //   // Extract pickup and dropoff locations
-  //   const pickupLocations =
-  //     trip.pickupLocations?.map((location) => ({
-  //       label: location.address,
-  //       value: location.address,
-  //     })) || []
-  //   const dropoffLocations =
-  //     trip.dropoffLocations?.map((location) => ({
-  //       label: location.address,
-  //       value: location.address,
-  //     })) || []
-  //   setLocations([...pickupLocations, ...dropoffLocations])
-  // }, [trip])
+    const extractCoordinates = async () => {
+      const coordinates = [];
 
-  console.log('locations :>> ', locations)
+      // Add pickup locations
+      if (parsedTrip.pickupLocations) {
+        for (const location of parsedTrip.pickupLocations) {
+          if (location.address) {
+            try {
+              const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(location.address)}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`);
+              const data = await response.json();
+              if (data.features && data.features.length > 0) {
+                const [lng, lat] = data.features[0].center;
+                coordinates.push({ lat, lng, type: 'pickup', address: location.address });
+              }
+            } catch (error) {
+              console.error('Error geocoding pickup location:', error);
+            }
+          }
+        }
+      }
+
+      // Add dropoff locations
+      if (parsedTrip.dropoffLocations) {
+        for (const location of parsedTrip.dropoffLocations) {
+          if (location.address) {
+            try {
+              const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(location.address)}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`);
+              const data = await response.json();
+              if (data.features && data.features.length > 0) {
+                const [lng, lat] = data.features[0].center;
+                coordinates.push({ lat, lng, type: 'dropoff', address: location.address });
+              }
+            } catch (error) {
+              console.error('Error geocoding dropoff location:', error);
+            }
+          }
+        }
+      }
+
+      // Add waypoints (including stop points)
+      if (parsedTrip.waypoints) {
+        for (const waypoint of parsedTrip.waypoints) {
+          const address = waypoint.address || waypoint.location;
+          if (address) {
+            try {
+              const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`);
+              const data = await response.json();
+              if (data.features && data.features.length > 0) {
+                const [lng, lat] = data.features[0].center;
+                coordinates.push({ lat, lng, type: 'waypoint', address, name: waypoint.location });
+              }
+            } catch (error) {
+              console.error('Error geocoding waypoint:', error);
+            }
+          }
+        }
+      }
+
+      // Add stop points from database
+      if (parsedTrip.stopPoints) {
+        for (const stop of parsedTrip.stopPoints) {
+          const address = stop.address || stop.location || stop.name;
+          if (address) {
+            try {
+              const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`);
+              const data = await response.json();
+              if (data.features && data.features.length > 0) {
+                const [lng, lat] = data.features[0].center;
+                coordinates.push({ lat, lng, type: 'stop', address, name: stop.name });
+              }
+            } catch (error) {
+              console.error('Error geocoding stop point:', error);
+            }
+          }
+        }
+      }
+
+      setRouteCoordinates(coordinates);
+    };
+
+    extractCoordinates();
+  }, [parsedTrip]);
+
+
 
   // If loading, show skeleton or loading state
   if (loading) {
@@ -510,7 +586,7 @@ export default function TripDetails({ id }) {
       <div className="grid gap-6 md:grid-cols-2">
         <DetailCard
           title={`Trip Information`}
-          description={'DInformation about this trip'}
+          description={'Information about this trip'}
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {trip_information.map((info) => (
@@ -520,7 +596,7 @@ export default function TripDetails({ id }) {
                 </dt>
                 <dd className="mt-1 text-sm text-gray-900">
                   {/* Only render as React node for pickup/dropoff, else as string */}
-                  {(info.label === "Pickup Locations" || info.label === "Dropoff Locations")
+                  {(info.label === "Pickup Locations" || info.label === "Dropoff Locations" || info.label === "Origin" || info.label === "Destination")
                     ? info.value
                     : displayValue(info.value)}
                 </dd>
@@ -550,13 +626,41 @@ export default function TripDetails({ id }) {
           title={`Trip Overview`}
           description={'Map view of this trip'}
         >
-          <div className=" h-[250] rounded-lg bg-gray-100 flex items-center justify-center">
-            <DisplayMap address={locations} />
+          <div className="h-[400px] w-full rounded-lg overflow-hidden border">
+            {typeof window !== 'undefined' && <TripMapboxView tripData={parsedTrip} />}
+          </div>
+
+          {pickupLocations.length > 0 && dropoffLocations.length > 0 && (
+            <MapDirections
+              visible={mapVisible}
+              onClose={() => setMapVisible(false)}
+              pickupLocation={{
+                latitude: pickupLocations[0].latitude || 0,
+                longitude: pickupLocations[0].longitude || 0,
+                address: pickupLocations[0].address || pickupLocations[0].location,
+              }}
+              dropoffLocation={{
+                latitude: dropoffLocations[0].latitude || 0,
+                longitude: dropoffLocations[0].longitude || 0,
+                address: dropoffLocations[0].address || dropoffLocations[0].location,
+              }}
+            />
+          )}
+
+          <div className="mt-3 flex justify-end">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setMapVisible(true)}
+              disabled={!(pickupLocations.length > 0 && dropoffLocations.length > 0)}
+            >
+              <MapPin className="h-4 w-4 mr-2" /> View Route
+            </Button>
           </div>
 
           <Separator className="my-4" />
 
-          <div className="mb-4">
+          {/* <div className="mb-4">
             <label className="text-sm font-medium text-gray-500">
               Financial Summary
             </label>
@@ -569,8 +673,8 @@ export default function TripDetails({ id }) {
                 </dt>
                 <dd className="mt-1 text-sm text-gray-900">{displayValue(info.value)}</dd>
               </div>
-            ))}
-          </div>
+            ))}tr
+          </div> */}
         </DetailCard>
       </div>
 
@@ -604,14 +708,14 @@ export default function TripDetails({ id }) {
                         {displayValue(assignment.drivers)}
                       </p>
                     </div>
-                    <div>
+                    {/* <div>
                       <h4 className="font-medium text-sm text-gray-500">
                         Trailers
                       </h4>
                       <p className="text-sm">
                         {displayValue(assignment.trailers) || 'None'}
                       </p>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               ))}
@@ -626,9 +730,8 @@ export default function TripDetails({ id }) {
 
       {/* Tabs for Waypoints, Expenses, Notes */}
       <Tabs defaultValue="waypoints" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="waypoints">Waypoints</TabsTrigger>
-          {/* <TabsTrigger value="expenses">Expenses</TabsTrigger> */}
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="waypoints">Waypoints & Stop Points</TabsTrigger>
           <TabsTrigger value="notes">Notes & Documents</TabsTrigger>
         </TabsList>
 
@@ -636,46 +739,42 @@ export default function TripDetails({ id }) {
         <TabsContent value="waypoints" className="space-y-4">
           <Card>
             <CardHeader className="pb-2">
-              <div className="flex justify-between items-center">
-                <CardTitle>Trip Waypoints</CardTitle>
-                <Button variant="outline" size="sm">
-                  <PlusCircle className="h-4 w-4 mr-2" /> Add Waypoint
-                </Button>
-              </div>
+              <CardTitle>Trip Waypoints & Stop Points</CardTitle>
               <CardDescription>
-                Scheduled stops and checkpoints for this trip
+                Scheduled stops, waypoints, and stop points for this trip
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {trip?.waypoints && trip?.waypoints.length > 0 ? (
+              {(parsedTrip?.waypoints && parsedTrip?.waypoints.length > 0) || (parsedTrip?.stopPoints && parsedTrip?.stopPoints.length > 0) ? (
                 <div className="relative">
                   {/* Timeline */}
                   <div className="absolute left-0 top-0 bottom-0 w-px bg-border ml-6"></div>
 
-                  {/* Waypoints */}
+                  {/* Route */}
                   <div className="space-y-8 relative">
                     {/* Origin */}
                     <div className="flex gap-4 items-start">
-                      <div className="w-3 h-3 rounded-full bg-primary mt-1.5 z-10"></div>
+                      <div className="w-3 h-3 rounded-full bg-green-500 mt-1.5 z-10"></div>
                       <div className="flex-1">
-                        <div className="font-medium">{trip?.origin}</div>
+                        <div className="font-medium">{parsedTrip?.origin}</div>
                         <div className="text-sm text-muted-foreground">
-                          Departure: {formatDate(trip?.startDate)}
+                          Departure: {formatDate(parsedTrip?.startDate)}
                         </div>
                       </div>
                     </div>
 
                     {/* Waypoints */}
-                    {trip?.waypoints.map((waypoint, index) => (
-                      <div key={index} className="flex gap-4 items-start">
-                        <div className="w-3 h-3 rounded-full bg-primary mt-1.5 z-10"></div>
+                    {parsedTrip?.waypoints?.map((waypoint, index) => (
+                      <div key={`waypoint-${index}`} className="flex gap-4 items-start">
+                        <div className="w-3 h-3 rounded-full bg-blue-500 mt-1.5 z-10"></div>
                         <div className="flex-1">
                           <div className="font-medium">{waypoint.location}</div>
                           <div className="text-sm text-muted-foreground">
-                            Arrival: {formatDateTime(waypoint.arrivalTime)}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Departure: {formatDateTime(waypoint.departureTime)}
+                            {waypoint.address && <div>Address: {waypoint.address}</div>}
+                            {waypoint.arrivalTime && <div>Arrival: {formatDateTime(waypoint.arrivalTime)}</div>}
+                            {waypoint.departureTime && <div>Departure: {formatDateTime(waypoint.departureTime)}</div>}
+                            {waypoint.contactPerson && <div>Contact: {waypoint.contactPerson}</div>}
+                            {waypoint.contactNumber && <div>Phone: {waypoint.contactNumber}</div>}
                           </div>
                           {waypoint.notes && (
                             <div className="text-sm mt-1 p-2 bg-muted rounded-md">
@@ -686,15 +785,37 @@ export default function TripDetails({ id }) {
                       </div>
                     ))}
 
+                    {/* Stop Points */}
+                    {parsedTrip?.stopPoints?.map((stopPoint, index) => (
+                      <div key={`stop-${index}`} className="flex gap-4 items-start">
+                        <div className="w-3 h-3 rounded-full bg-amber-500 mt-1.5 z-10"></div>
+                        <div className="flex-1">
+                          <div className="font-medium">{stopPoint.name}</div>
+                          <Badge variant="outline" className="mb-2">{stopPoint.type}</Badge>
+                          <div className="text-sm text-muted-foreground">
+                            {stopPoint.address && <div>Address: {stopPoint.address}</div>}
+                            {stopPoint.contact_person && <div>Contact: {stopPoint.contact_person}</div>}
+                            {stopPoint.contact_phone && <div>Phone: {stopPoint.contact_phone}</div>}
+                            {stopPoint.operating_hours && <div>Hours: {stopPoint.operating_hours}</div>}
+                          </div>
+                          {stopPoint.notes && (
+                            <div className="text-sm mt-1 p-2 bg-muted rounded-md">
+                              {stopPoint.notes}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+
                     {/* Destination */}
                     <div className="flex gap-4 items-start">
-                      <div className="w-3 h-3 rounded-full bg-primary mt-1.5 z-10"></div>
+                      <div className="w-3 h-3 rounded-full bg-red-500 mt-1.5 z-10"></div>
                       <div className="flex-1">
-                        <div className="font-medium">{trip?.destination}</div>
+                        <div className="font-medium">{parsedTrip?.destination}</div>
                         <div className="text-sm text-muted-foreground">
                           Arrival:{' '}
-                          {trip?.endDate
-                            ? formatDate(trip?.endDate)
+                          {parsedTrip?.endDate
+                            ? formatDate(parsedTrip?.endDate)
                             : 'Expected arrival date not set'}
                         </div>
                       </div>
@@ -703,7 +824,7 @@ export default function TripDetails({ id }) {
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
-                  No waypoints have been added to this trip.
+                  No waypoints or stop points have been added to this trip.
                 </div>
               )}
             </CardContent>
@@ -781,7 +902,7 @@ export default function TripDetails({ id }) {
                   </p>
                 </div>
 
-                <div className="p-4 border rounded-md">
+                {/* <div className="p-4 border rounded-md">
                   <h3 className="font-medium mb-2">Documents</h3>
                   <p className="text-sm text-muted-foreground">
                     No documents have been attached to this trip.
@@ -789,7 +910,7 @@ export default function TripDetails({ id }) {
                   <Button variant="outline" size="sm" className="mt-2">
                     <PlusCircle className="h-4 w-4 mr-2" /> Attach Document
                   </Button>
-                </div>
+                </div> */}
               </div>
             </CardContent>
           </Card>

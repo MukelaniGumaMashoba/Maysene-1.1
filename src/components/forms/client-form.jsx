@@ -23,6 +23,20 @@ import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
 
 
+// function ValidationError({ message }) {
+//   if (!message) return null
+//   if (label.address) {
+//     messsge
+//   }
+ 
+//   return (
+
+//     <p className="mt-1 text-sm text-red-600" id="email-error">
+//       {message}
+//     </p>
+//   )
+// }
+
 export function ClientForm({ id, onCancel }) {
   const { clients, clientsDispatch, } =
     useGlobalContext()
@@ -748,19 +762,21 @@ export function ClientForm({ id, onCancel }) {
                 Previous
               </Button>
             )}
-            {currentTab < tabs.length - 1 ? (
+            {currentTab < 1 && ( 
               <Button
                 type="button"
                 onClick={() => setCurrentTab(currentTab + 1)}
               >
                 Next
               </Button>
-            ) : (
+            )}
+            {currentTab < 2 && (
               <Button type="submit">
                 <Save className="mr-2 h-4 w-4" /> Save Client
               </Button>
             )}
           </div>
+
         </div>
       </div>
     </form>

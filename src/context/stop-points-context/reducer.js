@@ -21,10 +21,13 @@ const stopPointReducer = (state, action) => {
         error: action.payload,
       }
     case types.FETCH_STOP_POINTS:
+      const fetchedData = Array.isArray(action.payload) ? action.payload : []
       return {
         ...state,
-        data: Array.isArray(action.payload) ? action.payload : [],
+        data: fetchedData,
+        screenStats: state.getScreenStats ? state.getScreenStats(fetchedData) : state.screenStats,
         loading: false,
+        error: null,
       }
     case types.FETCH_STOP_POINT:
       return {
@@ -33,21 +36,25 @@ const stopPointReducer = (state, action) => {
         loading: false,
       }
     case types.ADD_STOP_POINT:
+      const addedData = Array.isArray(state.data)
+        ? [...state.data, action.payload]
+        : [action.payload]
       return {
         ...state,
-        data: Array.isArray(state.data)
-          ? [...state.data, action.payload]
-          : [action.payload],
+        data: addedData,
+        screenStats: state.getScreenStats ? state.getScreenStats(addedData) : state.screenStats,
         loading: false,
       }
     case types.UPDATE_STOP_POINT:
+      const updatedData = Array.isArray(state.data)
+        ? state.data.map((item) =>
+            item.id === action.payload.id ? action.payload : item
+          )
+        : [action.payload]
       return {
         ...state,
-        data: Array.isArray(state.data)
-          ? state.data.map((item) =>
-              item.id === action.payload.id ? action.payload : item
-            )
-          : [action.payload],
+        data: updatedData,
+        screenStats: state.getScreenStats ? state.getScreenStats(updatedData) : state.screenStats,
         currentStopPoint:
           state.currentStopPoint?.id === action.payload.id
             ? action.payload
@@ -55,11 +62,13 @@ const stopPointReducer = (state, action) => {
         loading: false,
       }
     case types.DELETE_STOP_POINT:
+      const deletedData = Array.isArray(state.data)
+        ? state.data.filter((item) => item.id !== action.payload)
+        : []
       return {
         ...state,
-        data: Array.isArray(state.data)
-          ? state.data.filter((item) => item.id !== action.payload)
-          : [],
+        data: deletedData,
+        screenStats: state.getScreenStats ? state.getScreenStats(deletedData) : state.screenStats,
         currentStopPoint:
           state.currentStopPoint?.id === action.payload
             ? null

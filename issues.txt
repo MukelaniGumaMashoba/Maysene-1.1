@@ -189,3 +189,14 @@ Company logs(
 old system{
     have create job and the should be able to create breakdown
 }
+
+
+1. - for driver and fleet manager handover process,
+2. - change the status or events, 
+3. - fc or fleet manager be able to create plan of the handover vehicles
+4. - 
+
+needed
+inspection templates
+UI Fix 
+icon change for fuel

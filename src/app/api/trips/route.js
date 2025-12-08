@@ -1,5 +1,5 @@
-import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
 // Initialize Supabase client
 
@@ -68,7 +68,7 @@ export async function POST(request) {
     
     // Look up cost centre ID by name
     const { data: costCentres, error: costCentreError } = await supabase
-      .from('breakdown_cost_centres')
+      .from('cost_centres')
       .select('id, active_trips')
       .eq('client_id', clientId)
       .eq('name', body.costCentre)

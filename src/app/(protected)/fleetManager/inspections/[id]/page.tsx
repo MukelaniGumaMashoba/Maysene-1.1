@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import jsPDF from "jspdf";
 import { printInspectionDetails } from "@/hooks/printPDF";
+import getExt from "@/hooks/timeHook";
 
 export default function InspectionDetail() {
   const params = useParams();
@@ -109,8 +110,8 @@ export default function InspectionDetail() {
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-6 text-sm text-gray-700">
               <div>
-                <strong>Registration:</strong>{" "}
-                {inspection.vehicle?.registration_number}
+                <strong>Registration:</strong> {inspection.vehicle.fleet_number}{" "}
+                : {inspection.vehicle?.registration_number}
               </div>
               <div>
                 <strong>Make/Model:</strong> {inspection.vehicle?.make}{" "}
@@ -131,8 +132,16 @@ export default function InspectionDetail() {
             </CardContent>
           </Card>
 
+          <Card className="bg-white/80 backdrop-blur-md shadow-xl rounded-2xl mb-3 mt-3">
+            <CardContent>
+              <div className="mt-3 text-sm text-gray-600 mb-3">
+                <strong>Location:</strong> {inspection.location}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Driver Info */}
-          <Card className="bg-white/80 backdrop-blur-md shadow-xl rounded-2xl">
+          <Card className="bg-white/80 backdrop-blur-md shadow-xl rounded-2xl mb-3 mt-3">
             <CardHeader>
               <CardTitle className="text-xl font-semibold text-indigo-700">
                 Driver Info
@@ -159,7 +168,7 @@ export default function InspectionDetail() {
           </Card>
 
           {/* Inspection Details */}
-          <Card className="bg-white/90 backdrop-blur-md shadow-xl rounded-2xl">
+          <Card className="bg-white/90 backdrop-blur-md shadow-xl rounded-2xl mb-3 mt-3">
             <CardHeader>
               <CardTitle className="text-xl font-semibold text-indigo-700">
                 Inspection Details
@@ -188,6 +197,12 @@ export default function InspectionDetail() {
                 <div>
                   <strong>Date:</strong>{" "}
                   {new Date(inspection.inspection_date).toLocaleString()}
+                </div>
+
+                <div>
+                  <strong>Time Taken:</strong>{" "}
+                  <p>{inspection.timing?.duration_seconds || "N/A"} seconds</p>
+                  <p>{getExt(inspection.timing?.duration_seconds)}</p>
                 </div>
               </div>
 

@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/dialog";
 import TripForm from "../../../../components/forms/trip-form";
 import { createClient } from "@/lib/supabase/client";
+import LoadPlanPage from "../../load-plan/page";
+// import Dashboard from "@/components/dashboard/trips";
 
 export default function TripsPage() {
   const [open, setOpen] = useState(false);
@@ -43,6 +45,32 @@ export default function TripsPage() {
       .join(", ");
   };
 
+  const getDropOffLocation = (trip) => {
+    if (!trip) return "-";
+    const dropoff =
+      parseJsonField(trip.dropoffLocations) ||
+      parseJsonField(trip.dropoff_locations) ||
+      [];
+    // Map to string like address or location before joining
+    return dropoff
+      .map(loc => loc.address || loc.location || "")
+      .filter(Boolean)
+      .join(", ") || "-";
+  };
+
+  const getPickupLocation = (trip) => {
+    if (!trip) return "-";
+    const pickup =
+      parseJsonField(trip.pickupLocations) ||
+      parseJsonField(trip.pickup_locations) ||
+      [];
+    // Map to string like address or location before joining
+    return pickup
+      .map(loc => loc.address || loc.location || "")
+      .filter(Boolean)
+      .join(", ") || "-";
+  };
+
   // Helper to get vehicle names (make + model) from vehicle assignments
   const getVehicleNames = (trip) => {
     if (!trip) return "";
@@ -72,12 +100,22 @@ export default function TripsPage() {
     try {
       const parsed = typeof val === "string" ? JSON.parse(val) : val;
       if (parsed && parsed.name) return parsed.name;
-    } catch {}
+    } catch { }
     return String(val);
   };
 
-  const fetchTrips = async () => {
+  const [lastFetch, setLastFetch] = React.useState(0);
+  const [loading, setLoading] = React.useState(true);
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+
+  const fetchTrips = React.useCallback(async (forceRefresh = false) => {
+    const now = Date.now();
+    if (!forceRefresh && now - lastFetch < CACHE_DURATION && trips.length > 0) {
+      return; // Use cached data
+    }
+
     try {
+      setLoading(true);
       const { data, error } = await supabase.from('trips').select('*');
       if (error) {
         console.error('Error fetching trips:', error);
@@ -88,17 +126,49 @@ export default function TripsPage() {
           driversDisplay: getDriverNames(trip),
           vehiclesDisplay: getVehicleNames(trip),
           costCentreDisplay: displayCostCentre(trip.costCentre || trip.cost_centre),
+          pickupLocations: getPickupLocation(trip),
+          dropoffLocations: getDropOffLocation(trip),
         }));
         setTrips(parsedTrips);
+        setLastFetch(now);
       }
     } catch (error) {
       console.error('Unexpected error fetching trips:', error);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [lastFetch, trips.length, supabase]);
 
   React.useEffect(() => {
     fetchTrips();
-  }, []);
+    
+    // Set up periodic refresh every 2 minutes
+    const interval = setInterval(() => {
+      fetchTrips(true);
+    }, 2 * 60 * 1000);
+    
+    // Real-time subscription with smart debouncing
+    let debounceTimer;
+    const channel = supabase
+      .channel('trips-realtime')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'trips' },
+        () => {
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => {
+            setLastFetch(0); // Force refresh
+            fetchTrips(true);
+          }, 5000); // 5 second debounce for faster updates
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      clearInterval(interval);
+      clearTimeout(debounceTimer);
+      supabase.removeChannel(channel);
+    };
+  }, [fetchTrips, supabase]);
 
   // Calculate stats from actual data
   const totalTrips = trips.length;
@@ -114,7 +184,7 @@ export default function TripsPage() {
   ];
 
   const titleSection = { title: "Trips", description: "Manage your trips", button: { text: "Add Trip" } };
-  const tableInfo = { tabs: [{ value: "all", title: "All Trips" }] };
+  const tableInfo = { tabs: [{ value: "all", title: "All Trips" }]};
 
   // Define columns without edit functionality
   const tableColumns = [
@@ -141,12 +211,12 @@ export default function TripsPage() {
     {
       accessorKey: "origin",
       header: "Origin",
-      cell: ({ row }) => row.original.origin || "-",
+      cell: ({ row }) => row.original.pickupLocations || "-",
     },
     {
       accessorKey: "destination",
       header: "Destination",
-      cell: ({ row }) => row.original.destination || "-",
+      cell: ({ row }) => row.original.dropoffLocations || "-",
     },
     {
       accessorKey: "status",
@@ -166,11 +236,6 @@ export default function TripsPage() {
         );
       },
     },
-    {
-      accessorKey: "costCentreDisplay",
-      header: "Cost Centre",
-      cell: ({ row }) => row.original.costCentreDisplay || "-",
-    },
   ];
 
   return (
@@ -181,13 +246,22 @@ export default function TripsPage() {
           <h1 className="text-2xl font-bold">{titleSection?.title}</h1>
           <p className="text-gray-500">{titleSection?.description}</p>
         </div>
-        <button
-          onClick={() => setOpen(true)}
-          className="flex items-center px-4 py-2 bg-primary text-white rounded-lg shadow hover:bg-primary/90"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          {titleSection?.button?.text}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => fetchTrips(true)}
+            disabled={loading}
+            className="px-3 py-2 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+          >
+            {loading ? 'Refreshing...' : 'Refresh'}
+          </button>
+          <button
+            onClick={() => setOpen(true)}
+            className="flex items-center px-4 py-2 bg-primary text-white rounded-lg shadow hover:bg-primary/90"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            {titleSection?.button?.text}
+          </button>
+        </div>
       </div>
 
       {/* Stats Section */}
@@ -224,21 +298,39 @@ export default function TripsPage() {
 
       <div className="bg-white rounded-xl border shadow-sm hover:shadow-md transition-shadow">
         <div className="p-6">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">All Trips</h3>
-            <p className="text-sm text-gray-500">View and manage all your trips</p>
+          <div className="mb-4 flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">All Trips</h3>
+              <p className="text-sm text-gray-500">View and manage all your trips</p>
+            </div>
+            <button
+              onClick={() => fetchTrips(true)}
+              disabled={loading}
+              className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+            >
+              {loading ? 'Refreshing...' : 'Refresh'}
+            </button>
           </div>
-          <DataTable
-            columns={tableColumns}
-            data={trips || []}
-            filterColumn={[]}
-            csv_headers={[]}
-            csv_rows={[]}
-            href="/fleetManager/trips"
-            downloadCSV={() => {}}
-          />
+          {loading && trips.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">Loading trips...</div>
+          ) : (
+            <DataTable
+              columns={tableColumns}
+              data={trips || []}
+              filterColumn={[]}
+              csv_headers={[]}
+              csv_rows={[]}
+              href="/fleetManager/trips"
+              downloadCSV={() => { }}
+            />
+          )}
         </div>
       </div>
+
+      <Tabs value="assigned-drivers">
+        <h3 className="text-lg font-semibold">Assigned Drivers</h3>
+        <LoadPlanPage />
+      </Tabs>
 
       {/* Trip Form Modal */}
       <Dialog open={open} onOpenChange={setOpen}>

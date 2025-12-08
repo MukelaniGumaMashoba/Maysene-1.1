@@ -11,7 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -48,10 +47,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { map, nullable } from "zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { is, se } from "date-fns/locale";
 import Modal from "@/components/modals/modal";
 
 interface Job {
@@ -69,15 +66,14 @@ interface Job {
     surname: string | null;
     cell_number: string | null;
     job_allocated: boolean;
-  } | null; // Note: single object or null
-
+  } | null;
   vehiclesc: {
     length: number;
     registration_number: string | null;
     make: string | null;
     model: string | null;
-  } | null; // single object or null
-
+    fleet_number: string;
+  } | null;
   location: string;
   coordinates: { lat: number; lng: number };
   technician_id: number | null;
@@ -93,6 +89,7 @@ interface Job {
   attachments: string[];
   completed_at: string;
   eta: string;
+  service: string;
 }
 
 interface Technician {
@@ -106,11 +103,16 @@ interface Technician {
 }
 
 export default function FleetJobsPage() {
+  // active jobs shown in the List tab
   const [jobs, setJobs] = useState<Job[]>([]);
+  // all jobs (including completed/cancelled) used by Kanban & Analytics
+  const [allJobs, setAllJobs] = useState<Job[]>([]);
+  // filtered list derived from active jobs + search/status filters
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
   const [userRole, setUserRole] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [serviceFilter, setServiceFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
@@ -190,6 +192,7 @@ export default function FleetJobsPage() {
       setIsUpdateDialogOpen(false);
       setNewStatus("");
       setUpdateNotes("");
+      await getJobs(); // refresh after update
     } catch (error) {
       console.error("Error updating job status:", error);
     }
@@ -208,46 +211,37 @@ export default function FleetJobsPage() {
     }
   }, [selectedJobForTech]);
 
+  // Fetch all jobs (including completed/cancelled). Then derive active and completed.
   const getJobs = async () => {
-    const { data: jobs, error } = await supabase
+    const { data: jobsData, error } = await supabase
       .from("job_assignments")
       .select(
         `
-      *,
-      drivers (*),
-      vehiclesc (*),
-      technicians:technician_id(*)
-    `
+          *,
+          drivers (*),
+          vehiclesc (*),
+          technicians:technician_id(*)
+        `
       )
-      .neq("status", "completed")
-      .neq("status", "cancelled")
       .order("created_at", { ascending: false });
-    if (error) {
-      console.error(error);
-    } else {
-      setJobs(jobs as unknown as Job[]);
-      console.log(jobs);
-    }
-  };
 
-  const getCompletedJobs = async () => {
-    const { data: jobs, error } = await supabase
-      .from("job_assignments")
-      .select(
-        `
-      *,
-      drivers (*),
-      vehiclesc (*),
-      technicians:technician_id(*)
-    `
-      )
-      .order("created_at", { ascending: false });
     if (error) {
       console.error(error);
-    } else {
-      setCompleted(jobs as unknown as Job[]);
-      console.log(jobs);
+      return;
     }
+    const all = (jobsData || []) as unknown as Job[];
+    setAllJobs(all);
+
+    // Active jobs for the List tab (same logic as before)
+    const active = all.filter(
+      (j) => j.status !== "completed" && j.status !== "cancelled"
+    );
+    setJobs(active);
+    setFilteredJobs(active);
+
+    // Completed jobs for analytics/cards that rely on completed
+    const completedJobs = all.filter((j) => j.status === "completed");
+    setCompleted(completedJobs);
   };
 
   // Fetch technicians from Supabase
@@ -290,7 +284,7 @@ export default function FleetJobsPage() {
     } else {
       toast.success(`Assigned ${technicianName} to job.`);
       setIsTechDialogOpen(false);
-      // Optionally refresh jobs here if you keep jobs state elsewhere
+      await getJobs();
     }
   };
 
@@ -302,8 +296,7 @@ export default function FleetJobsPage() {
         { event: "*", schema: "public", table: "assignments" },
         (payload) => {
           console.log("Change received in assignments table!", payload);
-          // Handle any updates to the assignments table
-          getJobs(); // Re-fetch jobs if needed or adjust to only update certain fields
+          getJobs();
         }
       )
       .subscribe();
@@ -312,40 +305,29 @@ export default function FleetJobsPage() {
       .channel("public:job_assignments")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "job_assignments" }, // Only listen to insert events
+        { event: "*", schema: "public", table: "job_assignments" },
         (payload) => {
-          console.log("New job added:", payload);
-          // When a new job is inserted, add it to the jobs state
-          getJobs(); // Add the new job to the front of the list
+          console.log("Change received in job_assignments:", payload);
+          getJobs();
         }
       )
       .subscribe();
-    // Get user role from localStorage
+
     const role = localStorage.getItem("userRole") || "call-center";
     setUserRole(role);
 
     getJobs();
-    getCompletedJobs();
 
     return () => {
       jobAssignments.unsubscribe();
       assignements.unsubscribe();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fetch initial data when the component mounts
+  // Filter active jobs once data is loaded or when search/status/priority changes
   useEffect(() => {
-    getJobs();
-  }, []);
-  // Filter jobs once data is loaded
-  // Use useEffect dependency array to trigger after jobs state is set
-  useEffect(() => {
-    if (jobs.length > 0) {
-      setFilteredJobs(jobs); // Now set filtered jobs after jobs are updated
-    }
-  }, [jobs]); // This effect will run when jobs change
-  // setFilteredJobs(jobs)
-  useEffect(() => {
+    // operate over active jobs (jobs state)
     let filtered = jobs;
 
     // Search filter
@@ -353,7 +335,6 @@ export default function FleetJobsPage() {
       filtered = filtered.filter((job) => {
         const searchLower = searchTerm.toLowerCase();
 
-        // Basic job fields
         if (
           job.job_id?.toLowerCase().includes(searchLower) ||
           job.description?.toLowerCase().includes(searchLower)
@@ -361,7 +342,6 @@ export default function FleetJobsPage() {
           return true;
         }
 
-        // Driver information
         if (job.drivers) {
           const driverName = job.drivers?.first_name?.toLowerCase() || "";
           const driverSurname = job.drivers?.surname?.toLowerCase() || "";
@@ -373,7 +353,6 @@ export default function FleetJobsPage() {
           }
         }
 
-        // Vehicle information
         if (job.vehiclesc) {
           const regNumber = job.vehiclesc.registration_number || "";
           const make = job.vehiclesc.make || "";
@@ -391,15 +370,22 @@ export default function FleetJobsPage() {
       });
     }
 
-    // Status filter
+    // Status filter (only for active jobs)
     if (statusFilter !== "all") {
       filtered = filtered.filter((job) => job.status === statusFilter);
     }
+
+    // service  filter
+    if (serviceFilter !== "all") {
+      filtered = filtered.filter((job) => job.service === serviceFilter);
+    }
+
 
     // Priority filter
     if (priorityFilter !== "all") {
       filtered = filtered.filter((job) => job.priority === priorityFilter);
     }
+
 
     setFilteredJobs(filtered);
   }, [jobs, searchTerm, statusFilter, priorityFilter]);
@@ -410,20 +396,17 @@ export default function FleetJobsPage() {
 
   useEffect(() => {
     handleRefreshClick();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Assume selectedJobForTech is set when you open the assign dialog
 
   const filteredTechnicians = technicians.filter((tech) => {
     if (!selectedJobForTech?.location || !tech.location) return false;
 
-    // Split job location and tech location into lowercase keyword arrays
     const jobLocationTerms = selectedJobForTech.location
       .toLowerCase()
       .split(/[\s,]+/);
     const techLocationTerms = tech.location.toLowerCase().split(/[\s,]+/);
 
-    // Check if any job location term appears in the tech location terms
     return jobLocationTerms.some((term) => techLocationTerms.includes(term));
   });
 
@@ -451,6 +434,14 @@ export default function FleetJobsPage() {
     setSelectedJob(job);
     setIsModalOpen(true);
   };
+
+  const getDays = (createdDate: string) => {
+  const start = new Date(createdDate);
+  const end = new Date(); 
+  const diffTime = Math.abs(end.getTime() - start.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+}
 
   return (
     <>
@@ -488,20 +479,18 @@ export default function FleetJobsPage() {
                 <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
-            {/* <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+            <Select value={serviceFilter} onValueChange={setServiceFilter}>
               <SelectTrigger className="w-40">
-                <SelectValue placeholder="Priority" />
+                <SelectValue placeholder="Service" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Priority</SelectItem>
-                <SelectItem value="emergency">Emergency</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="all">All Services</SelectItem>
+                <SelectItem value="Mechanical Failure">Mechanical Failure</SelectItem>
+                <SelectItem value="Electrical Issue">Electrical Issue</SelectItem>
+                <SelectItem value="Bodywork Repair">Bodywork Repair</SelectItem>
               </SelectContent>
-            </Select> */}
-
-            {/* Refresh Button */}
+            </Select>
+  
             <div className="mt-4">
               <button onClick={handleRefreshClick}>
                 <RefreshCcw />
@@ -532,12 +521,13 @@ export default function FleetJobsPage() {
                             <FileText className="h-5 w-5 text-blue-500" />
                             <CardTitle className="text-lg">
                               {job.job_id} :{" "}
-                              {job?.vehiclesc?.registration_number ||
-                                "No vehicle allocated"}{" "}
+                              {/* {job?.vehiclesc?.registration_number ||
+                                "No vehicle allocated"}{" "} */}
+                              {job?.vehiclesc?.fleet_number}
                             </CardTitle>
                           </div>
                           <Badge className={getPriorityColor(job.priority)}>
-                            {job.priority}
+                            {job.priority} : {job.service}
                           </Badge>
                           <Badge className={getStatusColor(job.status)}>
                             {job.status}
@@ -549,8 +539,9 @@ export default function FleetJobsPage() {
                         <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4 text-gray-500" />
                           <span className="text-sm text-gray-500">
-                            {new Date(job.created_at).toLocaleDateString()}{" "}
-                            {new Date(job.created_at).toLocaleTimeString()}
+                            {/* {new Date(job.created_at).toLocaleDateString()}{" "} */}
+                            {/* {new Date(job.created_at).toLocaleTimeString()} */}
+                            {getDays(job.created_at)} days ago
                           </span>
                         </div>
                       </div>
@@ -694,7 +685,6 @@ export default function FleetJobsPage() {
                               const url = data?.publicUrl;
                               const attachments =
                                 job.attachments as unknown as string[];
-                              // const url = attachments[index] as string;
                               console.log(url);
                               return (
                                 <div
@@ -743,7 +733,6 @@ export default function FleetJobsPage() {
                                   key={index}
                                   className="flex flex-col items-center gap-2"
                                 >
-                                  {/* Don't attempt to render local file URIs directly */}
                                   {imagePath.startsWith("file:///") ? (
                                     <Badge
                                       variant="secondary"
@@ -792,19 +781,6 @@ export default function FleetJobsPage() {
                             Close Job
                           </Button>
                         </div>
-
-                        {/* <div>
-                            {!job.technician_id && (
-                              <Button
-                                onClick={() => {
-                                  setSelectedJobForTech(job);
-                                  setIsTechDialogOpen(true);
-                                }}
-                              >
-                                Assign Technician
-                              </Button>
-                            )}
-                          </div> */}
 
                         {job.status === "awaiting-approval" &&
                           canApproveJobs && (
@@ -855,29 +831,25 @@ export default function FleetJobsPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {[
                 "Breakdown Request",
+                "completed",
                 "inprogress",
                 "assigned",
                 "Technician accepted",
                 "Technician on site",
-                "completed",
               ].map((status) => (
                 <Card key={status}>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm font-medium capitalize">
                       {status}
                       <Badge className="ml-2" variant="secondary">
-                        {
-                          filteredJobs.filter((job) => job.status === status)
-                            .length
-                        }
+                        {allJobs.filter((job) => job.status === status).length}
                       </Badge>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    {filteredJobs
+                    {allJobs
                       .filter((job) => job.status === status)
                       .map((job) => (
-                        // <Card key={job.id} className="p-3 hover:shadow-sm transition-shadow cursor-pointer">
                         <Card
                           key={job.id}
                           className="p-3 hover:shadow-sm transition-shadow"
@@ -918,7 +890,7 @@ export default function FleetJobsPage() {
                   <FileText className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{jobs.length}</div>
+                  <div className="text-2xl font-bold">{allJobs.length}</div>
                   <p className="text-xs text-muted-foreground">All Jobs</p>
                 </CardContent>
               </Card>
@@ -931,7 +903,10 @@ export default function FleetJobsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {jobs.filter((job) => job.status === "inprogress").length}
+                    {
+                      allJobs.filter((job) => job.status === "inprogress")
+                        .length
+                    }
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Active jobs being worked on
@@ -947,17 +922,14 @@ export default function FleetJobsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {
-                      completed.filter((job) => job.status === "completed")
-                        .length
-                    }
+                    {allJobs.filter((job) => job.status === "completed").length}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Successfully completed jobs
                   </p>
                 </CardContent>
               </Card>
-              <Card>
+              {/* <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
                     Avg. Cost
@@ -970,7 +942,7 @@ export default function FleetJobsPage() {
                     Average job cost
                   </p>
                 </CardContent>
-              </Card>
+              </Card> */}
             </div>
 
             <Card>
@@ -982,20 +954,20 @@ export default function FleetJobsPage() {
                 <div className="space-y-4">
                   {[
                     "Breakdown Request",
+                    "completed",
                     "assigned",
                     "Technician on site",
                     "Technician accepted",
                     "inprogress",
                     "awaiting-approval",
                     "approved",
-                    // "completed",
                     "cancelled",
                   ].map((status) => {
-                    const count = jobs.filter(
+                    const count = allJobs.filter(
                       (job) => job.status === status
                     ).length;
                     const percentage =
-                      jobs.length > 0 ? (count / jobs.length) * 100 : 0;
+                      allJobs.length > 0 ? (count / allJobs.length) * 100 : 0;
                     return (
                       <div
                         key={status}
@@ -1028,7 +1000,7 @@ export default function FleetJobsPage() {
         </Tabs>
 
         {isModalOpen && selectedJob && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-transparent bg-opacity-50">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/40 backdrop-blur-md">
             <div
               className="bg-white rounded-lg shadow-lg w-full max-w-2xl p-6 relative"
               onClick={(e) => e.stopPropagation()}

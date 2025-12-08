@@ -30,6 +30,7 @@ import { createClient } from '@/lib/supabase/client'
 
 // hooks
 import { getAddressCoordinates } from '@/hooks/get-address-coordinates'
+import { AddressAutocomplete } from '@/components/ui/address-autocomplete'
 
 const TripForm = ({ onClose, id }) => {
   const supabase = createClient()
@@ -37,12 +38,14 @@ const TripForm = ({ onClose, id }) => {
   // Local state for fetched data
   const [drivers, setDrivers] = useState([])
   const [vehicles, setVehicles] = useState([])
+  const [trailer, setTrailer] = useState([])
   const [clients, setClients] = useState([])
   const [costCentres, setCostCentres] = useState([])
   const [stopPoints, setStopPoints] = useState([])
   const [loading, setLoading] = useState(false)
   const [formState, setFormState] = useState(null)
   const [currentTab, setCurrentTab] = useState(0)
+  const [validationErrors, setValidationErrors] = useState({})
 
   // Fetch all reference data from Supabase on mount
   useEffect(() => {
@@ -51,18 +54,21 @@ const TripForm = ({ onClose, id }) => {
         const [
           { data: driversData },
           { data: vehiclesData },
+          { data: trailerData },
           { data: clientsData },
           { data: costCentresData },
           { data: stopPointsData }
         ] = await Promise.all([
           supabase.from('drivers').select('*').eq('status', true),
           supabase.from('vehiclesc').select('*').eq('available', true),
+          supabase.from('trailer').select('*'),
           supabase.from('clients').select('*'),
           supabase.from('breakdown_cost_centers').select('*'),
           supabase.from('stop_points').select('*'),
         ])
         setDrivers(driversData || [])
         setVehicles(vehiclesData || [])
+        setTrailer(trailerData || [])
         setClients(clientsData || [])
         setCostCentres(costCentresData || [])
         setStopPoints(stopPointsData || [])
@@ -81,7 +87,7 @@ const TripForm = ({ onClose, id }) => {
         setFormState({
           id: undefined,
           trip_id: `TRP-${Date.now()}`,
-          orderNumber: '',
+          orderNumber: `ORD-${Date.now()}`,
           rate: '',
           status: 'pending',
           startDate: format(new Date(), 'yyyy-MM-dd'),
@@ -463,11 +469,11 @@ const TripForm = ({ onClose, id }) => {
     trailerIndex,
     trailerId
   ) => {
-    const selectedTrailer = vehicles.find(
+    const selectedTrailer = trailer.find(
       (trailer) => trailer.id === trailerId
     )
     const trailerName = selectedTrailer
-      ? `${selectedTrailer.model} (${selectedTrailer.regNumber})`
+      ? `${selectedTrailer.registration} (${selectedTrailer.fleet_number})`
       : ''
 
     setFormState((prev) => {
@@ -676,9 +682,121 @@ const TripForm = ({ onClose, id }) => {
     }))
   }
 
+  // Handle waypoint change
+  const handleWaypointChange = (index, field, value) => {
+    setFormState((prev) => {
+      const updatedWaypoints = [...prev.waypoints]
+      updatedWaypoints[index] = { ...updatedWaypoints[index], [field]: value }
+      return {
+        ...prev,
+        waypoints: updatedWaypoints,
+      }
+    })
+  }
+
+  // Add waypoint
+  const addWaypoint = () => {
+    setFormState((prev) => ({
+      ...prev,
+      waypoints: [
+        ...prev.waypoints,
+        {
+          id: Date.now(),
+          location: '',
+          address: '',
+          contactPerson: '',
+          contactNumber: '',
+          operatingHours: '',
+          arrivalTime: '',
+          departureTime: '',
+          notes: '',
+          clientId: '',
+          stopPointId: '',
+        },
+      ],
+    }))
+  }
+
+  // Remove waypoint
+  const removeWaypoint = (index) => {
+    setFormState((prev) => {
+      const updatedWaypoints = [...prev.waypoints]
+      updatedWaypoints.splice(index, 1)
+      return {
+        ...prev,
+        waypoints: updatedWaypoints,
+      }
+    })
+  }
+
+  // Validation function
+  const validateCurrentTab = () => {
+    const errors = {}
+
+    if (currentTab === 0) { // Trip Information
+      if (!formState.orderNumber) errors.orderNumber = 'Order number is required'
+      if (!formState.rate) errors.rate = 'Rate is required'
+      if (!formState.costCentre) errors.costCentre = 'Cost centre is required'
+      if (!formState.startDate) errors.startDate = 'Start date is required'
+      if (!formState.endDate) errors.endDate = 'End date is required'
+      if (!formState.cargo) errors.cargo = 'Cargo description is required'
+      if (!formState.cargoWeight) errors.cargoWeight = 'Cargo weight is required'
+      if (!formState.clientDetails.name) errors.clientName = 'Client name is required'
+      if (!formState.clientDetails.contactPerson) errors.contactPerson = 'Contact person is required'
+      if (!formState.clientDetails.phone) errors.clientPhone = 'Client phone is required'
+      if (!formState.clientDetails.email) errors.clientEmail = 'Client email is required'
+    }
+
+    if (currentTab === 1) { // Vehicle Information
+      if (!formState.vehicleAssignments || formState.vehicleAssignments.length === 0) {
+        errors.vehicles = 'At least one vehicle assignment is required'
+      } else {
+        formState.vehicleAssignments.forEach((assignment, index) => {
+          if (!assignment.vehicle?.id) {
+            errors[`vehicle_${index}`] = 'Vehicle selection is required'
+          }
+          if (!assignment.drivers || assignment.drivers.length === 0 || !assignment.drivers[0]?.id) {
+            errors[`driver_${index}`] = 'At least one driver is required'
+          }
+        })
+      }
+    }
+
+    if (currentTab === 2) { // Location Information
+      if (!formState.pickupLocations || formState.pickupLocations.length === 0) {
+        errors.pickupLocations = 'At least one pickup location is required'
+      } else {
+        formState.pickupLocations.forEach((location, index) => {
+          if (!location.location) errors[`pickup_location_${index}`] = 'Location name is required'
+          if (!location.address) errors[`pickup_address_${index}`] = 'Address is required'
+        })
+      }
+
+      if (!formState.dropoffLocations || formState.dropoffLocations.length === 0) {
+        errors.dropoffLocations = 'At least one dropoff location is required'
+      } else {
+        formState.dropoffLocations.forEach((location, index) => {
+          if (!location.location) errors[`dropoff_location_${index}`] = 'Location name is required'
+          if (!location.address) errors[`dropoff_address_${index}`] = 'Address is required'
+        })
+      }
+    }
+
+    setValidationErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  // Handle next button with validation
+  const handleNext = () => {
+    setCurrentTab(currentTab + 1)
+  }
+
+
+
   // Handle form submission
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    if (e) e.preventDefault()
+    if (!validateCurrentTab()) return
     setLoading(true)
     try {
       // Normalize and resolve references for drivers, vehicles, costCentre, etc.
@@ -750,7 +868,16 @@ const TripForm = ({ onClose, id }) => {
         ? formState.dropoffLocations.map((loc) => ({ ...loc }))
         : []
 
-      // 7. Prepare tripData with both camelCase and snake_case for all relevant fields
+      // 7. Resolve waypoints with client and stop point relationships
+      const resolvedWaypoints = Array.isArray(formState.waypoints)
+        ? formState.waypoints.map((waypoint) => ({
+          ...waypoint,
+          clientId: waypoint.clientId || null,
+          stopPointId: waypoint.stopPointId || null,
+        }))
+        : []
+
+      // 8. Prepare tripData with both camelCase and snake_case for all relevant fields
       const tripData = {
         ...formState,
         route: `${formState.origin} to ${formState.destination}`,
@@ -763,9 +890,9 @@ const TripForm = ({ onClose, id }) => {
         clientDetails: resolvedClientDetails,
         pickupLocations: resolvedPickupLocations,
         dropoffLocations: resolvedDropoffLocations,
+        waypoints: resolvedWaypoints,
         // snake_case for DB compatibility
         vehicle_assignments: resolvedVehicleAssignments,
-        cost_centre: resolvedCostCentre,
         client_details: resolvedClientDetails,
         pickup_locations: resolvedPickupLocations,
         dropoff_locations: resolvedDropoffLocations,
@@ -783,7 +910,6 @@ const TripForm = ({ onClose, id }) => {
         selected_stop_points: formState.selectedStopPoints,
         stopPoints: formState.stopPoints,
         stop_points: formState.stopPoints,
-        waypoints: formState.waypoints,
       }
       if (!tripData.id || isNaN(Number(tripData.id))) {
         delete tripData.id
@@ -832,17 +958,17 @@ const TripForm = ({ onClose, id }) => {
       type: 'number',
       required: true,
     },
-    {
-      type: 'select',
-      htmlFor: 'costCentre',
-      label: 'Cost Centre',
-      placeholder: 'Select cost centre',
-      value: formState.costCentre,
-      required: true,
-      options: costCentres?.map((cc) => {
-        return { value: cc.id, label: cc.name }
-      }),
-    },
+    // {
+    //   type: 'select',
+    //   htmlFor: 'costCentre',
+    //   label: 'Cost Centre',
+    //   placeholder: 'Select cost centre',
+    //   value: formState.costCentre,
+    //   required: true,
+    //   options: costCentres?.map((cc) => {
+    //     return { value: cc.id, label: cc.name }
+    //   }),
+    // },
 
     {
       htmlFor: 'startDate',
@@ -1057,6 +1183,7 @@ const TripForm = ({ onClose, id }) => {
               removeVehicle={removeVehicle}
               drivers={drivers}
               vehicles={vehicles}
+              trailers={trailer}
               handleVehicleDriverChange={handleVehicleDriverChange}
               addVehicleDriver={addVehicleDriver}
               removeVehicleDriver={removeVehicleDriver}
@@ -1076,6 +1203,9 @@ const TripForm = ({ onClose, id }) => {
               addDropoffLocation={addDropoffLocation}
               removeDropoffLocation={removeDropoffLocation}
               handleStopPointChange={handleStopPointsChange}
+              handleWaypointChange={handleWaypointChange}
+              addWaypoint={addWaypoint}
+              removeWaypoint={removeWaypoint}
               clients={clients}
             />
           </TabsContent>
@@ -1146,6 +1276,7 @@ const TripForm = ({ onClose, id }) => {
           >
             Cancel
           </Button>
+
           <div className="flex gap-2">
             {currentTab > 0 && (
               <Button
@@ -1157,15 +1288,18 @@ const TripForm = ({ onClose, id }) => {
                 Previous
               </Button>
             )}
-            {currentTab < tabs.length - 1 ? (
+
+            {currentTab < 3 && (
               <Button
                 type="button"
-                onClick={() => setCurrentTab(currentTab + 1)}
+                onClick={handleNext}
                 disabled={loading}
               >
                 Next
               </Button>
-            ) : (
+            )}
+
+            {currentTab >= 3 && (
               <Button
                 type="submit"
                 disabled={loading}
@@ -1184,6 +1318,7 @@ const TripForm = ({ onClose, id }) => {
             )}
           </div>
         </div>
+
       </form>
     </div>
   )

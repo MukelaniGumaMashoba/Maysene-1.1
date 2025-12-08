@@ -4,42 +4,28 @@
 import { useEffect, useState, useRef } from 'react'
 
 // leaflet
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-// context
-import { useGlobalContext } from '@/context/global-context/context'
-
 // components
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
-
-// icons
-import { MapPin, Truck, User, Calendar, Clock } from 'lucide-react'
-
-// hooks
-import { getTripStatusBadge } from '@/hooks/use-badges'
-import PageLoader from '../ui/loader'
 import { ClipLoader } from 'react-spinners'
-import DetailCard from '../ui/detail-card'
-// Create custom marker icon
-const createCustomIcon = (status) => {
+// Create custom marker icon based on location type
+const createCustomIcon = (type) => {
   if (typeof window === 'undefined') return null
 
   const L = require('leaflet')
   const colors = {
-    'in-progress': '#3b82f6', // blue
-    delayed: '#ef4444', // red
-    completed: '#10b981', // green
-    pending: '#f59e0b', // amber
+    pickup: '#10b981', // green
+    dropoff: '#ef4444', // red
+    waypoint: '#3b82f6', // blue
+    stop: '#f59e0b', // amber
   }
 
   return L.divIcon({
     className: 'custom-marker',
     html: `<div style="
-        background-color: ${colors[status] || '#6b7280'};
+        background-color: ${colors[type] || '#6b7280'};
         width: 20px;
         height: 20px;
         border-radius: 50%;
@@ -69,18 +55,35 @@ const createCustomIcon = (status) => {
 // }
 async function geocodeAddress(address) {
   if (!address) return null
+  
   try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+    
     const res = await fetch(
       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
         address
-      )}&format=json`
+      )}&format=json&limit=1`,
+      { signal: controller.signal }
     )
+    
+    clearTimeout(timeoutId)
+    
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    
     const data = await res.json()
     if (data?.[0]) {
-      return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
+      return { 
+        lat: parseFloat(data[0].lat), 
+        lng: parseFloat(data[0].lon) 
+      }
     }
   } catch (err) {
-    console.error('Geocoding error:', err)
+    if (err.name === 'AbortError') {
+      console.warn('Geocoding timeout for:', address)
+    } else {
+      console.warn('Geocoding error for:', address, err.message)
+    }
   }
   return null
 }
@@ -94,130 +97,150 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 })
 
-export default function TripMapView() {
-  const { trips } = useGlobalContext()
+export default function TripMapView({ tripData }) {
   const [markers, setMarkers] = useState([])
-  const [selectedTrip, setSelectedTrip] = useState(null)
-  const [isClient, setIsClient] = useState(false)
-  const mapRef = useRef(null)
+  const [mapCenter, setMapCenter] = useState([-26.2041, 28.0473])
+  const [routeGeometry, setRouteGeometry] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!trips?.data?.length) return
+    if (!tripData) return
 
-    const processTrips = async () => {
+    const processTrip = async () => {
       const collectedMarkers = []
 
-      for (const trip of trips.data) {
-        const label = trip.id
-        //console.log('label', label)
-        // Geocode pickup locations
-        for (const pickup of trip.pickupLocations || []) {
-          console.log('pickup', pickup)
+      // Parse JSON fields
+      const parseField = (field) => {
+        if (!field) return []
+        if (typeof field === 'string') {
+          try {
+            return JSON.parse(field)
+          } catch {
+            return []
+          }
+        }
+        return Array.isArray(field) ? field : []
+      }
+
+      const pickupLocations = parseField(tripData.pickupLocations || tripData.pickup_locations)
+      const dropoffLocations = parseField(tripData.dropoffLocations || tripData.dropoff_locations)
+
+      // Geocode and add pickup locations
+      for (let i = 0; i < pickupLocations.length; i++) {
+        const pickup = pickupLocations[i]
+        if (pickup.address) {
           const coords = await geocodeAddress(pickup.address)
-          if (coords) {
-            collectedMarkers.push({
-              ...coords,
-              label: `${label} - Pickup`,
-              address: pickup.address,
-            })
-          }
+          collectedMarkers.push({
+            lat: coords?.lat || (-26.2041 + i * 0.01),
+            lng: coords?.lng || (28.0473 + i * 0.01),
+            label: `Pickup - ${pickup.location || 'Location'}`,
+            address: pickup.address,
+            type: 'pickup'
+          })
         }
+      }
 
-        // Geocode dropoff locations
-        for (const dropoff of trip.dropoffLocations || []) {
+      // Geocode and add dropoff locations
+      for (let i = 0; i < dropoffLocations.length; i++) {
+        const dropoff = dropoffLocations[i]
+        if (dropoff.address) {
           const coords = await geocodeAddress(dropoff.address)
-          if (coords) {
-            collectedMarkers.push({
-              ...coords,
-              label: `${label} - Dropoff`,
-              address: dropoff.address,
-            })
-          }
-        }
-
-        // Geocode stop points if present
-        for (const stop of trip.selectedStopPoints || []) {
-          const coords = await geocodeAddress(stop.address)
-          if (coords) {
-            collectedMarkers.push({
-              ...coords,
-              label: `${label} - Stop`,
-              address: stop.address,
-            })
-          }
+          collectedMarkers.push({
+            lat: coords?.lat || (-26.1941 + i * 0.01),
+            lng: coords?.lng || (28.0573 + i * 0.01),
+            label: `Dropoff - ${dropoff.location || 'Location'}`,
+            address: dropoff.address,
+            type: 'dropoff'
+          })
         }
       }
 
       setMarkers(collectedMarkers)
+      
+      // Set map center to first pickup location (start point)
+      const firstPickup = collectedMarkers.find(m => m.type === 'pickup')
+      if (firstPickup) {
+        setMapCenter([firstPickup.lat, firstPickup.lng])
+      } else if (collectedMarkers.length > 0) {
+        setMapCenter([collectedMarkers[0].lat, collectedMarkers[0].lng])
+      }
+      
+      setLoading(false)
+
+      // Get Mapbox navigation route
+      if (collectedMarkers.length > 1) {
+        const coordinates = collectedMarkers.map(m => `${m.lng},${m.lat}`).join(';')
+        try {
+          const response = await fetch(
+            `https://api.mapbox.com/directions/v5/mapbox/driving/${coordinates}?geometries=geojson&access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`
+          )
+          const data = await response.json()
+          if (data.routes && data.routes[0]) {
+            setRouteGeometry(data.routes[0].geometry.coordinates.map(coord => [coord[1], coord[0]]))
+          }
+        } catch (error) {
+          console.warn('Failed to get navigation route:', error)
+        }
+      }
     }
 
-    processTrips()
-  }, [trips])
-  console.log(markers)
-  // useEffect(() => {
-  //   geocodeAddress('1600 Amphitheatre Parkway, Mountain View, CA')
-  //     .then((coords) => console.log(coords)) // { lat: 37.422, lng: -122.084 }
-  //     .catch(console.error)
-  // }, [])
+    processTrip()
+  }, [tripData])
+  if (loading) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+          <p className="text-gray-500">Loading trip route...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!tripData || markers.length === 0) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-gray-50">
+        <p className="text-gray-500">No locations found for this trip</p>
+      </div>
+    )
+  }
 
   return (
-    <div className="w-full h-[100vh] rounded-md overflow-hidden">
-      {trips?.data && markers?.length > 0 ? (
-        <div className="w-full h-full relative">
-          <MapContainer
-            center={[-26.2041, 28.0473]}
-            zoom={10}
-            scrollWheelZoom={false}
-            style={{ height: '100%', width: '100%' }}
+    <div className="w-full h-full rounded-md overflow-hidden">
+      <MapContainer
+        center={mapCenter}
+        zoom={12}
+        scrollWheelZoom={true}
+        style={{ height: '100%', width: '100%' }}
+      >
+        <TileLayer
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+        />
+        {/* Navigation Route */}
+        {routeGeometry && (
+          <Polyline
+            positions={routeGeometry}
+            color="#3b82f6"
+            weight={5}
+            opacity={0.8}
+          />
+        )}
+        
+        {/* Markers */}
+        {markers.map((marker, idx) => (
+          <Marker
+            key={idx}
+            icon={createCustomIcon(marker.type)}
+            position={[marker.lat, marker.lng]}
           >
-            <TileLayer
-              // attribution="&copy; OpenStreetMap contributors"
-              // url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              //url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-            />
-
-            {markers.map((marker, idx) => (
-              <Marker
-                key={idx}
-                icon={createCustomIcon(marker.status)}
-                position={[marker.lat, marker.lng]}
-              >
-                <Popup>
-                  <strong>{marker.label}</strong>
-                  <br />
-                  {marker.address}
-                </Popup>
-              </Marker>
-            ))}
-
-            {/* <Marker position={[-26.2041, 28.0473]}>
-          <Popup>Hello from Johannesburg!</Popup>
-        </Marker> */}
-          </MapContainer>
-          <div className="w-full h-[200px]  z-10 absolute bottom-0 left-0 ">
-            <ScrollArea className="w-full h-[200px] whitespace-nowrap ">
-              <div className="flex space-x-4 p-4 overflow-x-auto">
-                {trips?.data?.map((trip) => (
-                  <div key={trip.id} className="w-[350px] h-full">
-                    <DetailCard
-                      title={trip.id}
-                      description={trip.clientDetails.name}
-                    >
-                      {trip.id}
-                    </DetailCard>
-                  </div>
-                ))}
-              </div>
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
-          </div>
-        </div>
-      ) : (
-        <div className="w-full h-full flex items-center justify-center bg-white/70 z-50">
-          <ClipLoader color="#000" size={50} />
-        </div>
-      )}
+            <Popup>
+              <strong>{marker.label}</strong>
+              <br />
+              {marker.address}
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
     </div>
   )
 }

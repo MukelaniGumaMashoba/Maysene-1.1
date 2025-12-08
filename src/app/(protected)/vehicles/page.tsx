@@ -35,21 +35,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogHeader,
-  DialogContent,
-  DialogTrigger,
-  DialogTitle,
-  DialogClose,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import Link from "next/link";
-import { DataTable } from "@/components/ui/data-table";
-import { initialVehiclesState } from "@/context/vehicles-context/context";
+// import { DataTable } from "@/components/ui/data-table";
+// import { initialVehiclesState } from "@/context/vehicles-context/context";
 
 const vehicleFormSchema = z.object({
-  id: z.number().int().min(1, "Registration number is required"),
+  id: z.number().int().optional(),
   registration_number: z.string().min(1, "Registration number is required"),
   engine_number: z.string().min(1, "Engine number is required"),
   vin_number: z.string().min(1, "VIN number is required"),
@@ -82,6 +74,8 @@ const vehicleFormSchema = z.object({
   expected_boarding_date: z.string().optional(),
   cost_centres: z.string().optional(),
   colour: z.string().min(1, "Colour is required"),
+  monthly_premium: z.string().optional(),
+  hourly_rate: z.string().optional(),
   created_by: z.string().optional(),
   created_at: z.string().optional(),
   updated_at: z.string().optional(),
@@ -106,10 +100,15 @@ interface Driver {
   email_address?: string | null;
 }
 
+interface CostCenter {
+  id: number;
+  company: string;
+  cost_code: string;
+}
+
 export default function Vehicles() {
   const [vehicles, setVehicles] = useState<VehicleFormValues[]>([]);
   const [isAddingVehicle, setIsAddingVehicle] = useState(false);
-  const [selectedVehicleReg, setSelectedVehicleReg] = useState("");
   const router = useRouter();
   const supabase = createClient();
   const [search, setSearch] = useState("");
@@ -120,6 +119,7 @@ export default function Vehicles() {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [filteredDrivers, setFilteredDrivers] = useState<Driver[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  // const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
 
   useEffect(() => {
     const getDrivers = async () => {
@@ -131,7 +131,22 @@ export default function Vehicles() {
       }
       setDrivers(data as []);
     };
+    
+    // const getCostCenters = async () => {
+    //   const { data, error } = await supabase
+    //     .from("level_3_cost_centers")
+    //     .select("id, company, cost_code")
+    //     .order("company");
+    //   if (error) {
+    //     console.error("Error fetching cost centers:", error);
+    //     setCostCenters([]);
+    //     return;
+    //   }
+    //   setCostCenters(data as CostCenter[]);
+    // };
+    
     getDrivers();
+    // getCostCenters();
   }, []);
 
   useEffect(() => {
@@ -143,34 +158,16 @@ export default function Vehicles() {
     setFilteredDrivers(filtered);
   }, [searchTerm, drivers]);
 
-  const useWorkshopId = () => {
-    const [workshopId, setWorkshopId] = useState<string | null>(null);
-    useEffect(() => {
-      const fetchWorkshopId = async () => {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const userId = sessionData?.session?.user?.id;
-        if (!userId) return;
 
-        const { data, error } = await supabase
-          .from("users")
-          .select("workshop_id")
-          .eq("id", userId)
-          .single();
-
-        if (data && !error) {
-          setWorkshopId(data.workshop_id);
-        }
-      };
-
-      fetchWorkshopId();
-    }, []);
-
-    return workshopId;
-  };
-  const workshopId = useWorkshopId();
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [filteredTechs, setFilteredTechs] = useState<Technician[]>([]);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedVehicle, setSelectedVehicle] = useState<VehicleFormValues | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingVehicleId, setEditingVehicleId] = useState<number | null>(null);
+  // const [equipmentData, setEquipmentData] = useState<any[]>([]);
+  const [isEquipmentSheetOpen, setIsEquipmentSheetOpen] = useState(false);
+  // const [equipmentVehicleReg, setEquipmentVehicleReg] = useState("");
   
   
 
@@ -217,10 +214,10 @@ export default function Vehicles() {
   const filteredVehicles = vehicles.filter((vehicle) => {
     const searchLower = search.toLowerCase();
     return (
-      vehicle.make.toLowerCase().includes(searchLower) ||
-      vehicle.model.toLowerCase().includes(searchLower) ||
-      vehicle.registration_number.toLowerCase().includes(searchLower) ||
-      vehicle.vehicle_type.toLowerCase().includes(searchLower)
+      (vehicle.make || '').toLowerCase().includes(searchLower) ||
+      (vehicle.model || '').toLowerCase().includes(searchLower) ||
+      (vehicle.registration_number || '').toLowerCase().includes(searchLower) ||
+      (vehicle.vehicle_type || '').toLowerCase().includes(searchLower)
     );
   });
 
@@ -248,7 +245,6 @@ export default function Vehicles() {
     const { data: vehicles, error } = await supabase
       .from("vehiclesc")
       .select("*")
-      .or("type.is.null,type.eq.internal");
     if (error) {
       console.error("the error is", error.name, error.message);
     } else {
@@ -285,8 +281,8 @@ export default function Vehicles() {
       sub_model: "",
       manufactured_year: "",
       vehicle_type: "vehicle",
-      registration_date: new Date().toISOString(),
-      license_expiry_date: new Date().toISOString(),
+      registration_date: new Date().toISOString().split('T')[0],
+      license_expiry_date: new Date().toISOString().split('T')[0],
       purchase_price: "",
       retail_price: "",
       vehicle_priority: "medium",
@@ -297,9 +293,11 @@ export default function Vehicles() {
       take_on_kilometers: "",
       service_intervals: "",
       boarding_km_hours: "",
-      expected_boarding_date: new Date().toISOString(),
+      expected_boarding_date: new Date().toISOString().split('T')[0],
       cost_centres: "",
       colour: "",
+      monthly_premium: "",
+      hourly_rate: "",
       // created_by: '',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -307,24 +305,77 @@ export default function Vehicles() {
   });
 
   const onSubmit = async (data: VehicleFormValues) => {
-    await handleAddVehicle(data);
-    fetchVehicles();
+    console.log('onSubmit called with data:', data);
+    console.log('Form errors:', form.formState.errors);
+    try {
+      if (isEditing && editingVehicleId) {
+        await handleUpdateVehicle(data);
+      } else {
+        await handleAddVehicle(data);
+      }
+      fetchVehicles();
+    } catch (error) {
+      console.error('Form submission error:', error);
+      toast.error('Form submission failed: ' + (error as Error).message);
+    }
   };
 
   const handleAddVehicle = async (data: VehicleFormValues) => {
+    console.log('Form data received:', data);
+    const { id, ...dataWithoutId } = data;
+    const vehicleData = {
+      ...dataWithoutId,
+      monthly_premium: data.monthly_premium ? parseFloat(data.monthly_premium.replace(/[^0-9.]/g, '')) : null,
+      hourly_rate: data.hourly_rate ? parseFloat(data.hourly_rate.replace(/[^0-9.]/g, '')) : null
+    };
+    console.log('Vehicle data to insert:', vehicleData);
     const { data: vehicle, error } = await supabase
       .from("vehiclesc")
       // @ts-expect-error
-      .insert(data);
+      .insert(vehicleData);
     if (error) {
       console.error(error.message);
+      toast.error("Failed to add vehicle: " + error.message);
+      throw new Error(error.message);
     } else {
       console.log(vehicle);
       toast.success("Vehicle added successfully");
-      alert("Vehicle added successfully");
       fetchVehicles();
       form.reset();
       setIsAddingVehicle(false);
+      setIsEditing(false);
+      setEditingVehicleId(null);
+      router.refresh();
+    }
+  };
+
+  const handleUpdateVehicle = async (data: VehicleFormValues) => {
+    if (!editingVehicleId) return;
+    
+    const vehicleData = {
+      ...data,
+      monthly_premium: data.monthly_premium ? parseFloat(data.monthly_premium.replace(/[^0-9.]/g, '')) : null,
+      hourly_rate: data.hourly_rate ? parseFloat(data.hourly_rate.replace(/[^0-9.]/g, '')) : null
+    };
+    
+    const { error } = await supabase
+      .from("vehiclesc")
+
+      // @ts-expect-error
+      .update(vehicleData)
+      .eq("id", editingVehicleId);
+    
+    if (error) {
+      console.error(error.message);
+      toast.error("Failed to update vehicle: " + error.message);
+      throw new Error(error.message);
+    } else {
+      toast.success("Vehicle updated successfully");
+      fetchVehicles();
+      form.reset();
+      setIsAddingVehicle(false);
+      setIsEditing(false);
+      setEditingVehicleId(null);
       router.refresh();
     }
   };
@@ -339,13 +390,13 @@ export default function Vehicles() {
 
   const getPriorityBadge = (priority: string) => {
     const colors = {
-      high: "bg-red-100 text-red-800",
-      medium: "bg-yellow-100 text-yellow-800",
-      low: "bg-green-100 text-green-800",
+      high: "bg-red-100 text-red-700 border-red-200",
+      medium: "bg-amber-100 text-amber-700 border-amber-200",
+      low: "bg-green-100 text-green-700 border-green-200",
     };
     return (
-      <Badge className={colors[priority as keyof typeof colors]}>
-        {priority}
+      <Badge className={`${colors[priority as keyof typeof colors]} text-xs px-2 py-0.5 font-medium border`}>
+        {priority?.toUpperCase() || 'N/A'}
       </Badge>
     );
   };
@@ -381,9 +432,6 @@ export default function Vehicles() {
     }
     console.log("Technician assigned successfully:", datav);
   }
-
-  const { columns } = initialVehiclesState;
-  // console.log("The vehicles are", columns)
 
   return (
     <div className="space-y-6">
@@ -473,7 +521,7 @@ export default function Vehicles() {
       {isAddingVehicle && (
         <Card>
           <CardHeader>
-            <CardTitle>Add New Vehicle</CardTitle>
+            <CardTitle>{isEditing ? 'Edit Vehicle' : 'Add New Vehicle'}</CardTitle>
           </CardHeader>
           {/* <CardContent>
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 mb-6 flex flex-col items-center bg-gray-50">
@@ -609,6 +657,34 @@ export default function Vehicles() {
 
                   <FormField
                     control={form.control}
+                    name="engine_number"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Engine Number *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="ENG123456" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="vin_number"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>VIN Number *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="VIN123456789" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
                     name="sub_model"
                     render={({ field }) => (
                       <FormItem>
@@ -629,6 +705,34 @@ export default function Vehicles() {
                         <FormLabel>Manufactured Year *</FormLabel>
                         <FormControl>
                           <Input placeholder="2023" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="registration_date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Registration Date *</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="license_expiry_date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>License Expiry Date *</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -716,19 +820,30 @@ export default function Vehicles() {
                     )}
                   />
 
-                  <FormField
+                  {/* <FormField
                     control={form.control}
                     name="cost_centres"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Cost Centres</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., Admin Dept" {...field} />
-                        </FormControl>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select cost centre" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {costCenters.map((center) => (
+                              <SelectItem key={center.id} value={center.company}>
+                                {center.company}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
-                  />
+                  /> */}
 
                   <FormField
                     control={form.control}
@@ -853,21 +968,84 @@ export default function Vehicles() {
                       </FormItem>
                     )}
                   />
+
+                  <FormField
+                    control={form.control}
+                    name="monthly_premium"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Monthly Premium</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="R 5,000" 
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e);
+                              const value = e.target.value.replace(/[^0-9.]/g, '');
+                              if (value) {
+                                const monthly = parseFloat(value);
+                                const hourly = (monthly / 30 / 8).toFixed(2);
+                                form.setValue('hourly_rate', hourly);
+                              } else {
+                                form.setValue('hourly_rate', '');
+                              }
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="hourly_rate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Hourly Rate (Auto-calculated)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="R 20.83" 
+                            {...field}
+                            readOnly
+                            className="bg-gray-50"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
 
                 <div className="flex gap-4">
                   <Button
-                    onClick={() => handleAddVehicle(form.getValues())}
                     type="submit"
                     className="bg-blue-600 hover:bg-blue-700"
+                    onClick={() => {
+                      const errors = form.formState.errors;
+                      console.log('All errors:', JSON.stringify(errors, null, 2));
+                      toast.error('Button clicked - check console for errors');
+                      
+                      if (Object.keys(errors).length > 0) {
+                        Object.entries(errors).forEach(([field, error]) => {
+                          console.log(`Field ${field}:`, error);
+                          toast.error(`${field}: ${error?.message || 'Invalid'}`);
+                        });
+                      }
+                    }}
                   >
                     <FileText className="w-4 h-4 mr-2" />
-                    Save Vehicle
+                    {isEditing ? 'Update Vehicle' : 'Save Vehicle'}
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setIsAddingVehicle(false)}
+                    onClick={() => {
+                      setIsAddingVehicle(false);
+                      setIsEditing(false);
+                      setEditingVehicleId(null);
+                      form.reset();
+                    }}
                   >
                     Cancel
                   </Button>
@@ -893,193 +1071,256 @@ export default function Vehicles() {
             </div>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Make & Model</TableHead>
-                  <TableHead>Registration</TableHead>
-                  <TableHead>Year</TableHead>
-                  <TableHead>Fuel</TableHead>
-                  <TableHead>Color</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Priority</TableHead>
-                  <TableHead>Driver</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredVehicles.map((vehicle, index) => (
-                  <TableRow
-                    key={vehicle.id}
-                    className={getRowBg(vehicle?.vehicle_type)}
-                  >
-                    <TableCell className="flex items-center gap-2">
-                      {getVehicleTypeIcon(vehicle.vehicle_type)}
-                      <span>
-                        {vehicle.make} {vehicle.model}
-                      </span>
-                    </TableCell>
-                    <TableCell>{vehicle.registration_number}</TableCell>
-                    <TableCell>{vehicle.manufactured_year}</TableCell>
-                    <TableCell>{vehicle.fuel_type}</TableCell>
-                    <TableCell>{vehicle.colour}</TableCell>
-                    <TableCell className="capitalize">
-                      {vehicle.vehicle_type}
-                    </TableCell>
-                    <TableCell>
-                      {getPriorityBadge(vehicle.vehicle_priority)}
-                    </TableCell>
-                    {/* <TableCell>
-                      {technicians.find(tech => tech.id === vehicle.tech_id)?.name || " "}
-                    </TableCell> */}
-                    <TableCell className="flex items-center gap-2">
-                      {drivers.find(
-                        (driver) => driver.id === vehicle.driver_id
-                      ) ? (
-                        <>
-                          <span>
-                            {
-                              drivers.find(
-                                (driver) => driver.id === vehicle.driver_id
-                              )?.first_name
-                            }{" "}
-                            {
-                              drivers.find(
-                                (driver) => driver.id === vehicle.driver_id
-                              )?.surname
-                            }
-                          </span>
-                          <Button
+            <div className="border border-slate-200 rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50 border-b border-slate-200">
+                    <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Registration</TableHead>
+                    <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Make/Model</TableHead>
+                    <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Type</TableHead>
+                    <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Year</TableHead>
+                    <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Fuel</TableHead>
+                    <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Priority</TableHead>
+                    <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Driver</TableHead>
+                    <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredVehicles.map((vehicle, index) => (
+                    <TableRow
+                      key={vehicle.id}
+                      className="h-12 hover:bg-slate-50 border-b border-slate-100 transition-colors"
+                    >
+                      <TableCell className="px-3 py-2 text-sm font-medium text-slate-900">{vehicle.registration_number || '-'}</TableCell>
+                      <TableCell className="px-3 py-2 text-sm text-slate-700">
+                        <div className="flex flex-col">
+                          <span className="font-medium">{vehicle.make || '-'}</span>
+                          <span className="text-xs text-slate-500">{vehicle.model || '-'}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-3 py-2 text-sm text-slate-700">
+                        <div className="flex items-center gap-1">
+                          {getVehicleTypeIcon(vehicle.vehicle_type)}
+                          <span className="capitalize text-xs">{vehicle.vehicle_type || '-'}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-3 py-2 text-sm text-slate-700">{vehicle.manufactured_year || '-'}</TableCell>
+                      <TableCell className="px-3 py-2 text-sm text-slate-700">
+                        <span className="capitalize text-xs">{vehicle.fuel_type || '-'}</span>
+                      </TableCell>
+                      <TableCell className="px-3 py-2 text-sm">
+                        {getPriorityBadge(vehicle.vehicle_priority)}
+                      </TableCell>
+                      <TableCell className="px-3 py-2 text-sm text-slate-700">
+                        {drivers.find(driver => driver.id === vehicle.driver_id) ? (
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs">
+                              {drivers.find(driver => driver.id === vehicle.driver_id)?.first_name} {drivers.find(driver => driver.id === vehicle.driver_id)?.surname}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400">Unassigned</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="px-3 py-2">
+                        <div className="flex gap-1">
+                          <Button 
+                            variant="outline" 
                             size="sm"
-                            variant="outline"
-                            className="ml-2"
-                            onClick={async () => {
-                              // Clear driver assignment
-                              const { error } = await supabase
-                                .from("vehiclesc")
-                                .update({ driver_id: null })
-                                .eq("id", vehicle.id);
-
-                              if (error) {
-                                alert(
-                                  "Failed to unassign driver: " + error.message
-                                );
-                                console.error(error);
-                              } else {
-                                toast.success("Driver unassigned successfully");
-                                alert("Driver unassigned successfully");
-                                fetchVehicles();
-                                router.refresh(); // refresh list to show update
-                              }
+                            className="h-7 px-2 text-xs"
+                            onClick={() => {
+                              setSelectedVehicle(vehicle);
+                              setIsSheetOpen(true);
                             }}
                           >
-                            Unassign
+                            View
                           </Button>
-                        </>
-                      ) : (
-                        <span>Not Assigned</span>
-                      )}
-                    </TableCell>
-
-                    <TableCell>
-                      <div className="flex flex-row gap-3">
-                        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                          <DialogTrigger asChild>
-                            {/* <Button
-                              variant="outline"
-                              className="px-4 py-2"
-                              onClick={() => {
-                                setSelectedVehicleReg(vehicle.registration_number);
-                                setSelectedVehicleId(vehicle.id); // NEW: store actual ID
-                                setDialogOpen(true);
-                              }}
-                            >
-                              Assign
-                            </Button> */}
-                          </DialogTrigger>
-                          <DialogContent className="sm:max-w-md w-full">
-                            <DialogTitle>Assign Driver</DialogTitle>
-                            <DialogDescription>
-                              Assign driver for vehicle with registration:{" "}
-                              <strong>{selectedVehicleReg}</strong>
-                            </DialogDescription>
-                            {/* technician search & list */}
-                            <Input
-                              placeholder="Search driver by name"
-                              value={searchTerm}
-                              onChange={(e) => setSearchTerm(e.target.value)}
-                              className="mb-4"
-                            />
-                            <div className="max-h-60 overflow-auto space-y-2">
-                              {/* {filteredTechs.length > 0 ? (
-                                filteredTechs.map((tech, index) => (
-                                  <button
-                                    key={tech.id}
-                                    onClick={() => {
-                                      if (selectedVehicleId) {
-                                        handleAssign(selectedVehicleId, tech.id);
-                                        setDialogOpen(false);
-                                      }
-                                    }}
-                                    className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-                                  >
-                                    {tech.name}
-                                  </button>
-                                ))
-                              ) : (
-                                <p className="text-center text-sm text-gray-500 py-4">No technicians found</p>
-                              )} */}
-                              {filteredDrivers.length > 0 ? (
-                                filteredDrivers.map((driver) => (
-                                  <button
-                                    key={driver.id}
-                                    onClick={() => {
-                                      if (selectedVehicleId) {
-                                        handleAssignDriver(
-                                          selectedVehicleId,
-                                          driver.id
-                                        );
-                                        setDialogOpen(false);
-                                      }
-                                    }}
-                                    className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-                                  >
-                                    {driver.first_name} {driver.surname}
-                                  </button>
-                                ))
-                              ) : (
-                                <p className="text-center text-sm text-gray-500 py-4">
-                                  No drivers found
-                                </p>
-                              )}
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-
-                        <Link href={`/vehicles/${vehicle.id}`}>
-                          <Button variant="default">View</Button>
-                        </Link>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                          {/* <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="h-7 px-2 text-xs"
+                            onClick={async () => {
+                              setEquipmentVehicleReg(vehicle.registration_number || '');
+                              await fetchEquipmentData(vehicle.registration_number || '');
+                              setIsEquipmentSheetOpen(true);
+                            }}
+                          >
+                            Equipment
+                          </Button> */}
+                          <Link href={`/vehicles/${vehicle.id}`}>
+                            <Button variant="default" size="sm" className="h-7 px-2 text-xs bg-slate-700 hover:bg-slate-800">Details</Button>
+                          </Link>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       )}
 
-      {columns && vehicles && vehicles.length > 0 && (
-        <DataTable
-          columns={columns()}
-          data={vehicles}
-          filterColumn={""}
-          filterPlaceholder={""}
-          // csv_headers={[]}
-          // csv_rows={[]}
-          href={`/vehicles`}
-        />
-      )}
+      {/* Vehicle Details Sheet */}
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent className="w-[600px] max-w-[90vw] p-0 bg-white">
+          {selectedVehicle && (
+            <>
+              {/* Header */}
+              <div className="bg-slate-50 border-b border-slate-200 p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex items-center justify-center w-10 h-10 bg-slate-700 rounded-lg">
+                      {getVehicleTypeIcon(selectedVehicle.vehicle_type)}
+                    </div>
+                    <div>
+                      <SheetTitle className="text-xl font-bold text-slate-900">
+                        {selectedVehicle.registration_number || 'Vehicle Details'}
+                      </SheetTitle>
+                      <p className="text-sm text-slate-600 mt-1">
+                        {selectedVehicle.make} {selectedVehicle.model} • {selectedVehicle.manufactured_year}
+                      </p>
+                    </div>
+                  </div>
+                  {getPriorityBadge(selectedVehicle.vehicle_priority)}
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="overflow-y-auto h-[calc(100vh-140px)] p-6 space-y-6">
+                {/* Basic Information */}
+                <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                  <div className="flex items-center space-x-2 mb-4">
+                    <div className="w-6 h-6 bg-slate-600 rounded flex items-center justify-center">
+                      <Car className="w-3 h-3 text-white" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">Basic Information</h3>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Registration</p>
+                      <p className="text-sm font-medium text-slate-900 mt-1">{selectedVehicle.registration_number || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Engine Number</p>
+                      <p className="text-sm text-slate-700 mt-1">{selectedVehicle.engine_number || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">VIN Number</p>
+                      <p className="text-sm text-slate-700 mt-1">{selectedVehicle.vin_number || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Color</p>
+                      <p className="text-sm text-slate-700 mt-1">{selectedVehicle.colour || '-'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Technical Details */}
+                <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                  <div className="flex items-center space-x-2 mb-4">
+                    <div className="w-6 h-6 bg-slate-600 rounded flex items-center justify-center">
+                      <Truck className="w-3 h-3 text-white" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">Technical Details</h3>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Fuel Type</p>
+                      <p className="text-sm text-slate-700 mt-1 capitalize">{selectedVehicle.fuel_type || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Transmission</p>
+                      <p className="text-sm text-slate-700 mt-1 capitalize">{selectedVehicle.transmission_type || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Tank Capacity</p>
+                      <p className="text-sm text-slate-700 mt-1">{selectedVehicle.tank_capacity ? `${selectedVehicle.tank_capacity}L` : '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Service Intervals</p>
+                      <p className="text-sm text-slate-700 mt-1">{selectedVehicle.service_intervals || '-'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Financial Information */}
+                <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                  <div className="flex items-center space-x-2 mb-4">
+                    <div className="w-6 h-6 bg-slate-600 rounded flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">R</span>
+                    </div>
+                    <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">Financial Information</h3>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Purchase Price</p>
+                      <p className="text-sm font-medium text-slate-900 mt-1">{selectedVehicle.purchase_price || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Retail Price</p>
+                      <p className="text-sm text-slate-700 mt-1">{selectedVehicle.retail_price || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Monthly Premium</p>
+                      <p className="text-sm text-slate-700 mt-1">{selectedVehicle.monthly_premium ? `R ${selectedVehicle.monthly_premium}` : '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Hourly Rate</p>
+                      <p className="text-sm text-slate-700 mt-1">{selectedVehicle.hourly_rate ? `R ${selectedVehicle.hourly_rate}` : '-'}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Cost Centres</p>
+                      <p className="text-sm text-slate-700 mt-1">{selectedVehicle.cost_centres || '-'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Assignment Information */}
+                <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                  <div className="flex items-center space-x-2 mb-4">
+                    <div className="w-6 h-6 bg-slate-600 rounded flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">A</span>
+                    </div>
+                    <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">Assignments</h3>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Assigned Driver</p>
+                      <p className="text-sm text-slate-700 mt-1">{
+                        drivers.find(d => d.id === selectedVehicle.driver_id) 
+                          ? `${drivers.find(d => d.id === selectedVehicle.driver_id)?.first_name} ${drivers.find(d => d.id === selectedVehicle.driver_id)?.surname}`
+                          : 'Not Assigned'
+                      }</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Assigned Technician</p>
+                      <p className="text-sm text-slate-700 mt-1">{
+                        technicians.find(t => t.id === selectedVehicle.tech_id)?.name || 'Not Assigned'
+                      }</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer Actions */}
+              <div className="border-t border-slate-200 p-4 bg-white">
+                <div className="flex justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsSheetOpen(false)}
+                    className="text-slate-600 border-slate-300"
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
+
     </div>
   );
 }

@@ -404,10 +404,6 @@ export default function ClientDetails({ id }) {
           </div>
           <Separator className="my-4" />
           <div className="mt-6">
-            <label className="text-sm font-medium text-gray-500">
-              Cost Centre location
-            </label>
-            <div className="mt-2 h-[200px] rounded-lg bg-gray-100 flex items-center justify-center">
               <DisplayMap
                 coords={client?.coords}
                 street={client?.street}
@@ -415,7 +411,6 @@ export default function ClientDetails({ id }) {
                 state={client?.state}
                 country={client?.country}
               />
-            </div>
           </div>
         </DetailCard>
       </div>

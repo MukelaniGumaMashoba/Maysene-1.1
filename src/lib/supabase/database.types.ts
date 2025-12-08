@@ -14,6 +14,254 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit: {
+        Row: {
+          actual_cpk: number | null
+          actual_distance: number | null
+          actual_driver_cost: number | null
+          actual_driving_time_minutes: number | null
+          actual_duration_minutes: number | null
+          actual_end_time: string | null
+          actual_finish_time: string | null
+          actual_fuel_cost: number | null
+          actual_start: string | null
+          actual_start_time: string | null
+          actual_total_cost: number | null
+          actual_vehicle_cost: number | null
+          cargo: string | null
+          cargo_weight: string | null
+          cargoweight: string | null
+          client_details: Json | null
+          clientdetails: Json | null
+          cost_centre: string | null
+          cost_variance: number | null
+          costcentre: Json | null
+          created_at: string | null
+          destination: string | null
+          distance: string | null
+          distance_variance: number | null
+          driver: string | null
+          driver_hourly_rate: number | null
+          drivers: Json | null
+          driving_time_variance_minutes: number | null
+          dropoff_locations: Json | null
+          dropofflocations: Json | null
+          duration_variance_minutes: number | null
+          end_date: string | null
+          enddate: string | null
+          finish_time_variance_minutes: number | null
+          fuel_price_used: number | null
+          id: number
+          load_inspection_id: number | null
+          notes: string | null
+          ordernumber: string | null
+          origin: string | null
+          pickup_locations: Json | null
+          pickuplocations: Json | null
+          planned_distance: number | null
+          planned_driver_cost: number | null
+          planned_driving_time_minutes: number | null
+          planned_duration_minutes: number | null
+          planned_finish_time: string | null
+          planned_fuel_cost: number | null
+          planned_start_time: string | null
+          planned_total_cost: number | null
+          planned_vehicle_cost: number | null
+          profit_margin_actual: number | null
+          rate: string | null
+          route: string | null
+          route_points: Json | null
+          selected_client: string | null
+          selected_stop_points: Json | null
+          selectedclient: string | null
+          selectedstoppoints: Json | null
+          start_time_variance_minutes: number | null
+          startdate: string | null
+          status: string
+          status_history: string[] | null
+          status_notes: string | null
+          statusnotes: string | null
+          stop_points: Json | null
+          stoppoints: Json | null
+          time_diff: number | null
+          trip_days_actual: number | null
+          trip_id: string | null
+          updated_at: string | null
+          vehicle: string | null
+          vehicle_assignments: Json | null
+          vehicle_type: string | null
+          vehicleassignments: Json | null
+          vehicles: Json | null
+          waypoints: Json | null
+        }
+        Insert: {
+          actual_cpk?: number | null
+          actual_distance?: number | null
+          actual_driver_cost?: number | null
+          actual_driving_time_minutes?: number | null
+          actual_duration_minutes?: number | null
+          actual_end_time?: string | null
+          actual_finish_time?: string | null
+          actual_fuel_cost?: number | null
+          actual_start?: string | null
+          actual_start_time?: string | null
+          actual_total_cost?: number | null
+          actual_vehicle_cost?: number | null
+          cargo?: string | null
+          cargo_weight?: string | null
+          cargoweight?: string | null
+          client_details?: Json | null
+          clientdetails?: Json | null
+          cost_centre?: string | null
+          cost_variance?: number | null
+          costcentre?: Json | null
+          created_at?: string | null
+          destination?: string | null
+          distance?: string | null
+          distance_variance?: number | null
+          driver?: string | null
+          driver_hourly_rate?: number | null
+          drivers?: Json | null
+          driving_time_variance_minutes?: number | null
+          dropoff_locations?: Json | null
+          dropofflocations?: Json | null
+          duration_variance_minutes?: number | null
+          end_date?: string | null
+          enddate?: string | null
+          finish_time_variance_minutes?: number | null
+          fuel_price_used?: number | null
+          id?: never
+          load_inspection_id?: number | null
+          notes?: string | null
+          ordernumber?: string | null
+          origin?: string | null
+          pickup_locations?: Json | null
+          pickuplocations?: Json | null
+          planned_distance?: number | null
+          planned_driver_cost?: number | null
+          planned_driving_time_minutes?: number | null
+          planned_duration_minutes?: number | null
+          planned_finish_time?: string | null
+          planned_fuel_cost?: number | null
+          planned_start_time?: string | null
+          planned_total_cost?: number | null
+          planned_vehicle_cost?: number | null
+          profit_margin_actual?: number | null
+          rate?: string | null
+          route?: string | null
+          route_points?: Json | null
+          selected_client?: string | null
+          selected_stop_points?: Json | null
+          selectedclient?: string | null
+          selectedstoppoints?: Json | null
+          start_time_variance_minutes?: number | null
+          startdate?: string | null
+          status?: string
+          status_history?: string[] | null
+          status_notes?: string | null
+          statusnotes?: string | null
+          stop_points?: Json | null
+          stoppoints?: Json | null
+          time_diff?: number | null
+          trip_days_actual?: number | null
+          trip_id?: string | null
+          updated_at?: string | null
+          vehicle?: string | null
+          vehicle_assignments?: Json | null
+          vehicle_type?: string | null
+          vehicleassignments?: Json | null
+          vehicles?: Json | null
+          waypoints?: Json | null
+        }
+        Update: {
+          actual_cpk?: number | null
+          actual_distance?: number | null
+          actual_driver_cost?: number | null
+          actual_driving_time_minutes?: number | null
+          actual_duration_minutes?: number | null
+          actual_end_time?: string | null
+          actual_finish_time?: string | null
+          actual_fuel_cost?: number | null
+          actual_start?: string | null
+          actual_start_time?: string | null
+          actual_total_cost?: number | null
+          actual_vehicle_cost?: number | null
+          cargo?: string | null
+          cargo_weight?: string | null
+          cargoweight?: string | null
+          client_details?: Json | null
+          clientdetails?: Json | null
+          cost_centre?: string | null
+          cost_variance?: number | null
+          costcentre?: Json | null
+          created_at?: string | null
+          destination?: string | null
+          distance?: string | null
+          distance_variance?: number | null
+          driver?: string | null
+          driver_hourly_rate?: number | null
+          drivers?: Json | null
+          driving_time_variance_minutes?: number | null
+          dropoff_locations?: Json | null
+          dropofflocations?: Json | null
+          duration_variance_minutes?: number | null
+          end_date?: string | null
+          enddate?: string | null
+          finish_time_variance_minutes?: number | null
+          fuel_price_used?: number | null
+          id?: never
+          load_inspection_id?: number | null
+          notes?: string | null
+          ordernumber?: string | null
+          origin?: string | null
+          pickup_locations?: Json | null
+          pickuplocations?: Json | null
+          planned_distance?: number | null
+          planned_driver_cost?: number | null
+          planned_driving_time_minutes?: number | null
+          planned_duration_minutes?: number | null
+          planned_finish_time?: string | null
+          planned_fuel_cost?: number | null
+          planned_start_time?: string | null
+          planned_total_cost?: number | null
+          planned_vehicle_cost?: number | null
+          profit_margin_actual?: number | null
+          rate?: string | null
+          route?: string | null
+          route_points?: Json | null
+          selected_client?: string | null
+          selected_stop_points?: Json | null
+          selectedclient?: string | null
+          selectedstoppoints?: Json | null
+          start_time_variance_minutes?: number | null
+          startdate?: string | null
+          status?: string
+          status_history?: string[] | null
+          status_notes?: string | null
+          statusnotes?: string | null
+          stop_points?: Json | null
+          stoppoints?: Json | null
+          time_diff?: number | null
+          trip_days_actual?: number | null
+          trip_id?: string | null
+          updated_at?: string | null
+          vehicle?: string | null
+          vehicle_assignments?: Json | null
+          vehicle_type?: string | null
+          vehicleassignments?: Json | null
+          vehicles?: Json | null
+          waypoints?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_load_inspection_id_fkey"
+            columns: ["load_inspection_id"]
+            isOneToOne: false
+            referencedRelation: "load_inspections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       billing_log: {
         Row: {
           created_at: string | null
@@ -38,6 +286,81 @@ export type Database = {
           process_date?: string
           process_type?: string
           status?: string
+        }
+        Relationships: []
+      }
+      boot_stock: {
+        Row: {
+          code: string | null
+          cost_excl_vat_zar: string | null
+          created_at: string | null
+          description: string | null
+          id: number
+          ip_addresses: Json | null
+          quantity: string | null
+          stock_type: string | null
+          supplier: string | null
+          total_value: string | null
+          USD: string | null
+        }
+        Insert: {
+          code?: string | null
+          cost_excl_vat_zar?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: never
+          ip_addresses?: Json | null
+          quantity?: string | null
+          stock_type?: string | null
+          supplier?: string | null
+          total_value?: string | null
+          USD?: string | null
+        }
+        Update: {
+          code?: string | null
+          cost_excl_vat_zar?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: never
+          ip_addresses?: Json | null
+          quantity?: string | null
+          stock_type?: string | null
+          supplier?: string | null
+          total_value?: string | null
+          USD?: string | null
+        }
+        Relationships: []
+      }
+      boot_stock_catalog: {
+        Row: {
+          code: string
+          cost_excl_vat_zar: string | null
+          created_at: string | null
+          description: string
+          id: number
+          stock_type: string | null
+          supplier: string | null
+          usd: string | null
+        }
+        Insert: {
+          code: string
+          cost_excl_vat_zar?: string | null
+          created_at?: string | null
+          description: string
+          id?: never
+          stock_type?: string | null
+          supplier?: string | null
+          usd?: string | null
+        }
+        Update: {
+          code?: string
+          cost_excl_vat_zar?: string | null
+          created_at?: string | null
+          description?: string
+          id?: never
+          stock_type?: string | null
+          supplier?: string | null
+          usd?: string | null
         }
         Relationships: []
       }
@@ -380,18 +703,25 @@ export type Database = {
           contact_person: string | null
           coords: string | null
           country: string | null
+          credit_limit: number | null
+          dormant_flag: boolean | null
           dropoff_locations: Json | null
           email: string | null
+          fax_number: string | null
           id: number
           industry: string | null
           name: string
           phone: string | null
           pickup_locations: Json | null
+          postal_code: string | null
+          registration_name: string | null
+          registration_number: string | null
           state: string | null
           status: string
           street: string | null
           tax_number: string | null
           vat_number: string | null
+          vat_registered: boolean | null
         }
         Insert: {
           address?: string | null
@@ -401,18 +731,25 @@ export type Database = {
           contact_person?: string | null
           coords?: string | null
           country?: string | null
+          credit_limit?: number | null
+          dormant_flag?: boolean | null
           dropoff_locations?: Json | null
           email?: string | null
+          fax_number?: string | null
           id?: number
           industry?: string | null
           name?: string
           phone?: string | null
           pickup_locations?: Json | null
+          postal_code?: string | null
+          registration_name?: string | null
+          registration_number?: string | null
           state?: string | null
           status?: string
           street?: string | null
           tax_number?: string | null
           vat_number?: string | null
+          vat_registered?: boolean | null
         }
         Update: {
           address?: string | null
@@ -422,18 +759,25 @@ export type Database = {
           contact_person?: string | null
           coords?: string | null
           country?: string | null
+          credit_limit?: number | null
+          dormant_flag?: boolean | null
           dropoff_locations?: Json | null
           email?: string | null
+          fax_number?: string | null
           id?: number
           industry?: string | null
           name?: string
           phone?: string | null
           pickup_locations?: Json | null
+          postal_code?: string | null
+          registration_name?: string | null
+          registration_number?: string | null
           state?: string | null
           status?: string
           street?: string | null
           tax_number?: string | null
           vat_number?: string | null
+          vat_registered?: boolean | null
         }
         Relationships: []
       }
@@ -1126,70 +1470,103 @@ export type Database = {
       }
       drivers: {
         Row: {
+          apointment_date: string | null
+          appointment_date: string | null
+          available: boolean | null
           cell_number: string | null
           created_at: string | null
           created_by: string | null
           driver_restriction_code: string | null
           email_address: string | null
-          first_name: string
+          first_name: string | null
           front_of_driver_pic: string | null
+          hazCamDate: string | null
+          hourly_rate: number | null
           id: number
           id_or_passport_document: string | null
-          id_or_passport_number: string
+          id_or_passport_number: string | null
           license_code: string | null
           license_expiry_date: string | null
           license_number: string | null
+          medic_exam_date: string | null
+          passport_expiry: string | null
+          passport_status: string | null
           pdp_expiry_date: string | null
+          pop: string | null
           professional_driving_permit: boolean | null
           rear_of_driver_pic: string | null
           sa_issued: boolean | null
-          surname: string
+          salary: number | null
+          status: string | null
+          surname: string | null
           user_id: string | null
           vehicle_restriction_code: string | null
           work_permit_upload: string | null
         }
         Insert: {
+          apointment_date?: string | null
+          appointment_date?: string | null
+          available?: boolean | null
           cell_number?: string | null
           created_at?: string | null
           created_by?: string | null
           driver_restriction_code?: string | null
           email_address?: string | null
-          first_name: string
+          first_name?: string | null
           front_of_driver_pic?: string | null
-          id?: number
+          hazCamDate?: string | null
+          hourly_rate?: number | null
+          id?: never
           id_or_passport_document?: string | null
-          id_or_passport_number: string
+          id_or_passport_number?: string | null
           license_code?: string | null
           license_expiry_date?: string | null
           license_number?: string | null
+          medic_exam_date?: string | null
+          passport_expiry?: string | null
+          passport_status?: string | null
           pdp_expiry_date?: string | null
+          pop?: string | null
           professional_driving_permit?: boolean | null
           rear_of_driver_pic?: string | null
           sa_issued?: boolean | null
-          surname: string
+          salary?: number | null
+          status?: string | null
+          surname?: string | null
           user_id?: string | null
           vehicle_restriction_code?: string | null
           work_permit_upload?: string | null
         }
         Update: {
+          apointment_date?: string | null
+          appointment_date?: string | null
+          available?: boolean | null
           cell_number?: string | null
           created_at?: string | null
           created_by?: string | null
           driver_restriction_code?: string | null
           email_address?: string | null
-          first_name?: string
+          first_name?: string | null
           front_of_driver_pic?: string | null
-          id?: number
+          hazCamDate?: string | null
+          hourly_rate?: number | null
+          id?: never
           id_or_passport_document?: string | null
-          id_or_passport_number?: string
+          id_or_passport_number?: string | null
           license_code?: string | null
           license_expiry_date?: string | null
           license_number?: string | null
+          medic_exam_date?: string | null
+          passport_expiry?: string | null
+          passport_status?: string | null
           pdp_expiry_date?: string | null
+          pop?: string | null
           professional_driving_permit?: boolean | null
           rear_of_driver_pic?: string | null
           sa_issued?: boolean | null
-          surname?: string
+          salary?: number | null
+          status?: string | null
+          surname?: string | null
           user_id?: string | null
           vehicle_restriction_code?: string | null
           work_permit_upload?: string | null
@@ -1544,6 +1921,33 @@ export type Database = {
         }
         Relationships: []
       }
+      inspection_templates: {
+        Row: {
+          created_at: string | null
+          id: string
+          inspection: string | null
+          structure: Json
+          type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          inspection?: string | null
+          structure: Json
+          type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          inspection?: string | null
+          structure?: Json
+          type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       inspections: {
         Row: {
           category: string | null
@@ -1552,9 +1956,12 @@ export type Database = {
           driver_id: number | null
           id: number
           inspection_date: string | null
+          location: string | null
           odo_reading: number
           overall_status: string | null
           remarks: string | null
+          timing: Json | null
+          trip_id: number | null
           vehicle_id: number
         }
         Insert: {
@@ -1562,11 +1969,14 @@ export type Database = {
           checklist: Json
           created_at?: string | null
           driver_id?: number | null
-          id?: number
+          id?: never
           inspection_date?: string | null
+          location?: string | null
           odo_reading: number
           overall_status?: string | null
           remarks?: string | null
+          timing?: Json | null
+          trip_id?: number | null
           vehicle_id: number
         }
         Update: {
@@ -1574,11 +1984,14 @@ export type Database = {
           checklist?: Json
           created_at?: string | null
           driver_id?: number | null
-          id?: number
+          id?: never
           inspection_date?: string | null
+          location?: string | null
           odo_reading?: number
           overall_status?: string | null
           remarks?: string | null
+          timing?: Json | null
+          trip_id?: number | null
           vehicle_id?: number
         }
         Relationships: [
@@ -2454,6 +2867,47 @@ export type Database = {
         }
         Relationships: []
       }
+      load_inspections: {
+        Row: {
+          created_at: string | null
+          driver_id: string
+          id: number
+          images: string[]
+          inspection_date: string
+          status: string
+          trip_id: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          driver_id: string
+          id?: never
+          images: string[]
+          inspection_date?: string
+          status?: string
+          trip_id?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          driver_id?: string
+          id?: never
+          images?: string[]
+          inspection_date?: string
+          status?: string
+          trip_id?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "load_inspections_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mac_steel: {
         Row: {
           company: string | null
@@ -2852,6 +3306,60 @@ export type Database = {
         }
         Relationships: []
       }
+      routes: {
+        Row: {
+          created_at: string
+          distance_km: number | null
+          duration_minutes: number | null
+          end_points: string | null
+          estimated_eta: string | null
+          id: number
+          order_number: string | null
+          route_data: Json | null
+          route_geometry: Json | null
+          start_points: string | null
+          status: string | null
+          tollgates: Json | null
+          traffic_warnings: Json | null
+          truck_restrictions: Json | null
+          vehicle_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          distance_km?: number | null
+          duration_minutes?: number | null
+          end_points?: string | null
+          estimated_eta?: string | null
+          id?: number
+          order_number?: string | null
+          route_data?: Json | null
+          route_geometry?: Json | null
+          start_points?: string | null
+          status?: string | null
+          tollgates?: Json | null
+          traffic_warnings?: Json | null
+          truck_restrictions?: Json | null
+          vehicle_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          distance_km?: number | null
+          duration_minutes?: number | null
+          end_points?: string | null
+          estimated_eta?: string | null
+          id?: number
+          order_number?: string | null
+          route_data?: Json | null
+          route_geometry?: Json | null
+          start_points?: string | null
+          status?: string | null
+          tollgates?: Json | null
+          traffic_warnings?: Json | null
+          truck_restrictions?: Json | null
+          vehicle_id?: string | null
+        }
+        Relationships: []
+      }
       stock: {
         Row: {
           code: string | null
@@ -2859,6 +3367,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           id: number
+          ip_addresses: Json | null
           quantity: string | null
           stock_type: string | null
           supplier: string | null
@@ -2871,6 +3380,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: never
+          ip_addresses?: Json | null
           quantity?: string | null
           stock_type?: string | null
           supplier?: string | null
@@ -2883,6 +3393,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: never
+          ip_addresses?: Json | null
           quantity?: string | null
           stock_type?: string | null
           supplier?: string | null
@@ -3010,6 +3521,96 @@ export type Database = {
         }
         Relationships: []
       }
+      stop_points: {
+        Row: {
+          address: string | null
+          capacity: string | null
+          city: string | null
+          color: string | null
+          contact_email: string | null
+          contact_person: string | null
+          contact_phone: string | null
+          coordinates: string | null
+          coordinates5: string | null
+          coordinates6: string | null
+          coords: string | null
+          country: string | null
+          created_at: string | null
+          facilities: string[] | null
+          id: number
+          name: string | null
+          name2: string | null
+          notes: string | null
+          operating_hours: string | null
+          outline: string | null
+          radius: number | null
+          state: string | null
+          street: string | null
+          style_url: string | null
+          type: string | null
+          updated_at: string | null
+          value: string | null
+        }
+        Insert: {
+          address?: string | null
+          capacity?: string | null
+          city?: string | null
+          color?: string | null
+          contact_email?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          coordinates?: string | null
+          coordinates5?: string | null
+          coordinates6?: string | null
+          coords?: string | null
+          country?: string | null
+          created_at?: string | null
+          facilities?: string[] | null
+          id?: never
+          name?: string | null
+          name2?: string | null
+          notes?: string | null
+          operating_hours?: string | null
+          outline?: string | null
+          radius?: number | null
+          state?: string | null
+          street?: string | null
+          style_url?: string | null
+          type?: string | null
+          updated_at?: string | null
+          value?: string | null
+        }
+        Update: {
+          address?: string | null
+          capacity?: string | null
+          city?: string | null
+          color?: string | null
+          contact_email?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          coordinates?: string | null
+          coordinates5?: string | null
+          coordinates6?: string | null
+          coords?: string | null
+          country?: string | null
+          created_at?: string | null
+          facilities?: string[] | null
+          id?: never
+          name?: string | null
+          name2?: string | null
+          notes?: string | null
+          operating_hours?: string | null
+          outline?: string | null
+          radius?: number | null
+          state?: string | null
+          street?: string | null
+          style_url?: string | null
+          type?: string | null
+          updated_at?: string | null
+          value?: string | null
+        }
+        Relationships: []
+      }
       systems: {
         Row: {
           created_at: string
@@ -3033,6 +3634,65 @@ export type Database = {
           users?: Json | null
         }
         Relationships: []
+      }
+      tech_stock: {
+        Row: {
+          created_at: string
+          id: number
+          new_stock_assigned: boolean | null
+          stock: Json | null
+          technician_email: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          new_stock_assigned?: boolean | null
+          stock?: Json | null
+          technician_email?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          new_stock_assigned?: boolean | null
+          stock?: Json | null
+          technician_email?: string | null
+        }
+        Relationships: []
+      }
+      technician_boot_stock: {
+        Row: {
+          catalog_item_id: number | null
+          id: number
+          ip_addresses: Json | null
+          last_updated: string | null
+          quantity: number | null
+          technician_email: string
+        }
+        Insert: {
+          catalog_item_id?: number | null
+          id?: never
+          ip_addresses?: Json | null
+          last_updated?: string | null
+          quantity?: number | null
+          technician_email: string
+        }
+        Update: {
+          catalog_item_id?: number | null
+          id?: never
+          ip_addresses?: Json | null
+          last_updated?: string | null
+          quantity?: number | null
+          technician_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technician_boot_stock_catalog_item_id_fkey"
+            columns: ["catalog_item_id"]
+            isOneToOne: false
+            referencedRelation: "boot_stock_catalog"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       technicians: {
         Row: {
@@ -3061,99 +3721,455 @@ export type Database = {
         }
         Relationships: []
       }
+      trailer: {
+        Row: {
+          available: boolean | null
+          colour: string | null
+          created_at: string
+          created_by: string | null
+          fleet_number: string | null
+          id: number
+          inspected: boolean | null
+          license_expiry_date: string | null
+          make: string | null
+          manufactured_year: string | null
+          model: string | null
+          registration: string | null
+          registration_date: string | null
+          service_intervals: string | null
+          speedo_current: number | null
+          status: string | null
+          sub_model: string | null
+          trailer_type: string | null
+          type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          available?: boolean | null
+          colour?: string | null
+          created_at?: string
+          created_by?: string | null
+          fleet_number?: string | null
+          id?: number
+          inspected?: boolean | null
+          license_expiry_date?: string | null
+          make?: string | null
+          manufactured_year?: string | null
+          model?: string | null
+          registration?: string | null
+          registration_date?: string | null
+          service_intervals?: string | null
+          speedo_current?: number | null
+          status?: string | null
+          sub_model?: string | null
+          trailer_type?: string | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          available?: boolean | null
+          colour?: string | null
+          created_at?: string
+          created_by?: string | null
+          fleet_number?: string | null
+          id?: number
+          inspected?: boolean | null
+          license_expiry_date?: string | null
+          make?: string | null
+          manufactured_year?: string | null
+          model?: string | null
+          registration?: string | null
+          registration_date?: string | null
+          service_intervals?: string | null
+          speedo_current?: number | null
+          status?: string | null
+          sub_model?: string | null
+          trailer_type?: string | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      trailer_inspection: {
+        Row: {
+          created_at: string | null
+          driver_id: number | null
+          id: number
+          inspected: boolean
+          inspection_date: string | null
+          trailer: string | null
+          type: string | null
+          updated_at: string | null
+          user_id: string | null
+          vehicle_id: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          driver_id?: number | null
+          id?: never
+          inspected?: boolean
+          inspection_date?: string | null
+          trailer?: string | null
+          type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          vehicle_id?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          driver_id?: number | null
+          id?: never
+          inspected?: boolean
+          inspection_date?: string | null
+          trailer?: string | null
+          type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          vehicle_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trailer_inspection_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trailer_inspection_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehiclesc"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trips: {
         Row: {
+          accepted_at: string | null
+          actual_end_time: string | null
+          actual_start_time: string | null
+          alert_message: string | null
+          alert_timestamp: string | null
+          alert_type: string | null
+          approximate_fuel_cost: number | null
+          approximated_cpk: number | null
+          approximated_driver_cost: number | null
+          approximated_vehicle_cost: number | null
+          arrival_radius: number | null
+          break_reminder_due: boolean | null
+          breaks: Json | null
           cargo: string | null
           cargo_weight: string | null
-          cargoWeight: number | null
+          cargoweight: string | null
+          cargoWeight: string | null
           client_details: Json | null
+          clientdetails: Json | null
+          clientDetails: Json | null
           cost_centre: string | null
+          costcentre: Json | null
+          costCentre: string | null
+          created_at: string | null
+          current_latitude: number | null
+          current_longitude: number | null
+          current_speed: number | null
+          departure_radius: number | null
           destination: string | null
+          destination_coordinates: Json | null
           distance: string | null
           driver: string | null
           drivers: Json | null
+          driving_hours: number | null
           dropoff_locations: Json | null
+          dropofflocations: Json | null
+          dropoffLocations: Json | null
           end_date: string | null
+          end_mileage: number | null
+          enddate: string | null
+          endDate: string | null
+          estimated_distance: number | null
+          fuel_price_per_liter: number | null
+          goods_in_transit_premium: number | null
           id: number
+          last_break_time: string | null
+          last_location_update: string | null
+          late_acceptance: boolean | null
+          late_arrival: boolean | null
+          load_inspection_id: number | null
+          loading_location_lat: number | null
+          loading_location_lng: number | null
+          loading_location_radius: number | null
           notes: string | null
-          order_number: string | null
+          ordernumber: string | null
+          orderNumber: string | null
           origin: string | null
+          origin_coordinates: Json | null
           pickup_locations: Json | null
+          pickuplocations: Json | null
+          pickupLocations: Json | null
           rate: string | null
           route: string | null
+          route_history: string | null
+          route_points: Json | null
           selected_client: string | null
           selected_stop_points: Json | null
-          start_date: string | null
+          selected_vehicle_type: string | null
+          selectedclient: string | null
+          selectedClient: string | null
+          selectedstoppoints: Json | null
+          selectedStopPoints: Json | null
+          start_mileage: number | null
+          startdate: string | null
+          startDate: string | null
           status: string
+          status_history: string[] | null
           status_notes: string | null
+          statusnotes: string | null
+          statusNotes: string | null
           stop_points: Json | null
-          trip_id: string
+          stoppoints: Json | null
+          stopPoints: Json | null
+          total_distance: number | null
+          total_vehicle_cost: number | null
+          trip_id: string | null
+          trip_type: string | null
+          unauthorized_stops_count: number | null
+          updated_at: string | null
           vehicle: string | null
           vehicle_assignments: Json | null
+          vehicleassignments: Json | null
+          vehicleAssignments: Json | null
           vehicles: Json | null
           waypoints: Json | null
         }
         Insert: {
+          accepted_at?: string | null
+          actual_end_time?: string | null
+          actual_start_time?: string | null
+          alert_message?: string | null
+          alert_timestamp?: string | null
+          alert_type?: string | null
+          approximate_fuel_cost?: number | null
+          approximated_cpk?: number | null
+          approximated_driver_cost?: number | null
+          approximated_vehicle_cost?: number | null
+          arrival_radius?: number | null
+          break_reminder_due?: boolean | null
+          breaks?: Json | null
           cargo?: string | null
           cargo_weight?: string | null
-          cargoWeight?: number | null
+          cargoweight?: string | null
+          cargoWeight?: string | null
           client_details?: Json | null
+          clientdetails?: Json | null
+          clientDetails?: Json | null
           cost_centre?: string | null
+          costcentre?: Json | null
+          costCentre?: string | null
+          created_at?: string | null
+          current_latitude?: number | null
+          current_longitude?: number | null
+          current_speed?: number | null
+          departure_radius?: number | null
           destination?: string | null
+          destination_coordinates?: Json | null
           distance?: string | null
           driver?: string | null
           drivers?: Json | null
+          driving_hours?: number | null
           dropoff_locations?: Json | null
+          dropofflocations?: Json | null
+          dropoffLocations?: Json | null
           end_date?: string | null
-          id?: number
+          end_mileage?: number | null
+          enddate?: string | null
+          endDate?: string | null
+          estimated_distance?: number | null
+          fuel_price_per_liter?: number | null
+          goods_in_transit_premium?: number | null
+          id?: never
+          last_break_time?: string | null
+          last_location_update?: string | null
+          late_acceptance?: boolean | null
+          late_arrival?: boolean | null
+          load_inspection_id?: number | null
+          loading_location_lat?: number | null
+          loading_location_lng?: number | null
+          loading_location_radius?: number | null
           notes?: string | null
-          order_number?: string | null
+          ordernumber?: string | null
+          orderNumber?: string | null
           origin?: string | null
+          origin_coordinates?: Json | null
           pickup_locations?: Json | null
+          pickuplocations?: Json | null
+          pickupLocations?: Json | null
           rate?: string | null
           route?: string | null
+          route_history?: string | null
+          route_points?: Json | null
           selected_client?: string | null
           selected_stop_points?: Json | null
-          start_date?: string | null
+          selected_vehicle_type?: string | null
+          selectedclient?: string | null
+          selectedClient?: string | null
+          selectedstoppoints?: Json | null
+          selectedStopPoints?: Json | null
+          start_mileage?: number | null
+          startdate?: string | null
+          startDate?: string | null
           status?: string
+          status_history?: string[] | null
           status_notes?: string | null
+          statusnotes?: string | null
+          statusNotes?: string | null
           stop_points?: Json | null
-          trip_id: string
+          stoppoints?: Json | null
+          stopPoints?: Json | null
+          total_distance?: number | null
+          total_vehicle_cost?: number | null
+          trip_id?: string | null
+          trip_type?: string | null
+          unauthorized_stops_count?: number | null
+          updated_at?: string | null
           vehicle?: string | null
           vehicle_assignments?: Json | null
+          vehicleassignments?: Json | null
+          vehicleAssignments?: Json | null
           vehicles?: Json | null
           waypoints?: Json | null
         }
         Update: {
+          accepted_at?: string | null
+          actual_end_time?: string | null
+          actual_start_time?: string | null
+          alert_message?: string | null
+          alert_timestamp?: string | null
+          alert_type?: string | null
+          approximate_fuel_cost?: number | null
+          approximated_cpk?: number | null
+          approximated_driver_cost?: number | null
+          approximated_vehicle_cost?: number | null
+          arrival_radius?: number | null
+          break_reminder_due?: boolean | null
+          breaks?: Json | null
           cargo?: string | null
           cargo_weight?: string | null
-          cargoWeight?: number | null
+          cargoweight?: string | null
+          cargoWeight?: string | null
           client_details?: Json | null
+          clientdetails?: Json | null
+          clientDetails?: Json | null
           cost_centre?: string | null
+          costcentre?: Json | null
+          costCentre?: string | null
+          created_at?: string | null
+          current_latitude?: number | null
+          current_longitude?: number | null
+          current_speed?: number | null
+          departure_radius?: number | null
           destination?: string | null
+          destination_coordinates?: Json | null
           distance?: string | null
           driver?: string | null
           drivers?: Json | null
+          driving_hours?: number | null
           dropoff_locations?: Json | null
+          dropofflocations?: Json | null
+          dropoffLocations?: Json | null
           end_date?: string | null
-          id?: number
+          end_mileage?: number | null
+          enddate?: string | null
+          endDate?: string | null
+          estimated_distance?: number | null
+          fuel_price_per_liter?: number | null
+          goods_in_transit_premium?: number | null
+          id?: never
+          last_break_time?: string | null
+          last_location_update?: string | null
+          late_acceptance?: boolean | null
+          late_arrival?: boolean | null
+          load_inspection_id?: number | null
+          loading_location_lat?: number | null
+          loading_location_lng?: number | null
+          loading_location_radius?: number | null
           notes?: string | null
-          order_number?: string | null
+          ordernumber?: string | null
+          orderNumber?: string | null
           origin?: string | null
+          origin_coordinates?: Json | null
           pickup_locations?: Json | null
+          pickuplocations?: Json | null
+          pickupLocations?: Json | null
           rate?: string | null
           route?: string | null
+          route_history?: string | null
+          route_points?: Json | null
           selected_client?: string | null
           selected_stop_points?: Json | null
-          start_date?: string | null
+          selected_vehicle_type?: string | null
+          selectedclient?: string | null
+          selectedClient?: string | null
+          selectedstoppoints?: Json | null
+          selectedStopPoints?: Json | null
+          start_mileage?: number | null
+          startdate?: string | null
+          startDate?: string | null
           status?: string
+          status_history?: string[] | null
           status_notes?: string | null
+          statusnotes?: string | null
+          statusNotes?: string | null
           stop_points?: Json | null
-          trip_id?: string
+          stoppoints?: Json | null
+          stopPoints?: Json | null
+          total_distance?: number | null
+          total_vehicle_cost?: number | null
+          trip_id?: string | null
+          trip_type?: string | null
+          unauthorized_stops_count?: number | null
+          updated_at?: string | null
           vehicle?: string | null
           vehicle_assignments?: Json | null
+          vehicleassignments?: Json | null
+          vehicleAssignments?: Json | null
           vehicles?: Json | null
           waypoints?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trips_load_inspection_id_fkey"
+            columns: ["load_inspection_id"]
+            isOneToOne: false
+            referencedRelation: "load_inspections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trips_assignement: {
+        Row: {
+          accepted: boolean | null
+          created_at: string
+          driver_id: number | null
+          id: number
+          trailer_id: number | null
+          vehicle_id: number | null
+        }
+        Insert: {
+          accepted?: boolean | null
+          created_at?: string
+          driver_id?: number | null
+          id?: number
+          trailer_id?: number | null
+          vehicle_id?: number | null
+        }
+        Update: {
+          accepted?: boolean | null
+          created_at?: string
+          driver_id?: number | null
+          id?: number
+          trailer_id?: number | null
+          vehicle_id?: number | null
         }
         Relationships: []
       }
@@ -3168,6 +4184,7 @@ export type Database = {
           id: string
           permissions: Json | null
           role: string | null
+          site_id: string | null
           tech_admin: boolean | null
         }
         Insert: {
@@ -3180,6 +4197,7 @@ export type Database = {
           id: string
           permissions?: Json | null
           role?: string | null
+          site_id?: string | null
           tech_admin?: boolean | null
         }
         Update: {
@@ -3192,6 +4210,7 @@ export type Database = {
           id?: string
           permissions?: Json | null
           role?: string | null
+          site_id?: string | null
           tech_admin?: boolean | null
         }
         Relationships: []
@@ -3203,6 +4222,10 @@ export type Database = {
           id: number
           inspected: boolean
           inspection_date: string | null
+          location: string | null
+          second_trailer: string | null
+          timing: Json | null
+          trailer: string | null
           type: string | null
           updated_at: string | null
           user_id: string | null
@@ -3211,9 +4234,13 @@ export type Database = {
         Insert: {
           created_at?: string | null
           driver_id?: number | null
-          id?: number
+          id?: never
           inspected?: boolean
           inspection_date?: string | null
+          location?: string | null
+          second_trailer?: string | null
+          timing?: Json | null
+          trailer?: string | null
           type?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -3222,9 +4249,13 @@ export type Database = {
         Update: {
           created_at?: string | null
           driver_id?: number | null
-          id?: number
+          id?: never
           inspected?: boolean
           inspection_date?: string | null
+          location?: string | null
+          second_trailer?: string | null
+          timing?: Json | null
+          trailer?: string | null
           type?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -5264,112 +6295,526 @@ export type Database = {
       }
       vehiclesc: {
         Row: {
+          agreed_km: number | null
+          angola: boolean | null
+          angola_exp_date: string | null
+          asset_number: string | null
           boarding_km_hours: number | null
-          colour: string
+          botswana: boolean | null
+          botswana_expiry_date: string | null
+          botswana_rsl_date: string | null
+          botswana_rtp_date: string | null
+          branch_code: string | null
+          branch_name: string | null
+          cbp_date: string | null
+          cell_phones_prd: string | null
+          cof_date: string | null
+          cof_mh_date: string | null
+          cof_rt_date: string | null
+          colour: string | null
           company_id: number | null
           cost_centres: string | null
           created_at: string | null
           created_by: string | null
+          department_code: string | null
+          department_name: string | null
+          diesel_recommended_litres: number | null
+          diesel_target_consumption: number | null
+          dr_vno_km: number | null
+          drc: boolean | null
+          drc_exp_date: string | null
+          driver_code: string | null
+          driver_code_two: string | null
           driver_id: number | null
+          driver_name: string | null
+          driver_name_two: string | null
           engine_number: string | null
+          equipment_prd: string | null
           expected_boarding_date: string | null
+          fines_prd: string | null
+          fleet_number: string | null
           fuel_type: string | null
+          gen_location: string | null
+          genset_code: string | null
+          genset_name: string | null
+          genset_type: string | null
+          gvm: number | null
+          handover_driver: number | null
+          hazchem: boolean | null
+          hour_before_service: number | null
+          hour_current: number | null
+          hour_service_due_at: number | null
+          hour_service_due_flag: boolean | null
+          hour_service_due_in: number | null
+          hour_service_interval: number | null
+          hourly_rate: number | null
           id: number
           inspected: boolean | null
+          insurance_prd: string | null
+          km_before_service: number | null
+          ledger_code: string | null
+          ledger_description: string | null
+          lesotho: boolean | null
+          lesotho_exp_date: string | null
+          licence_date: string | null
+          licences_prd: string | null
           license_expiry_date: string | null
+          maint_contr_prd: string | null
+          maj_service_due: number | null
+          maj_service_interval: number | null
           make: string | null
-          manufactured_year: string
-          model: string
+          malawi: boolean | null
+          malawi_3rd_party_date: string | null
+          manufactured_year: string | null
+          min_service_due: number | null
+          min_service_interval: number | null
+          model: string | null
+          monthly_premium: number | null
+          mozambique: boolean | null
+          mozambique_expiry_date: string | null
+          namibia: boolean | null
+          namibia_expiry_date: string | null
+          offload_no_email_flag: boolean | null
+          pdp_date: string | null
+          permits_prd: string | null
+          police_clearance_date: string | null
+          private_cell: string | null
+          project_code: string | null
           purchase_price: number | null
           register_number: string | null
           registration_date: string | null
-          registration_number: string
+          registration_number: string | null
+          repairs_prd: string | null
           retail_price: number | null
-          service_intervals: string
+          service_due_flag: boolean | null
+          service_due_in_kms: number | null
+          service_intervals: string | null
+          slmn_code: string | null
+          slmn_name: string | null
+          speedo_current: number | null
+          speedo_start: number | null
+          speedo_start_load: number | null
+          start_timestamp: string | null
           status: string | null
           sub_model: string | null
-          take_on_kilometers: number
+          swaziland: boolean | null
+          swaziland_expiry_date: string | null
+          take_on_kilometers: number | null
           tank_capacity: number | null
+          tare: number | null
           tech_id: number | null
+          toll_fees_prd: string | null
+          tracking_prd: string | null
+          trailer_name: string | null
+          trailer_name2: string | null
+          trailer_no: string | null
+          trailer_no2: string | null
+          trailer_type: string | null
+          trailer_type_desc: string | null
+          trailer2_type: string | null
+          trailer2_type_desc: string | null
           transmission_type: string | null
+          transp_descrip: string | null
+          transp_no: string | null
+          trip_sheet_number_last: string | null
           type: string | null
+          tyres_prd: string | null
           updated_at: string | null
+          veh_allocated_flag: boolean | null
+          veh_comp01_max_qty: number | null
+          veh_comp02_max_qty: number | null
+          veh_comp03_max_qty: number | null
+          veh_comp04_max_qty: number | null
+          veh_comp05_max_qty: number | null
+          veh_comp06_max_qty: number | null
+          veh_comp07_max_qty: number | null
+          veh_control_no: number | null
+          veh_control_type: string | null
+          veh_division_code: string | null
+          veh_division_name: string | null
+          veh_dormant_flag: boolean | null
+          veh_escort_flag: boolean | null
+          veh_exception: string | null
+          veh_from_screen: string | null
+          veh_load_no: string | null
+          veh_location: string | null
+          veh_maj_distance: number | null
+          veh_min_distance: number | null
+          veh_mine_permit1_date: string | null
+          veh_mine_permit2_date: string | null
+          veh_prev_load: string | null
+          veh_speedo_date: string | null
+          veh_tare: number | null
+          veh_trip_sheet_number: string | null
+          vehicle_call_number: string | null
+          vehicle_called: boolean | null
+          vehicle_category: string | null
+          vehicle_number: string | null
+          vehicle_payments_prd: string | null
           vehicle_priority: string | null
-          vehicle_type: string
+          vehicle_type: string | null
+          vehicle_type_descrip: string | null
+          vehicle_year: string | null
           vin_number: string | null
+          wages_prd: string | null
           workshop_id: string | null
+          zam_3rd_party_date: string | null
+          zam_carbon_tax_date: string | null
+          zambia: boolean | null
+          zambia_exp_date: string | null
+          zim_3rd_party_date: string | null
+          zim_carbon_tax_date: string | null
+          zim_cvg_date: string | null
+          zimbabwe: boolean | null
+          zimbabwe_exp_date: string | null
         }
         Insert: {
+          agreed_km?: number | null
+          angola?: boolean | null
+          angola_exp_date?: string | null
+          asset_number?: string | null
           boarding_km_hours?: number | null
-          colour: string
+          botswana?: boolean | null
+          botswana_expiry_date?: string | null
+          botswana_rsl_date?: string | null
+          botswana_rtp_date?: string | null
+          branch_code?: string | null
+          branch_name?: string | null
+          cbp_date?: string | null
+          cell_phones_prd?: string | null
+          cof_date?: string | null
+          cof_mh_date?: string | null
+          cof_rt_date?: string | null
+          colour?: string | null
           company_id?: number | null
           cost_centres?: string | null
           created_at?: string | null
           created_by?: string | null
+          department_code?: string | null
+          department_name?: string | null
+          diesel_recommended_litres?: number | null
+          diesel_target_consumption?: number | null
+          dr_vno_km?: number | null
+          drc?: boolean | null
+          drc_exp_date?: string | null
+          driver_code?: string | null
+          driver_code_two?: string | null
           driver_id?: number | null
+          driver_name?: string | null
+          driver_name_two?: string | null
           engine_number?: string | null
+          equipment_prd?: string | null
           expected_boarding_date?: string | null
+          fines_prd?: string | null
+          fleet_number?: string | null
           fuel_type?: string | null
-          id?: number
+          gen_location?: string | null
+          genset_code?: string | null
+          genset_name?: string | null
+          genset_type?: string | null
+          gvm?: number | null
+          handover_driver?: number | null
+          hazchem?: boolean | null
+          hour_before_service?: number | null
+          hour_current?: number | null
+          hour_service_due_at?: number | null
+          hour_service_due_flag?: boolean | null
+          hour_service_due_in?: number | null
+          hour_service_interval?: number | null
+          hourly_rate?: number | null
+          id?: never
           inspected?: boolean | null
+          insurance_prd?: string | null
+          km_before_service?: number | null
+          ledger_code?: string | null
+          ledger_description?: string | null
+          lesotho?: boolean | null
+          lesotho_exp_date?: string | null
+          licence_date?: string | null
+          licences_prd?: string | null
           license_expiry_date?: string | null
+          maint_contr_prd?: string | null
+          maj_service_due?: number | null
+          maj_service_interval?: number | null
           make?: string | null
-          manufactured_year: string
-          model: string
+          malawi?: boolean | null
+          malawi_3rd_party_date?: string | null
+          manufactured_year?: string | null
+          min_service_due?: number | null
+          min_service_interval?: number | null
+          model?: string | null
+          monthly_premium?: number | null
+          mozambique?: boolean | null
+          mozambique_expiry_date?: string | null
+          namibia?: boolean | null
+          namibia_expiry_date?: string | null
+          offload_no_email_flag?: boolean | null
+          pdp_date?: string | null
+          permits_prd?: string | null
+          police_clearance_date?: string | null
+          private_cell?: string | null
+          project_code?: string | null
           purchase_price?: number | null
           register_number?: string | null
           registration_date?: string | null
-          registration_number: string
+          registration_number?: string | null
+          repairs_prd?: string | null
           retail_price?: number | null
-          service_intervals: string
+          service_due_flag?: boolean | null
+          service_due_in_kms?: number | null
+          service_intervals?: string | null
+          slmn_code?: string | null
+          slmn_name?: string | null
+          speedo_current?: number | null
+          speedo_start?: number | null
+          speedo_start_load?: number | null
+          start_timestamp?: string | null
           status?: string | null
           sub_model?: string | null
-          take_on_kilometers: number
+          swaziland?: boolean | null
+          swaziland_expiry_date?: string | null
+          take_on_kilometers?: number | null
           tank_capacity?: number | null
+          tare?: number | null
           tech_id?: number | null
+          toll_fees_prd?: string | null
+          tracking_prd?: string | null
+          trailer_name?: string | null
+          trailer_name2?: string | null
+          trailer_no?: string | null
+          trailer_no2?: string | null
+          trailer_type?: string | null
+          trailer_type_desc?: string | null
+          trailer2_type?: string | null
+          trailer2_type_desc?: string | null
           transmission_type?: string | null
+          transp_descrip?: string | null
+          transp_no?: string | null
+          trip_sheet_number_last?: string | null
           type?: string | null
+          tyres_prd?: string | null
           updated_at?: string | null
+          veh_allocated_flag?: boolean | null
+          veh_comp01_max_qty?: number | null
+          veh_comp02_max_qty?: number | null
+          veh_comp03_max_qty?: number | null
+          veh_comp04_max_qty?: number | null
+          veh_comp05_max_qty?: number | null
+          veh_comp06_max_qty?: number | null
+          veh_comp07_max_qty?: number | null
+          veh_control_no?: number | null
+          veh_control_type?: string | null
+          veh_division_code?: string | null
+          veh_division_name?: string | null
+          veh_dormant_flag?: boolean | null
+          veh_escort_flag?: boolean | null
+          veh_exception?: string | null
+          veh_from_screen?: string | null
+          veh_load_no?: string | null
+          veh_location?: string | null
+          veh_maj_distance?: number | null
+          veh_min_distance?: number | null
+          veh_mine_permit1_date?: string | null
+          veh_mine_permit2_date?: string | null
+          veh_prev_load?: string | null
+          veh_speedo_date?: string | null
+          veh_tare?: number | null
+          veh_trip_sheet_number?: string | null
+          vehicle_call_number?: string | null
+          vehicle_called?: boolean | null
+          vehicle_category?: string | null
+          vehicle_number?: string | null
+          vehicle_payments_prd?: string | null
           vehicle_priority?: string | null
-          vehicle_type?: string
+          vehicle_type?: string | null
+          vehicle_type_descrip?: string | null
+          vehicle_year?: string | null
           vin_number?: string | null
+          wages_prd?: string | null
           workshop_id?: string | null
+          zam_3rd_party_date?: string | null
+          zam_carbon_tax_date?: string | null
+          zambia?: boolean | null
+          zambia_exp_date?: string | null
+          zim_3rd_party_date?: string | null
+          zim_carbon_tax_date?: string | null
+          zim_cvg_date?: string | null
+          zimbabwe?: boolean | null
+          zimbabwe_exp_date?: string | null
         }
         Update: {
+          agreed_km?: number | null
+          angola?: boolean | null
+          angola_exp_date?: string | null
+          asset_number?: string | null
           boarding_km_hours?: number | null
-          colour?: string
+          botswana?: boolean | null
+          botswana_expiry_date?: string | null
+          botswana_rsl_date?: string | null
+          botswana_rtp_date?: string | null
+          branch_code?: string | null
+          branch_name?: string | null
+          cbp_date?: string | null
+          cell_phones_prd?: string | null
+          cof_date?: string | null
+          cof_mh_date?: string | null
+          cof_rt_date?: string | null
+          colour?: string | null
           company_id?: number | null
           cost_centres?: string | null
           created_at?: string | null
           created_by?: string | null
+          department_code?: string | null
+          department_name?: string | null
+          diesel_recommended_litres?: number | null
+          diesel_target_consumption?: number | null
+          dr_vno_km?: number | null
+          drc?: boolean | null
+          drc_exp_date?: string | null
+          driver_code?: string | null
+          driver_code_two?: string | null
           driver_id?: number | null
+          driver_name?: string | null
+          driver_name_two?: string | null
           engine_number?: string | null
+          equipment_prd?: string | null
           expected_boarding_date?: string | null
+          fines_prd?: string | null
+          fleet_number?: string | null
           fuel_type?: string | null
-          id?: number
+          gen_location?: string | null
+          genset_code?: string | null
+          genset_name?: string | null
+          genset_type?: string | null
+          gvm?: number | null
+          handover_driver?: number | null
+          hazchem?: boolean | null
+          hour_before_service?: number | null
+          hour_current?: number | null
+          hour_service_due_at?: number | null
+          hour_service_due_flag?: boolean | null
+          hour_service_due_in?: number | null
+          hour_service_interval?: number | null
+          hourly_rate?: number | null
+          id?: never
           inspected?: boolean | null
+          insurance_prd?: string | null
+          km_before_service?: number | null
+          ledger_code?: string | null
+          ledger_description?: string | null
+          lesotho?: boolean | null
+          lesotho_exp_date?: string | null
+          licence_date?: string | null
+          licences_prd?: string | null
           license_expiry_date?: string | null
+          maint_contr_prd?: string | null
+          maj_service_due?: number | null
+          maj_service_interval?: number | null
           make?: string | null
-          manufactured_year?: string
-          model?: string
+          malawi?: boolean | null
+          malawi_3rd_party_date?: string | null
+          manufactured_year?: string | null
+          min_service_due?: number | null
+          min_service_interval?: number | null
+          model?: string | null
+          monthly_premium?: number | null
+          mozambique?: boolean | null
+          mozambique_expiry_date?: string | null
+          namibia?: boolean | null
+          namibia_expiry_date?: string | null
+          offload_no_email_flag?: boolean | null
+          pdp_date?: string | null
+          permits_prd?: string | null
+          police_clearance_date?: string | null
+          private_cell?: string | null
+          project_code?: string | null
           purchase_price?: number | null
           register_number?: string | null
           registration_date?: string | null
-          registration_number?: string
+          registration_number?: string | null
+          repairs_prd?: string | null
           retail_price?: number | null
-          service_intervals?: string
+          service_due_flag?: boolean | null
+          service_due_in_kms?: number | null
+          service_intervals?: string | null
+          slmn_code?: string | null
+          slmn_name?: string | null
+          speedo_current?: number | null
+          speedo_start?: number | null
+          speedo_start_load?: number | null
+          start_timestamp?: string | null
           status?: string | null
           sub_model?: string | null
-          take_on_kilometers?: number
+          swaziland?: boolean | null
+          swaziland_expiry_date?: string | null
+          take_on_kilometers?: number | null
           tank_capacity?: number | null
+          tare?: number | null
           tech_id?: number | null
+          toll_fees_prd?: string | null
+          tracking_prd?: string | null
+          trailer_name?: string | null
+          trailer_name2?: string | null
+          trailer_no?: string | null
+          trailer_no2?: string | null
+          trailer_type?: string | null
+          trailer_type_desc?: string | null
+          trailer2_type?: string | null
+          trailer2_type_desc?: string | null
           transmission_type?: string | null
+          transp_descrip?: string | null
+          transp_no?: string | null
+          trip_sheet_number_last?: string | null
           type?: string | null
+          tyres_prd?: string | null
           updated_at?: string | null
+          veh_allocated_flag?: boolean | null
+          veh_comp01_max_qty?: number | null
+          veh_comp02_max_qty?: number | null
+          veh_comp03_max_qty?: number | null
+          veh_comp04_max_qty?: number | null
+          veh_comp05_max_qty?: number | null
+          veh_comp06_max_qty?: number | null
+          veh_comp07_max_qty?: number | null
+          veh_control_no?: number | null
+          veh_control_type?: string | null
+          veh_division_code?: string | null
+          veh_division_name?: string | null
+          veh_dormant_flag?: boolean | null
+          veh_escort_flag?: boolean | null
+          veh_exception?: string | null
+          veh_from_screen?: string | null
+          veh_load_no?: string | null
+          veh_location?: string | null
+          veh_maj_distance?: number | null
+          veh_min_distance?: number | null
+          veh_mine_permit1_date?: string | null
+          veh_mine_permit2_date?: string | null
+          veh_prev_load?: string | null
+          veh_speedo_date?: string | null
+          veh_tare?: number | null
+          veh_trip_sheet_number?: string | null
+          vehicle_call_number?: string | null
+          vehicle_called?: boolean | null
+          vehicle_category?: string | null
+          vehicle_number?: string | null
+          vehicle_payments_prd?: string | null
           vehicle_priority?: string | null
-          vehicle_type?: string
+          vehicle_type?: string | null
+          vehicle_type_descrip?: string | null
+          vehicle_year?: string | null
           vin_number?: string | null
+          wages_prd?: string | null
           workshop_id?: string | null
+          zam_3rd_party_date?: string | null
+          zam_carbon_tax_date?: string | null
+          zambia?: boolean | null
+          zambia_exp_date?: string | null
+          zim_3rd_party_date?: string | null
+          zim_carbon_tax_date?: string | null
+          zim_cvg_date?: string | null
+          zimbabwe?: boolean | null
+          zimbabwe_exp_date?: string | null
         }
         Relationships: [
           {
@@ -5485,10 +6930,16 @@ export type Database = {
       }
     }
     Functions: {
-      calculate_monthly_billing: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
+      assign_technician_with_override: {
+        Args: {
+          p_job_date: string
+          p_job_id: string
+          p_override?: boolean
+          p_technician_name: string
+        }
+        Returns: Json
       }
+      calculate_monthly_billing: { Args: never; Returns: undefined }
       calculate_premium_with_tolerance: {
         Args: {
           p_base_premium: number
@@ -5505,16 +6956,27 @@ export type Database = {
           performance_rating: number
         }[]
       }
-      generate_job_number: {
-        Args: Record<PropertyKey, never>
-        Returns: string
+      check_technician_availability: {
+        Args: { p_job_date: string; p_technician_name: string }
+        Returns: {
+          conflicting_date: string
+          customer_name: string
+          job_id: string
+          job_number: string
+        }[]
       }
-      generate_quotation_number: {
-        Args: Record<PropertyKey, never>
-        Returns: string
+      force_assign_technician: {
+        Args: {
+          p_job_date: string
+          p_job_id: string
+          p_technician_name: string
+        }
+        Returns: Json
       }
+      generate_job_number: { Args: never; Returns: string }
+      generate_quotation_number: { Args: never; Returns: string }
       get_available_months: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           has_fleet_stats: boolean
           has_premiums: boolean
@@ -5535,7 +6997,7 @@ export type Database = {
         }[]
       }
       get_payments_summary: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           balance_due: number
           company: string
@@ -5549,25 +7011,9 @@ export type Database = {
           total_paid: number
         }[]
       }
-      gtrgm_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_decompress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_in: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_options: {
-        Args: { "": unknown }
+      initialize_technician_stock: {
+        Args: { tech_email: string }
         Returns: undefined
-      }
-      gtrgm_out: {
-        Args: { "": unknown }
-        Returns: unknown
       }
       insert_monthly_premiums: {
         Args: {
@@ -5579,54 +7025,16 @@ export type Database = {
         }
         Returns: undefined
       }
-      monthly_billing_process: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      reset_loan_vehicles: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      set_limit: {
-        Args: { "": number }
-        Returns: number
-      }
-      show_limit: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      show_trgm: {
-        Args: { "": string }
-        Returns: string[]
-      }
-      trigger_monthly_billing: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      unaccent: {
-        Args: { "": string }
-        Returns: string
-      }
-      unaccent_init: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      update_overdue_amounts: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      update_payment_months: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      update_payment_months_once: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      update_payments_on_22nd: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      monthly_billing_process: { Args: never; Returns: undefined }
+      reset_loan_vehicles: { Args: never; Returns: undefined }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
+      trigger_monthly_billing: { Args: never; Returns: string }
+      unaccent: { Args: { "": string }; Returns: string }
+      update_overdue_amounts: { Args: never; Returns: undefined }
+      update_payment_months: { Args: never; Returns: undefined }
+      update_payment_months_once: { Args: never; Returns: undefined }
+      update_payments_on_22nd: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

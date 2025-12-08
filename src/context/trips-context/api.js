@@ -1,30 +1,42 @@
 import { createClient } from '@/lib/supabase/client'
 import * as api from './actions'
 
-// Fetch trips
-export const fetchTrips = async (tripsDispatch) => {
+// Cache for trips data
+let tripsCache = {
+    data: null,
+    timestamp: 0,
+    duration: 5 * 60 * 1000 // 5 minutes
+}
+
+// Fetch trips with caching
+export const fetchTrips = async (tripsDispatch, forceRefresh = false) => {
+    const now = Date.now()
+    
+    // Use cached data if available and not expired
+    if (!forceRefresh && tripsCache.data && (now - tripsCache.timestamp) < tripsCache.duration) {
+        tripsDispatch(api.fetchTripsSuccess(tripsCache.data))
+        return
+    }
+    
     tripsDispatch(api.fetchTripsStart())
     try {
         const supabase = createClient()
-        // select all trips: use the project's `trips` table first; fallback to `trips`
-        let data
-        let error
-        let usedTable = null
+        const { data, error } = await supabase.from('trips').select('*')
 
-            ({ data, error } = await supabase.from('trips').select('*'))
-        if (!error && Array.isArray(data)) usedTable = 'trips'
-
-        if (!usedTable) {
-            ({ data, error } = await supabase.from('trips').select('*'))
-            if (!error && Array.isArray(data)) usedTable = 'trips'
-        }
-
-        console.debug('fetchTrips usedTable=', usedTable, 'rows=', (data || []).length)
+        console.debug('fetchTrips rows=', (data || []).length)
 
         if (error) {
             tripsDispatch(api.fetchTripsFailure(error))
             return
         }
+        
+        // Update cache
+        tripsCache = {
+            data: data || [],
+            timestamp: now,
+            duration: tripsCache.duration
+        }
+        
         tripsDispatch(api.fetchTripsSuccess(data || []))
     } catch (err) {
         tripsDispatch(api.fetchTripsFailure(err))
@@ -74,25 +86,18 @@ export const upsertTrip = async (id, tripData, tripsDispatch) => {
     if (id) {
         tripsDispatch(api.updateTripStart())
         try {
-            // update: prefer the project's `trips` table first; fallback to `trips`
-            let data
-            let error
-            let usedTable = null
+            const { data, error } = await supabase.from('trips').update(payload).eq('id', id).select()
 
-                ({ data, error } = await supabase.from('trips').update(payload).eq('id', id).select())
-            if (!error && data) usedTable = 'trips'
-
-            if (!usedTable) {
-                ({ data, error } = await supabase.from('trips').update(payload).eq('id', id).select())
-                if (!error && data) usedTable = 'trips'
-            }
-
-            console.debug('updateTrip usedTable=', usedTable, 'updated=', data)
+            console.debug('updateTrip updated=', data)
 
             if (error) {
                 tripsDispatch(api.updateTripFailure(error))
                 return
             }
+            
+            // Invalidate cache after update
+            tripsCache.timestamp = 0
+            
             tripsDispatch(api.updateTripSuccess(data?.[0] || data))
             return data?.[0] || data
         } catch (err) {
@@ -104,25 +109,18 @@ export const upsertTrip = async (id, tripData, tripsDispatch) => {
     // Insert new trip
     tripsDispatch(api.addTripStart())
     try {
-        // insert: prefer the project's `trips` table first; fallback to `trips`
-        let data
-        let error
-        let usedTable = null
+        const { data, error } = await supabase.from('trips').insert(payload).select()
 
-            ({ data, error } = await supabase.from('trips').insert(payload).select())
-        if (!error && data) usedTable = 'trips'
-
-        if (!usedTable) {
-            ({ data, error } = await supabase.from('trips').insert(payload).select())
-            if (!error && data) usedTable = 'trips'
-        }
-
-        console.debug('addTrip usedTable=', usedTable, 'inserted=', data)
+        console.debug('addTrip inserted=', data)
 
         if (error) {
             tripsDispatch(api.addTripFailure(error))
             return
         }
+        
+        // Invalidate cache after insert
+        tripsCache.timestamp = 0
+        
         tripsDispatch(api.addTripSuccess(data?.[0] || data))
         return data?.[0] || data
     } catch (err) {
@@ -134,23 +132,18 @@ export const deleteTrip = async (id, tripsDispatch) => {
     tripsDispatch(api.deleteTripStart())
     try {
         const supabase = createClient()
-        let error
-        let usedTable = null
+        const { error } = await supabase.from('trips').delete().eq('id', id)
 
-            ({ error } = await supabase.from('trips').delete().eq('id', id))
-        if (!error) usedTable = 'trips'
-
-        if (!usedTable) {
-            ({ error } = await supabase.from('trips').delete().eq('id', id))
-            if (!error) usedTable = 'trips'
-        }
-
-        console.debug('deleteTrip usedTable=', usedTable, 'id=', id)
+        console.debug('deleteTrip id=', id)
 
         if (error) {
             tripsDispatch(api.deleteTripFailure(error))
             return
         }
+        
+        // Invalidate cache after delete
+        tripsCache.timestamp = 0
+        
         tripsDispatch(api.deleteTripSuccess(id))
     } catch (err) {
         tripsDispatch(api.deleteTripFailure(err))

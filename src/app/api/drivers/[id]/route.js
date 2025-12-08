@@ -1,6 +1,6 @@
-import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-
+import { createClient } from '@/lib/supabase/server';
+import { logUserActivity } from '@/lib/utils/logUserActivity'
 
 // *****************************
 // update driver
@@ -62,6 +62,12 @@ export async function PUT(request, { params }) {
       request.ip ||
       'unknown'
 
+    await logUserActivity(supabase, user, {
+      timestamp: new Date().toISOString(),
+      activity: 'Updated Driver',
+      ip: ip === '::1' ? 'localhost' : ip,
+    })
+
     return NextResponse.json({ id, ...updatedDriver }, { status: 200 })
   } catch (error) {
     return NextResponse.json(
@@ -121,6 +127,12 @@ export async function DELETE(request, { params }) {
       request.headers.get('x-real-ip') ||
       request.ip ||
       'unknown'
+
+    await logUserActivity(supabase, user, {
+      timestamp: new Date().toISOString(),
+      activity: 'Deleted Driver',
+      ip: ip === '::1' ? 'localhost' : ip,
+    })
 
     return NextResponse.json(id, { status: 200 })
   } catch (error) {

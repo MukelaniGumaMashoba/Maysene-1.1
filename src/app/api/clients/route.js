@@ -1,17 +1,14 @@
-"'use server'"
-
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 
 // *****************************
 // get clients
 // *****************************
-
-
 export async function GET(request) {
+  const supabase = createRouteHandlerClient({ cookies })
+  
   // Verify authentication
-  const supabase = createClient();
-
   const { data: { session }, error: authError } = await supabase.auth.getSession()
   
   if (authError || !session) {
@@ -33,6 +30,7 @@ export async function GET(request) {
       .from('clients')
       .select('*')
       .eq('company', userProfile.client_id)
+      .order('created_at', { ascending: false })
     
     if (error) throw error
     
@@ -46,7 +44,7 @@ export async function GET(request) {
 // add clients
 // *****************************
 export async function POST(request) {
-  const supabase = createClient();
+  const supabase = createRouteHandlerClient({ cookies })
   
   // Verify authentication
   const { data: { session }, error: authError } = await supabase.auth.getSession()

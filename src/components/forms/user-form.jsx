@@ -793,9 +793,12 @@ const UserForm = ({ onCancel, id }) => {
   const onSubmit = async (data) => {
     setCurrentTab(0)
 
-    u_api.upsertUser(id, data, usersDispatch)
-
-    onCancel()
+    try {
+      await u_api.upsertUser(id, data, usersDispatch)
+      onCancel()
+    } catch (error) {
+      console.error('Error saving user:', error)
+    }
   }
 
   const handleSubmit = (e) => {
