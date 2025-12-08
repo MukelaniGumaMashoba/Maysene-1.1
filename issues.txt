@@ -200,3 +200,7 @@ needed
 inspection templates
 UI Fix 
 icon change for fuel
+
+
+
+FIX THE ID PAGE TO BE ABLE TO EDIT CLIENT, EDIT THE STOP POINTS
