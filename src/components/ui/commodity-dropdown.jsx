@@ -5,7 +5,7 @@ import { ChevronDown, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const COMMODITIES = [
-  'BR', 'Cl', 'ST', 'FS', 'FO', 'FW', 'FC', 'FMCG', 'GENC', 'CIT', 'BRD', 'PNT', 'CMT', 'HCON', 'CONT', 'GNL', 'GF', 'THDW', 'WH', 'TI', 'PAL', 'FERT', 'FL', 'STEEL', 'SHV', 'TYRE', 'SLT', 'GRAIN', 'EMP', 'MDD', 'BUILD', 'SALE', 'MAKRO', 'JUMBO', 'CNCLDN', 'DFT', 'MDD TRIP RATE', 'CHEP', 'BRK', 'HEIN', 'QSUGAR', 'SHU', 'JM', 'M5', 'CAM', 'MC', 'RH', 'FD', 'SAL', 'UML', 'MDD DAY RT', 'BRKDN', 'SERV/COF', 'NEWV', 'BBGD', 'GRMR', 'HMCPT', 'REVLOGS', 'REDLR', 'MT', 'MR', 'MDFT', 'CLTHM', 'SAPPI', 'CAM140', 'CAM148', 'CAMZULU', 'CAM PINE', 'CAMTR', 'BDFT', 'KELL', 'ULT', 'REPL', 'BRAK', 'RUST', 'BUILDF', 'HUL', 'ILOV', 'AFRO', 'ILL', 'SAP', 'P&G', 'VIP', 'DFTST', 'OMNI', 'SPEC', 'SAINT', 'LAD', 'BXM', 'VEG', 'CRAD', 'TVP', 'PALL', 'TIP', 'SALB', 'CLEAR'
+  'Ash','Cement'
 ]
 
 export function CommodityDropdown({ value, onChange, placeholder = "Select commodity" }) {
