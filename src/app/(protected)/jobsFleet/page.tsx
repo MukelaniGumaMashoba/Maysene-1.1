@@ -50,6 +50,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Modal from "@/components/modals/modal";
+import { AllocateSubcontractorDialog } from "@/components/modals/subcontractors";
 
 interface Job {
   id: number;
@@ -90,6 +91,7 @@ interface Job {
   completed_at: string;
   eta: string;
   service: string;
+  created: number;
 }
 
 interface Technician {
@@ -127,7 +129,7 @@ export default function FleetJobsPage() {
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [searchTechnicianLocation, setSearchTechnicianLocation] = useState("");
   const [selectedJobForTech, setSelectedJobForTech] = useState<Job | null>(
-    null
+    null,
   );
   const [isTechDialogOpen, setIsTechDialogOpen] = useState(false);
 
@@ -169,10 +171,43 @@ export default function FleetJobsPage() {
     }
   };
 
+  const handleCreatedRequired = async (
+    jobId: number,
+    status: string,
+    notes?: string,
+    created?: number,
+  ) => {
+    try {
+      const { error } = await supabase
+        .from("job_assignments")
+        .update({
+          status: status,
+          notes: notes || "",
+          created: created,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", jobId);
+
+      if (error) {
+        console.error("Error updating job status:", error);
+        return;
+      }
+
+      alert("Job successful, status updated successfully.");
+
+      setIsUpdateDialogOpen(false);
+      setNewStatus("");
+      setUpdateNotes("");
+      await getJobs(); // refresh after update
+    } catch (error) {
+      console.error("Error updating job status:", error);
+    }
+  };
+
   const handleUpdateJobStatus = async (
     jobId: number,
     status: string,
-    notes?: string
+    notes?: string,
   ) => {
     try {
       const { error } = await supabase
@@ -221,7 +256,7 @@ export default function FleetJobsPage() {
           drivers (*),
           vehiclesc (*),
           technicians:technician_id(*)
-        `
+        `,
       )
       .order("created_at", { ascending: false });
 
@@ -232,10 +267,15 @@ export default function FleetJobsPage() {
     const all = (jobsData || []) as unknown as Job[];
     setAllJobs(all);
 
-    // Active jobs for the List tab (same logic as before)
-    const active = all.filter(
-      (j) => j.status !== "completed" && j.status !== "cancelled"
-    );
+    // Active jobs for the List tab (exclude completed, cancelled, and rejected)
+    const active = all.filter((j) => {
+      const statusLower = j.status?.toLowerCase?.() ?? "";
+      const isCompleted = statusLower === "completed";
+      const isCancelled = statusLower === "cancelled";
+      const isRejected = j.created === 1;
+
+      return !isCompleted && !isCancelled && !isRejected;
+    });
     setJobs(active);
     setFilteredJobs(active);
 
@@ -266,7 +306,7 @@ export default function FleetJobsPage() {
   // Assign the selected technician to the job
   const assignTechnicianToJob = async (
     technicianId: number,
-    technicianName: string
+    technicianName: string,
   ) => {
     if (!selectedJobForTech) return;
 
@@ -297,7 +337,7 @@ export default function FleetJobsPage() {
         (payload) => {
           console.log("Change received in assignments table!", payload);
           getJobs();
-        }
+        },
       )
       .subscribe();
 
@@ -309,7 +349,7 @@ export default function FleetJobsPage() {
         (payload) => {
           console.log("Change received in job_assignments:", payload);
           getJobs();
-        }
+        },
       )
       .subscribe();
 
@@ -380,12 +420,10 @@ export default function FleetJobsPage() {
       filtered = filtered.filter((job) => job.service === serviceFilter);
     }
 
-
     // Priority filter
     if (priorityFilter !== "all") {
       filtered = filtered.filter((job) => job.priority === priorityFilter);
     }
-
 
     setFilteredJobs(filtered);
   }, [jobs, searchTerm, statusFilter, priorityFilter]);
@@ -436,12 +474,18 @@ export default function FleetJobsPage() {
   };
 
   const getDays = (createdDate: string) => {
-  const start = new Date(createdDate);
-  const end = new Date(); 
-  const diffTime = Math.abs(end.getTime() - start.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays;
-}
+    const start = new Date(createdDate);
+    const end = new Date();
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  // Collate rejected or cancelled jobs for the Rejected tab
+  const rejectedJobs = allJobs.filter((job) => {
+    const statusLower = job.status?.toLowerCase?.() ?? "";
+    return job.created === 1 || statusLower === "cancelled";
+  });
 
   return (
     <>
@@ -485,12 +529,16 @@ export default function FleetJobsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Services</SelectItem>
-                <SelectItem value="Mechanical Failure">Mechanical Failure</SelectItem>
-                <SelectItem value="Electrical Issue">Electrical Issue</SelectItem>
+                <SelectItem value="Mechanical Failure">
+                  Mechanical Failure
+                </SelectItem>
+                <SelectItem value="Electrical Issue">
+                  Electrical Issue
+                </SelectItem>
                 <SelectItem value="Bodywork Repair">Bodywork Repair</SelectItem>
               </SelectContent>
             </Select>
-  
+
             <div className="mt-4">
               <button onClick={handleRefreshClick}>
                 <RefreshCcw />
@@ -503,6 +551,7 @@ export default function FleetJobsPage() {
           <TabsList>
             <TabsTrigger value="list">Job List</TabsTrigger>
             <TabsTrigger value="kanban">Kanban Board</TabsTrigger>
+            <TabsTrigger value="calendar">Rejected</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
 
@@ -771,7 +820,27 @@ export default function FleetJobsPage() {
                             </Button>
                           </Link>
                         </div>
-                        <div className="flex gap-2">
+
+                        {/* using created field with number 1 or 0 whereby 0 is job appoved but when 1 rejected */}
+
+                        {(job.status === "inprogress" ||
+                          job.status === "Approved") && (
+                          <div className="flex gap-2">
+                            {/* In your jobs list (e.g., where job.status === "Approved") */}
+                            {job.status === "Approved" && (
+                              <div className="flex gap-2">
+                                <AllocateSubcontractorDialog
+                                  jobId={job.id}
+                                  jobDescription={job.description}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {(job.status === "assigned" ||
+                          job.status === "Assigned" ||
+                          job.status === "Approved") && (
                           <Button
                             variant="destructive"
                             size="sm"
@@ -780,7 +849,42 @@ export default function FleetJobsPage() {
                             <XCircle className="h-4 w-4 mr-2" />
                             Close Job
                           </Button>
-                        </div>
+                        )}
+
+                        {job.status === "Breakdown Request" && (
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() =>
+                                handleCreatedRequired(
+                                  job.id,
+                                  "Approved",
+                                  "Job approved by fleet manager",
+                                  0,
+                                )
+                              }
+                              className="bg-green-600 hover:bg-green-700"
+                              size="sm"
+                            >
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Approve
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              onClick={() =>
+                                handleCreatedRequired(
+                                  job.id,
+                                  "Cancelled",
+                                  "Job rejected by fleet manager",
+                                  1,
+                                )
+                              }
+                              size="sm"
+                            >
+                              <XCircle className="h-4 w-4 mr-2" />
+                              Reject
+                            </Button>
+                          </div>
+                        )}
 
                         {job.status === "awaiting-approval" &&
                           canApproveJobs && (
@@ -790,7 +894,7 @@ export default function FleetJobsPage() {
                                   handleUpdateJobStatus(
                                     job.id,
                                     "approved",
-                                    "Job approved by fleet manager"
+                                    "Job approved by fleet manager",
                                   )
                                 }
                                 className="bg-green-600 hover:bg-green-700"
@@ -805,7 +909,7 @@ export default function FleetJobsPage() {
                                   handleUpdateJobStatus(
                                     job.id,
                                     "cancelled",
-                                    "Job rejected by fleet manager"
+                                    "Job rejected by fleet manager",
                                   )
                                 }
                                 size="sm"
@@ -879,6 +983,100 @@ export default function FleetJobsPage() {
               ))}
             </div>
           </TabsContent>
+
+            <TabsContent value="calendar" className="space-y-4">
+              <div className="grid gap-4">
+                {rejectedJobs.map((job) => (
+                  <Card
+                    key={job.id}
+                    className="hover:shadow-md transition-shadow"
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-5 w-5 text-red-500" />
+                            <CardTitle className="text-lg">
+                              {job.job_id} : {job?.vehiclesc?.fleet_number}
+                            </CardTitle>
+                          </div>
+                          <Badge className={getPriorityColor(job.priority)}>
+                            {job.priority} : {job.service}
+                          </Badge>
+                          <Badge variant="destructive">Rejected</Badge>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm text-gray-500">
+                            {getDays(job.created_at)} days ago
+                          </span>
+                        </div>
+                      </div>
+                      <CardDescription className="text-base font-medium">
+                        {job.description}
+                      </CardDescription>
+                    </CardHeader>
+
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                        <div>
+                          <h4 className="font-semibold mb-2 flex items-center gap-2">
+                            <User className="h-4 w-4" />
+                            Driver Information
+                          </h4>
+                          <p className="text-sm">
+                            <strong>Name:</strong> {job.drivers?.first_name}{" "}
+                            {job.drivers?.surname}
+                          </p>
+                          <p className="text-sm">
+                            <strong>Phone:</strong> {job.drivers?.cell_number}
+                          </p>
+                        </div>
+
+                        <div>
+                          <h4 className="font-semibold mb-2 flex items-center gap-2">
+                            <Truck className="h-4 w-4" />
+                            Vehicle Details
+                          </h4>
+                          <p className="text-sm">
+                            <strong>Reg:</strong> {" "}
+                            {job.vehiclesc?.registration_number || "N/A"}
+                          </p>
+                          <p className="text-sm">
+                            <strong>Make:</strong> {job.vehiclesc?.make || "N/A"}
+                          </p>
+                          <p className="text-sm">
+                            <strong>Model:</strong> {" "}
+                            {job.vehiclesc?.model || "N/A"}
+                          </p>
+                        </div>
+
+                        <div>
+                          <h4 className="font-semibold mb-2 flex items-center gap-2">
+                            <MapPin className="h-4 w-4" />
+                            Location
+                          </h4>
+                          <p className="text-sm text-gray-600">
+                            {job.location}
+                          </p>
+                        </div>
+
+                        <div>
+                          <h4 className="font-semibold mb-2 flex items-center gap-2">
+                            <MessageSquare className="h-4 w-4" />
+                            Rejection Notes
+                          </h4>
+                          <p className="text-sm text-gray-600">
+                            {job.notes || "No rejection notes provided"}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+            
 
           <TabsContent value="analytics" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -964,7 +1162,7 @@ export default function FleetJobsPage() {
                     "cancelled",
                   ].map((status) => {
                     const count = allJobs.filter(
-                      (job) => job.status === status
+                      (job) => job.status === status,
                     ).length;
                     const percentage =
                       allJobs.length > 0 ? (count / allJobs.length) * 100 : 0;

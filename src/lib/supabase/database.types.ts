@@ -697,85 +697,139 @@ export type Database = {
       clients: {
         Row: {
           address: string | null
+          capacity: string | null
           city: string | null
           ck_number: string | null
           client_id: string | null
+          color: string | null
+          contact_email: string | null
           contact_person: string | null
+          contact_phone: string | null
+          coordinates: string | null
+          coordinates5: string | null
+          coordinates6: string | null
           coords: string | null
           country: string | null
+          created_at: string | null
           credit_limit: number | null
           dormant_flag: boolean | null
           dropoff_locations: Json | null
           email: string | null
+          facilities: string[] | null
           fax_number: string | null
           id: number
           industry: string | null
           name: string
+          name2: string | null
+          notes: string | null
+          operating_hours: string | null
+          outline: string | null
           phone: string | null
           pickup_locations: Json | null
           postal_code: string | null
+          radius: number | null
           registration_name: string | null
           registration_number: string | null
           state: string | null
           status: string
           street: string | null
+          style_url: string | null
           tax_number: string | null
+          type: string | null
+          updated_at: string | null
+          value: string | null
           vat_number: string | null
           vat_registered: boolean | null
         }
         Insert: {
           address?: string | null
+          capacity?: string | null
           city?: string | null
           ck_number?: string | null
           client_id?: string | null
+          color?: string | null
+          contact_email?: string | null
           contact_person?: string | null
+          contact_phone?: string | null
+          coordinates?: string | null
+          coordinates5?: string | null
+          coordinates6?: string | null
           coords?: string | null
           country?: string | null
+          created_at?: string | null
           credit_limit?: number | null
           dormant_flag?: boolean | null
           dropoff_locations?: Json | null
           email?: string | null
+          facilities?: string[] | null
           fax_number?: string | null
           id?: number
           industry?: string | null
-          name?: string
+          name: string
+          name2?: string | null
+          notes?: string | null
+          operating_hours?: string | null
+          outline?: string | null
           phone?: string | null
           pickup_locations?: Json | null
           postal_code?: string | null
+          radius?: number | null
           registration_name?: string | null
           registration_number?: string | null
           state?: string | null
           status?: string
           street?: string | null
+          style_url?: string | null
           tax_number?: string | null
+          type?: string | null
+          updated_at?: string | null
+          value?: string | null
           vat_number?: string | null
           vat_registered?: boolean | null
         }
         Update: {
           address?: string | null
+          capacity?: string | null
           city?: string | null
           ck_number?: string | null
           client_id?: string | null
+          color?: string | null
+          contact_email?: string | null
           contact_person?: string | null
+          contact_phone?: string | null
+          coordinates?: string | null
+          coordinates5?: string | null
+          coordinates6?: string | null
           coords?: string | null
           country?: string | null
+          created_at?: string | null
           credit_limit?: number | null
           dormant_flag?: boolean | null
           dropoff_locations?: Json | null
           email?: string | null
+          facilities?: string[] | null
           fax_number?: string | null
           id?: number
           industry?: string | null
           name?: string
+          name2?: string | null
+          notes?: string | null
+          operating_hours?: string | null
+          outline?: string | null
           phone?: string | null
           pickup_locations?: Json | null
           postal_code?: string | null
+          radius?: number | null
           registration_name?: string | null
           registration_number?: string | null
           state?: string | null
           status?: string
           street?: string | null
+          style_url?: string | null
           tax_number?: string | null
+          type?: string | null
+          updated_at?: string | null
+          value?: string | null
           vat_number?: string | null
           vat_registered?: boolean | null
         }
@@ -1476,6 +1530,7 @@ export type Database = {
           cell_number: string | null
           created_at: string | null
           created_by: string | null
+          driver_code: string | null
           driver_restriction_code: string | null
           email_address: string | null
           first_name: string | null
@@ -1510,6 +1565,7 @@ export type Database = {
           cell_number?: string | null
           created_at?: string | null
           created_by?: string | null
+          driver_code?: string | null
           driver_restriction_code?: string | null
           email_address?: string | null
           first_name?: string | null
@@ -1544,6 +1600,7 @@ export type Database = {
           cell_number?: string | null
           created_at?: string | null
           created_by?: string | null
+          driver_code?: string | null
           driver_restriction_code?: string | null
           email_address?: string | null
           first_name?: string | null
@@ -1633,12 +1690,141 @@ export type Database = {
         }
         Relationships: []
       }
-      eps_daily_stats: {
+      eps_daily_performance: {
         Row: {
           created_at: string | null
           date: string
+          driver_name: string
+          efficiency: number | null
+          id: number
+          last_update_time: string | null
+          latest_address: string | null
+          latest_geozone: string | null
+          latest_latitude: number | null
+          latest_loc_time: string
+          latest_longitude: number | null
+          latest_mileage: number | null
+          latest_speed: number | null
+          plate: string
+          reward_level: string | null
+          risk_level: string | null
+          route_compliance: boolean | null
+          safety_score: number | null
+          speed_compliance: boolean | null
+          time_compliance: boolean | null
+          total_points: number | null
+          total_risk_score: number | null
+          total_updates_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          driver_name: string
+          efficiency?: number | null
+          id?: number
+          last_update_time?: string | null
+          latest_address?: string | null
+          latest_geozone?: string | null
+          latest_latitude?: number | null
+          latest_loc_time: string
+          latest_longitude?: number | null
+          latest_mileage?: number | null
+          latest_speed?: number | null
+          plate: string
+          reward_level?: string | null
+          risk_level?: string | null
+          route_compliance?: boolean | null
+          safety_score?: number | null
+          speed_compliance?: boolean | null
+          time_compliance?: boolean | null
+          total_points?: number | null
+          total_risk_score?: number | null
+          total_updates_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          driver_name?: string
+          efficiency?: number | null
+          id?: number
+          last_update_time?: string | null
+          latest_address?: string | null
+          latest_geozone?: string | null
+          latest_latitude?: number | null
+          latest_loc_time?: string
+          latest_longitude?: number | null
+          latest_mileage?: number | null
+          latest_speed?: number | null
+          plate?: string
+          reward_level?: string | null
+          risk_level?: string | null
+          route_compliance?: boolean | null
+          safety_score?: number | null
+          speed_compliance?: boolean | null
+          time_compliance?: boolean | null
+          total_points?: number | null
+          total_risk_score?: number | null
+          total_updates_count?: number | null
+        }
+        Relationships: []
+      }
+      eps_daily_snapshots: {
+        Row: {
+          created_at: string | null
+          current_level: string | null
+          current_points: number | null
+          driver_name: string
+          harsh_braking_violations: number | null
+          id: number
+          night_driving_violations: number | null
+          other_violations: number | null
+          points_deducted: number | null
+          route_violations: number | null
+          snapshot_date: string
+          speed_violations: number | null
+          total_violations: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_level?: string | null
+          current_points?: number | null
+          driver_name: string
+          harsh_braking_violations?: number | null
+          id?: number
+          night_driving_violations?: number | null
+          other_violations?: number | null
+          points_deducted?: number | null
+          route_violations?: number | null
+          snapshot_date: string
+          speed_violations?: number | null
+          total_violations?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          current_level?: string | null
+          current_points?: number | null
+          driver_name?: string
+          harsh_braking_violations?: number | null
+          id?: number
+          night_driving_violations?: number | null
+          other_violations?: number | null
+          points_deducted?: number | null
+          route_violations?: number | null
+          snapshot_date?: string
+          speed_violations?: number | null
+          total_violations?: number | null
+        }
+        Relationships: []
+      }
+      eps_daily_stats: {
+        Row: {
+          created_at: string | null
+          daily_distance: number | null
+          date: string
           day_driving_hours: number | null
           driver_name: string
+          engine_off_time: string | null
+          engine_on_time: string | null
           first_drive_time: string | null
           id: number
           last_drive_time: string | null
@@ -1650,13 +1836,17 @@ export type Database = {
           total_distance: number | null
           total_driving_hours: number | null
           total_points: number | null
+          total_risk_score: number | null
           total_violations: number | null
         }
         Insert: {
           created_at?: string | null
+          daily_distance?: number | null
           date: string
           day_driving_hours?: number | null
           driver_name: string
+          engine_off_time?: string | null
+          engine_on_time?: string | null
           first_drive_time?: string | null
           id?: number
           last_drive_time?: string | null
@@ -1668,13 +1858,17 @@ export type Database = {
           total_distance?: number | null
           total_driving_hours?: number | null
           total_points?: number | null
+          total_risk_score?: number | null
           total_violations?: number | null
         }
         Update: {
           created_at?: string | null
+          daily_distance?: number | null
           date?: string
           day_driving_hours?: number | null
           driver_name?: string
+          engine_off_time?: string | null
+          engine_on_time?: string | null
           first_drive_time?: string | null
           id?: number
           last_drive_time?: string | null
@@ -1686,6 +1880,55 @@ export type Database = {
           total_distance?: number | null
           total_driving_hours?: number | null
           total_points?: number | null
+          total_risk_score?: number | null
+          total_violations?: number | null
+        }
+        Relationships: []
+      }
+      eps_daily_violations: {
+        Row: {
+          created_at: string | null
+          date: string
+          driver_name: string
+          excessive_day_count: number | null
+          excessive_night_count: number | null
+          harsh_braking_count: number | null
+          id: number
+          last_violation_time: string | null
+          plate: string
+          route_deviation_count: number | null
+          speeding_count: number | null
+          total_penalty_points: number | null
+          total_violations: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          driver_name: string
+          excessive_day_count?: number | null
+          excessive_night_count?: number | null
+          harsh_braking_count?: number | null
+          id?: number
+          last_violation_time?: string | null
+          plate: string
+          route_deviation_count?: number | null
+          speeding_count?: number | null
+          total_penalty_points?: number | null
+          total_violations?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          driver_name?: string
+          excessive_day_count?: number | null
+          excessive_night_count?: number | null
+          harsh_braking_count?: number | null
+          id?: number
+          last_violation_time?: string | null
+          plate?: string
+          route_deviation_count?: number | null
+          speeding_count?: number | null
+          total_penalty_points?: number | null
           total_violations?: number | null
         }
         Relationships: []
@@ -1755,33 +1998,72 @@ export type Database = {
       }
       eps_driver_rewards: {
         Row: {
+          braking_threshold_exceeded: boolean | null
           created_at: string | null
           current_level: string | null
+          current_points: number | null
           driver_name: string
+          harsh_braking_count: number | null
           id: number
           last_updated: string | null
-          plate: string
+          night_driving_count: number | null
+          night_threshold_exceeded: boolean | null
+          other_threshold_exceeded: boolean | null
+          other_violations_count: number | null
+          plate: string | null
+          points_deducted: number | null
+          route_threshold_exceeded: boolean | null
+          route_violations_count: number | null
+          speed_threshold_exceeded: boolean | null
+          speed_violations_count: number | null
           total_points: number | null
+          total_risk_score: number | null
           violations_count: number | null
         }
         Insert: {
+          braking_threshold_exceeded?: boolean | null
           created_at?: string | null
           current_level?: string | null
+          current_points?: number | null
           driver_name: string
+          harsh_braking_count?: number | null
           id?: number
           last_updated?: string | null
-          plate: string
+          night_driving_count?: number | null
+          night_threshold_exceeded?: boolean | null
+          other_threshold_exceeded?: boolean | null
+          other_violations_count?: number | null
+          plate?: string | null
+          points_deducted?: number | null
+          route_threshold_exceeded?: boolean | null
+          route_violations_count?: number | null
+          speed_threshold_exceeded?: boolean | null
+          speed_violations_count?: number | null
           total_points?: number | null
+          total_risk_score?: number | null
           violations_count?: number | null
         }
         Update: {
+          braking_threshold_exceeded?: boolean | null
           created_at?: string | null
           current_level?: string | null
+          current_points?: number | null
           driver_name?: string
+          harsh_braking_count?: number | null
           id?: number
           last_updated?: string | null
-          plate?: string
+          night_driving_count?: number | null
+          night_threshold_exceeded?: boolean | null
+          other_threshold_exceeded?: boolean | null
+          other_violations_count?: number | null
+          plate?: string | null
+          points_deducted?: number | null
+          route_threshold_exceeded?: boolean | null
+          route_violations_count?: number | null
+          speed_threshold_exceeded?: boolean | null
+          speed_violations_count?: number | null
           total_points?: number | null
+          total_risk_score?: number | null
           violations_count?: number | null
         }
         Relationships: []
@@ -1918,6 +2200,147 @@ export type Database = {
           updated_at?: string
           vehicle_restriction_code?: string | null
           work_permit_url?: string | null
+        }
+        Relationships: []
+      }
+      eps_fuel_data: {
+        Row: {
+          created_at: string | null
+          driver_name: string | null
+          engine_status: string | null
+          fuel_level: number | null
+          fuel_percentage: number | null
+          fuel_temperature: number | null
+          fuel_volume: number | null
+          id: number
+          latitude: number | null
+          loc_time: string | null
+          longitude: number | null
+          plate: string
+        }
+        Insert: {
+          created_at?: string | null
+          driver_name?: string | null
+          engine_status?: string | null
+          fuel_level?: number | null
+          fuel_percentage?: number | null
+          fuel_temperature?: number | null
+          fuel_volume?: number | null
+          id?: number
+          latitude?: number | null
+          loc_time?: string | null
+          longitude?: number | null
+          plate: string
+        }
+        Update: {
+          created_at?: string | null
+          driver_name?: string | null
+          engine_status?: string | null
+          fuel_level?: number | null
+          fuel_percentage?: number | null
+          fuel_temperature?: number | null
+          fuel_volume?: number | null
+          id?: number
+          latitude?: number | null
+          loc_time?: string | null
+          longitude?: number | null
+          plate?: string
+        }
+        Relationships: []
+      }
+      eps_vehicles: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          driver_name: string | null
+          engine_status: string | null
+          fuel_level: number | null
+          fuel_percentage: number | null
+          fuel_temperature: number | null
+          fuel_volume: number | null
+          geozone: string | null
+          id: number
+          latitude: number | null
+          loc_time: string | null
+          longitude: number | null
+          mileage: number | null
+          name_event: string | null
+          plate: string
+          speed: number | null
+          statuses: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          driver_name?: string | null
+          engine_status?: string | null
+          fuel_level?: number | null
+          fuel_percentage?: number | null
+          fuel_temperature?: number | null
+          fuel_volume?: number | null
+          geozone?: string | null
+          id?: number
+          latitude?: number | null
+          loc_time?: string | null
+          longitude?: number | null
+          mileage?: number | null
+          name_event?: string | null
+          plate: string
+          speed?: number | null
+          statuses?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          driver_name?: string | null
+          engine_status?: string | null
+          fuel_level?: number | null
+          fuel_percentage?: number | null
+          fuel_temperature?: number | null
+          fuel_volume?: number | null
+          geozone?: string | null
+          id?: number
+          latitude?: number | null
+          loc_time?: string | null
+          longitude?: number | null
+          mileage?: number | null
+          name_event?: string | null
+          plate?: string
+          speed?: number | null
+          statuses?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      fuel_gauge_settings: {
+        Row: {
+          color_high: string
+          color_low: string
+          color_medium: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color_high?: string
+          color_low?: string
+          color_medium?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color_high?: string
+          color_low?: string
+          color_medium?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -2149,6 +2572,99 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_categories: {
+        Row: {
+          code: string
+          company: string | null
+          created_at: string
+          date_adjusted: string | null
+          description: string
+          id: number
+          total_count: number | null
+        }
+        Insert: {
+          code: string
+          company?: string | null
+          created_at?: string
+          date_adjusted?: string | null
+          description: string
+          id?: number
+          total_count?: number | null
+        }
+        Update: {
+          code?: string
+          company?: string | null
+          created_at?: string
+          date_adjusted?: string | null
+          description?: string
+          id?: number
+          total_count?: number | null
+        }
+        Relationships: []
+      }
+      inventory_items: {
+        Row: {
+          assigned_date: string | null
+          assigned_to_technician: string | null
+          category_code: string
+          company: string | null
+          container: string | null
+          created_at: string
+          date_adjusted: string | null
+          direction: string | null
+          id: number
+          job_card_id: string | null
+          notes: string | null
+          serial_number: string
+          status: string | null
+        }
+        Insert: {
+          assigned_date?: string | null
+          assigned_to_technician?: string | null
+          category_code: string
+          company?: string | null
+          container?: string | null
+          created_at?: string
+          date_adjusted?: string | null
+          direction?: string | null
+          id?: number
+          job_card_id?: string | null
+          notes?: string | null
+          serial_number: string
+          status?: string | null
+        }
+        Update: {
+          assigned_date?: string | null
+          assigned_to_technician?: string | null
+          category_code?: string
+          company?: string | null
+          container?: string | null
+          created_at?: string
+          date_adjusted?: string | null
+          direction?: string | null
+          id?: number
+          job_card_id?: string | null
+          notes?: string | null
+          serial_number?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_category_fkey"
+            columns: ["category_code"]
+            isOneToOne: false
+            referencedRelation: "inventory_categories"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "inventory_items_job_card_fkey"
+            columns: ["job_card_id"]
+            isOneToOne: false
+            referencedRelation: "job_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_items: {
         Row: {
           created_at: string
@@ -2182,6 +2698,57 @@ export type Database = {
         }
         Relationships: []
       }
+      job_allocation: {
+        Row: {
+          created_at: string | null
+          end_date: string | null
+          id: string
+          job_description: string
+          job_id: number
+          start_date: string | null
+          status: string
+          subcontractor_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          end_date?: string | null
+          id?: string
+          job_description: string
+          job_id: number
+          start_date?: string | null
+          status?: string
+          subcontractor_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          end_date?: string | null
+          id?: string
+          job_description?: string
+          job_id?: number
+          start_date?: string | null
+          status?: string
+          subcontractor_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_allocation_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "job_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_allocation_subcontractor_id_fkey"
+            columns: ["subcontractor_id"]
+            isOneToOne: false
+            referencedRelation: "subcontractor"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_assignments: {
         Row: {
           accepted: boolean | null
@@ -2197,6 +2764,7 @@ export type Database = {
           client_type: string | null
           completed_at: string | null
           coordinates: Json | null
+          created: number | null
           created_at: string | null
           created_by: string | null
           description: string
@@ -2238,6 +2806,7 @@ export type Database = {
           client_type?: string | null
           completed_at?: string | null
           coordinates?: Json | null
+          created?: number | null
           created_at?: string | null
           created_by?: string | null
           description: string
@@ -2279,6 +2848,7 @@ export type Database = {
           client_type?: string | null
           completed_at?: string | null
           coordinates?: Json | null
+          created?: number | null
           created_at?: string | null
           created_by?: string | null
           description?: string
@@ -3022,6 +3592,42 @@ export type Database = {
         }
         Relationships: []
       }
+      note_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          new_note: string | null
+          note_type: string | null
+          old_note: string | null
+          user_email: string | null
+          user_id: string
+          vehicle_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          new_note?: string | null
+          note_type?: string | null
+          old_note?: string | null
+          user_email?: string | null
+          user_id: string
+          vehicle_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          new_note?: string | null
+          note_type?: string | null
+          old_note?: string | null
+          user_email?: string | null
+          user_id?: string
+          vehicle_id?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount_due: number | null
@@ -3066,6 +3672,8 @@ export type Database = {
       }
       payments_: {
         Row: {
+          amount_excl_vat: number | null
+          amount_incl_vat: number | null
           balance_due: number | null
           billing_month: string | null
           company: string | null
@@ -3082,8 +3690,11 @@ export type Database = {
           paid_amount: number | null
           payment_status: string | null
           reference: string | null
+          vat_amount: number | null
         }
         Insert: {
+          amount_excl_vat?: number | null
+          amount_incl_vat?: number | null
           balance_due?: number | null
           billing_month?: string | null
           company?: string | null
@@ -3100,8 +3711,11 @@ export type Database = {
           paid_amount?: number | null
           payment_status?: string | null
           reference?: string | null
+          vat_amount?: number | null
         }
         Update: {
+          amount_excl_vat?: number | null
+          amount_incl_vat?: number | null
           balance_due?: number | null
           billing_month?: string | null
           company?: string | null
@@ -3118,6 +3732,7 @@ export type Database = {
           paid_amount?: number | null
           payment_status?: string | null
           reference?: string | null
+          vat_amount?: number | null
         }
         Relationships: []
       }
@@ -3611,6 +4226,39 @@ export type Database = {
         }
         Relationships: []
       }
+      subcontractor: {
+        Row: {
+          availability: boolean | null
+          created_at: string | null
+          email: string
+          id: string
+          name: string
+          rating: number | null
+          skills: string[]
+          updated_at: string | null
+        }
+        Insert: {
+          availability?: boolean | null
+          created_at?: string | null
+          email: string
+          id?: string
+          name: string
+          rating?: number | null
+          skills?: string[]
+          updated_at?: string | null
+        }
+        Update: {
+          availability?: boolean | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+          rating?: number | null
+          skills?: string[]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       systems: {
         Row: {
           created_at: string
@@ -3637,6 +4285,7 @@ export type Database = {
       }
       tech_stock: {
         Row: {
+          assigned_parts: Json | null
           created_at: string
           id: number
           new_stock_assigned: boolean | null
@@ -3644,6 +4293,7 @@ export type Database = {
           technician_email: string | null
         }
         Insert: {
+          assigned_parts?: Json | null
           created_at?: string
           id?: number
           new_stock_assigned?: boolean | null
@@ -3651,6 +4301,7 @@ export type Database = {
           technician_email?: string | null
         }
         Update: {
+          assigned_parts?: Json | null
           created_at?: string
           id?: number
           new_stock_assigned?: boolean | null
@@ -4183,6 +4834,7 @@ export type Database = {
           first_login: boolean | null
           id: string
           permissions: Json | null
+          phone: string | null
           role: string | null
           site_id: string | null
           tech_admin: boolean | null
@@ -4196,6 +4848,7 @@ export type Database = {
           first_login?: boolean | null
           id: string
           permissions?: Json | null
+          phone?: string | null
           role?: string | null
           site_id?: string | null
           tech_admin?: boolean | null
@@ -4209,6 +4862,7 @@ export type Database = {
           first_login?: boolean | null
           id?: string
           permissions?: Json | null
+          phone?: string | null
           role?: string | null
           site_id?: string | null
           tech_admin?: boolean | null
@@ -5020,6 +5674,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      vehicle_settings: {
+        Row: {
+          created_at: string
+          id: string
+          tank_size: number | null
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          tank_size?: number | null
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          tank_size?: number | null
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: []
       }
       vehicles: {
         Row: {
@@ -6930,11 +7608,20 @@ export type Database = {
       }
     }
     Functions: {
-      assign_technician_with_override: {
+      assign_technician_simple: {
         Args: {
           p_job_date: string
           p_job_id: string
           p_override?: boolean
+          p_technician_name: string
+        }
+        Returns: Json
+      }
+      assign_technician_with_override: {
+        Args: {
+          p_job_date: string
+          p_job_id: string
+          p_override: boolean
           p_technician_name: string
         }
         Returns: Json
@@ -6972,6 +7659,19 @@ export type Database = {
           p_technician_name: string
         }
         Returns: Json
+      }
+      generate_bulk_invoice_data: {
+        Args: { account_id_param?: string }
+        Returns: {
+          amount_excl_vat: number
+          company: string
+          cost_code: string
+          invoice_date: string
+          service_description: string
+          total_amount: number
+          vat_amount: number
+          vehicle_id: string
+        }[]
       }
       generate_job_number: { Args: never; Returns: string }
       generate_quotation_number: { Args: never; Returns: string }
@@ -7011,6 +7711,17 @@ export type Database = {
           total_paid: number
         }[]
       }
+      get_users_with_auth: {
+        Args: { email_pattern: string }
+        Returns: {
+          created_at: string
+          email: string
+          first_login: boolean
+          id: string
+          last_sign_in_at: string
+          role: string
+        }[]
+      }
       initialize_technician_stock: {
         Args: { tech_email: string }
         Returns: undefined
@@ -7026,6 +7737,14 @@ export type Database = {
         Returns: undefined
       }
       monthly_billing_process: { Args: never; Returns: undefined }
+      populate_payments_from_vehicles: {
+        Args: never
+        Returns: {
+          message: string
+          processed_count: number
+          total_amount: number
+        }[]
+      }
       reset_loan_vehicles: { Args: never; Returns: undefined }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }

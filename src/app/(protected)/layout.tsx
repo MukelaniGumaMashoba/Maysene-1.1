@@ -32,23 +32,23 @@ interface ProtectedLayoutProps {
 // Role-based navigation configuration
 const roleNavigation = {
   "fleet manager": [
-    { name: "Dashboard", href: "/dashboard", Icon: <ChartBar /> },
+    { name: "Dashboard", href: "/dashboard", Icon: <ChartBar /> },    
+    { name: "Load Plan", href: "/load-plan", Icon: <Route /> },
     { name: "Statistics", href: "/statistics", Icon: <StepForward /> },
     { name: "Jobs", href: "/jobsFleet", Icon: <Briefcase /> },
     {
       name: "Inspections",
       href: "/fleetManager/inspections",
       Icon: <QrCode />,
-    },
+    },  
+    { name: "Stop Points", href: "/fleetManager/stop-points", Icon: <Route /> },
     { name: "Drivers", href: "/drivers", Icon: <Users /> },
     { name: "Vehicles", href: "/vehicles", Icon: <Car /> },
     { name: "Clients", href: "/fleetManager/clients", Icon: <Building2 /> },
-    { name: "Stop Points", href: "/fleetManager/stop-points", Icon: <Route /> },
-    { name: "Load Plan", href: "/load-plan", Icon: <Route /> },
-    { name: "Fuel Can Bus", href: "/fuel", Icon: <Truck /> },
     { name: "Financials", href: "/audit", Icon: <Settings2Icon /> },
+    { name: "Fuel Can Bus", href: "/fuel", Icon: <Truck /> },
+    { name: "User Management", href: "/userManagement", Icon: <PlusSquare /> }, 
     { name: "System Settings", href: "/settings", Icon: <Settings /> },
-    { name: "User Management", href: "/userManagement", Icon: <PlusSquare /> },
   ],
   fc: [
     { name: "Dashboard", href: "/dashboard", Icon: <ChartBar /> },
