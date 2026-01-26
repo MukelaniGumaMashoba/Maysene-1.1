@@ -42,6 +42,7 @@ const roleNavigation = {
       Icon: <QrCode />,
     },  
     { name: "Stop Points", href: "/fleetManager/stop-points", Icon: <Route /> },
+    {name : "Subcontractors", href: "/fleetManager/subcontractors", Icon: <Construction /> },
     { name: "Drivers", href: "/drivers", Icon: <Users /> },
     { name: "Vehicles", href: "/vehicles", Icon: <Car /> },
     { name: "Clients", href: "/fleetManager/clients", Icon: <Building2 /> },
