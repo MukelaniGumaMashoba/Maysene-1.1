@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -25,9 +25,13 @@ import {
     Calendar,
     AlertTriangle,
     Download,
+    Users,
+    Star,
+    Printer,
 } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
+import jsPDF from "jspdf"
 
 interface Job {
     id: number;
@@ -78,10 +82,12 @@ interface Job {
 export default function FleetJobDetailPage() {
     const params = useParams()
     const [job, setJob] = useState<Job | null>(null)
+    const [allocation, setAllocation] = useState<any>(null)
     const [userRole, setUserRole] = useState<string>("")
     const [newNote, setNewNote] = useState("")
     const [isLoading, setIsLoading] = useState(true)
     const supabase = createClient()
+    const contentRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
         const role = localStorage.getItem("userRole") || "call-center"
@@ -103,6 +109,20 @@ export default function FleetJobDetailPage() {
 
                 if (jobData) {
                     setJob(jobData as unknown as Job)
+                    
+                    // Fetch allocation details if exists
+                    const { data: allocationData } = await supabase
+                        .from("job_allocation")
+                        .select(`
+                            *,
+                            subcontractor (*)
+                        `)
+                        .eq("job_id", Number(params.id))
+                        .single()
+                    
+                    if (allocationData) {
+                        setAllocation(allocationData)
+                    }
                 }
                 setIsLoading(false)
             } catch (error) {
@@ -208,6 +228,24 @@ export default function FleetJobDetailPage() {
         }
     }
 
+    const handleDownloadPdf = () => {
+        if (!contentRef.current) return
+        const doc = new jsPDF({
+            unit: "pt",
+            format: "a4",
+        })
+        doc.html(contentRef.current, {
+            callback: function (doc) {
+                doc.save(`Job_${job?.job_id}.pdf`)
+            },
+            margin: [20, 20, 20, 20],
+            autoPaging: "text",
+            x: 0,
+            y: 0,
+            html2canvas: { scale: 0.6 },
+        })
+    }
+
     if (isLoading) {
         return <div>Loading...</div>
     }
@@ -233,9 +271,17 @@ export default function FleetJobDetailPage() {
                 <FileText className="h-6 w-6 text-blue-600" />
                 <h1 className="text-xl font-semibold">{job.job_id}</h1>
             </div>
+            {/* <Button
+                onClick={handleDownloadPdf}
+                className="ml-auto bg-indigo-600 text-white hover:bg-indigo-700"
+                size="sm"
+            >
+                <Printer className="h-4 w-4 mr-2" />
+                Download PDF
+            </Button> */}
 
 
-            <div className="flex-1 space-y-6 p-6">
+            <div className="flex-1 space-y-6 p-6" ref={contentRef}>
                 {/* Job Header */}
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
@@ -279,7 +325,7 @@ export default function FleetJobDetailPage() {
                 <Tabs defaultValue="details" className="space-y-4">
                     <TabsList>
                         <TabsTrigger value="details">Job Details</TabsTrigger>
-                        {/* <TabsTrigger value="timeline">Timeline</TabsTrigger> */}
+                        <TabsTrigger value="subcontractor">Subcontractor</TabsTrigger>
                         <TabsTrigger value="notes">Notes & Communication</TabsTrigger>
                         <TabsTrigger value="attachments">Attachments</TabsTrigger>
                     </TabsList>
@@ -461,6 +507,94 @@ export default function FleetJobDetailPage() {
                                 </CardContent>
                             </Card>
                         )}
+                    </TabsContent>
+
+                    <TabsContent value="subcontractor" className="space-y-4">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Users className="h-5 w-5" />
+                                    Subcontractor Assignment
+                                </CardTitle>
+                                <CardDescription>View subcontractor allocation details</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {allocation ? (
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <div>
+                                                <Label className="text-sm font-medium">Assigned to</Label>
+                                                <p className="text-sm font-semibold">{allocation.subcontractor?.name}</p>
+                                            </div>
+                                            <div>
+                                                <Label className="text-sm font-medium">Status</Label>
+                                                <Badge className={getStatusColor(allocation.status)}>
+                                                    {allocation.status}
+                                                </Badge>
+                                            </div>
+                                            <div>
+                                                <Label className="text-sm font-medium">Email</Label>
+                                                <p className="text-sm">{allocation.subcontractor?.email}</p>
+                                            </div>
+                                            <div>
+                                                <Label className="text-sm font-medium">Phone</Label>
+                                                <div className="flex items-center gap-2">
+                                                    <Button size="sm" variant="outline">
+                                                        <Phone className="h-4 w-4" />
+                                                    </Button>
+                                                    <p className="text-sm">{allocation.subcontractor?.phone}</p>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <Label className="text-sm font-medium">Skills</Label>
+                                                <div className="flex flex-wrap gap-1 mt-1">
+                                                    {allocation.subcontractor?.skills?.map((skill: string, index: number) => (
+                                                        <Badge key={index} variant="outline" className="text-xs">
+                                                            {skill}
+                                                        </Badge>
+                                                    )) || <span className="text-sm text-gray-500">N/A</span>}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <Label className="text-sm font-medium">Rating</Label>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="flex gap-0.5">
+                                                        {Array.from({ length: 5 }).map((_, i) => (
+                                                            <Star
+                                                                key={i}
+                                                                className={`h-4 w-4 ${
+                                                                    i < Math.floor(allocation.subcontractor?.rating || 0)
+                                                                        ? 'fill-yellow-400 text-yellow-400'
+                                                                        : 'text-gray-300'
+                                                                }`}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                    <span className="text-sm">({allocation.subcontractor?.rating || 0})</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <Separator />
+                                        <div>
+                                            <Label className="text-sm font-medium">Allocated At</Label>
+                                            <p className="text-sm">{new Date(allocation.created_at).toLocaleString()}</p>
+                                        </div>
+                                        <div>
+                                            <Label className="text-sm font-medium">Job Description</Label>
+                                            <p className="text-sm bg-gray-50 p-3 rounded">{allocation.job_description}</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-8">
+                                        <Users className="h-12 w-12 mx-auto mb-2 opacity-50 text-gray-400" />
+                                        <Badge variant="secondary" className="text-lg px-4 py-2 mb-2">
+                                            Not Assigned to Subcontractor
+                                        </Badge>
+                                        <p className="text-gray-500">This job has not been allocated to any subcontractor</p>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
                     </TabsContent>
 
                     <TabsContent value="timeline" className="space-y-4">
