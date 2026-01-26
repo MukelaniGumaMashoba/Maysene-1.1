@@ -65,6 +65,94 @@ import TestRouteMap from "@/components/map/test-route-map";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from 'recharts';
 
+// Trip Time Info Component with ETA
+function TripTimeInfo({ trip }: any) {
+  const [eta, setEta] = useState<any>(null);
+
+  useEffect(() => {
+    async function fetchEta() {
+      if (!trip.id && !trip.trip_id) return;
+      try {
+        const tripId = trip.id || trip.trip_id;
+        const response = await fetch(`/api/trips/${tripId}/eta`);
+        const data = await response.json();
+        if (!data.error && data.eta) {
+          setEta(data);
+        }
+      } catch (error) {
+        console.error('Error fetching ETA:', error);
+      }
+    }
+    fetchEta();
+  }, [trip.id, trip.trip_id]);
+
+  const pickupTime = trip.pickup_locations?.[0]?.scheduled_time || trip.pickuplocations?.[0]?.scheduled_time;
+  const dropoffTime = trip.dropoff_locations?.[0]?.scheduled_time || trip.dropofflocations?.[0]?.scheduled_time;
+
+  if (!pickupTime && !dropoffTime && !eta) return null;
+
+  return (
+    <div className="flex mb-2 gap-2">
+      {/* Schedule Section (70%) */}
+      {(pickupTime || dropoffTime) && (
+        <div className="bg-blue-50 rounded p-1.5 border border-blue-200 flex-1 min-w-0" style={{ flexBasis: '70%' }}>
+          <div className="flex items-center gap-1 mb-1">
+            <Clock className="w-2.5 h-2.5 text-blue-600" />
+            <span className="text-xs font-medium text-blue-800">Schedule</span>
+          </div>
+          <div className="space-y-1">
+            {pickupTime && (
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                  <span className="font-medium text-slate-700">Pickup</span>
+                </div>
+                <span className="font-semibold text-slate-900">
+                  {new Date(pickupTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} {new Date(pickupTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+            )}
+            {dropoffTime && (
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                  <span className="font-medium text-slate-700">Drop-off</span>
+                </div>
+                <span className="font-semibold text-slate-900">
+                  {new Date(dropoffTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} {new Date(dropoffTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      {/* ETA Section (30%) */}
+      {eta && (
+        <div className="bg-red-50 rounded p-1.5 border border-red-200 flex flex-col justify-between" style={{ flexBasis: '30%', minWidth: 0 }}>
+          <div>
+            <div className="flex items-center gap-1 mb-1">
+              <Clock className="w-2.5 h-2.5 text-red-600" />
+              <span className="text-xs font-medium text-red-800">Actual ETA</span>
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-medium text-slate-700">Estimated Arrival</span>
+              <span className="font-semibold text-red-900">
+                {new Date(eta.eta).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} {new Date(eta.eta).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+          </div>
+          {eta.distance && (
+            <div className="flex items-center justify-between text-xs mt-1">
+              <span className="text-slate-600">Distance</span>
+              <span className="font-medium text-slate-900">{(eta.distance / 1000).toFixed(1)} km</span>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 
 // Driver Card Component with fetched driver info
@@ -615,7 +703,7 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
                 </div>
 
                 {/* Route Information */}
-                <div className="grid grid-cols-2 gap-2 mb-3">
+                <div className="grid grid-cols-2 gap-2 mb-2">
                   <div className="bg-slate-50 rounded p-2">
                     <div className="flex items-center gap-1 mb-1">
                       <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
@@ -633,7 +721,7 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
                 </div>
 
                 {/* Enhanced Timeline */}
-                <div className="mb-3">
+                <div className="mb-2">
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="text-xs font-semibold text-slate-700">Trip Progress</h4>
                     <span className="text-xs text-slate-500">{Math.round(progress)}% Complete</span>
@@ -683,13 +771,11 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
                       />
                     </div>
                   </div>
-                  
-
                 </div>
 
                 {/* Cargo Information */}
                 {trip.cargo && (
-                  <div className="bg-slate-50 rounded p-2 mb-3">
+                  <div className="bg-slate-50 rounded p-2 mb-2">
                     <div className="flex items-center gap-1 mb-1">
                       <div className="w-1.5 h-1.5 bg-slate-500 rounded-full"></div>
                       <span className="text-xs font-medium text-slate-600 uppercase">Cargo</span>
@@ -701,42 +787,7 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
                 )}
 
                 {/* Time Information */}
-                {(() => {
-                  const pickupTime = trip.pickup_locations?.[0]?.scheduled_time || trip.pickuplocations?.[0]?.scheduled_time;
-                  const dropoffTime = trip.dropoff_locations?.[0]?.scheduled_time || trip.dropofflocations?.[0]?.scheduled_time;
-                  return (pickupTime || dropoffTime) && (
-                    <div className="bg-blue-50 rounded p-1.5 mb-2 border border-blue-200">
-                      <div className="flex items-center gap-1 mb-1">
-                        <Clock className="w-2.5 h-2.5 text-blue-600" />
-                        <span className="text-xs font-medium text-blue-800">Schedule</span>
-                      </div>
-                      <div className="space-y-1">
-                        {pickupTime && (
-                          <div className="flex items-center justify-between text-xs">
-                            <div className="flex items-center gap-1">
-                              <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                              <span className="font-medium text-slate-700">Pickup</span>
-                            </div>
-                            <span className="font-semibold text-slate-900">
-                              {new Date(pickupTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} {new Date(pickupTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                        )}
-                        {dropoffTime && (
-                          <div className="flex items-center justify-between text-xs">
-                            <div className="flex items-center gap-1">
-                              <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
-                              <span className="font-medium text-slate-700">Drop-off</span>
-                            </div>
-                            <span className="font-semibold text-slate-900">
-                              {new Date(dropoffTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} {new Date(dropoffTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })()}
+                <TripTimeInfo trip={trip} />
 
                 {/* Action Buttons */}
                 <div className="flex flex-wrap gap-1">
