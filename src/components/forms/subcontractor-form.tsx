@@ -25,6 +25,7 @@ interface SubcontractorFormProps {
 
 export function SubcontractorForm({ subcontractor, onSuccess }: SubcontractorFormProps) {
   const [loading, setLoading] = useState(false)
+  const [availability, setAvailability] = useState(subcontractor?.availability ?? true)
   const isEdit = !!subcontractor
 
   const handleSubmit = async (formData: FormData) => {
@@ -37,7 +38,7 @@ export function SubcontractorForm({ subcontractor, onSuccess }: SubcontractorFor
         await createSubcontractor(formData)
         toast.success('Subcontractor created successfully')
       }
-      onSuccess?.()
+      setTimeout(() => onSuccess?.(), 100)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'An error occurred')
     } finally {
@@ -125,15 +126,15 @@ export function SubcontractorForm({ subcontractor, onSuccess }: SubcontractorFor
             <div className="flex items-center space-x-2">
               <Switch
                 id="availability"
-                name="availability"
-                defaultChecked={subcontractor?.availability ?? true}
+                checked={availability}
+                onCheckedChange={setAvailability}
               />
               <Label htmlFor="availability">Available</Label>
-            <input
-              type="hidden"
-              name="availability"
-              value={subcontractor?.availability ? 'true' : 'false'}
-            />
+              <input
+                type="hidden"
+                name="availability"
+                value={availability ? 'true' : 'false'}
+              />
             </div>
           </div>
 

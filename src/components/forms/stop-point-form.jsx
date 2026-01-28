@@ -30,6 +30,7 @@ import DynamicInput from '../ui/dynamic-input'
 import { getLatLngFromAddress } from '@/hooks/get-coords'
 import AddressAutocomplete from '../ui/address-autocomplete'
 import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation';
 
 // Function to get type badge for preview
 const getTypeBadge = (type) => {
@@ -89,6 +90,9 @@ const StopPointForm = ({ onCancel, id }) => {
   const stopPoint = stop_points.data.find((sp) => sp.id === id)
   const supabase = createClient()
   const [isloading, setIsloading] = useState(false)
+
+
+  const router = useRouter();
 
   const [formData, setFormData] = useState({
     id: stopPoint?.id || '',
@@ -166,21 +170,19 @@ const StopPointForm = ({ onCancel, id }) => {
     }
 
     try {
-      setIsloading(true)
-
-      await sp_api.upsertStopPoint(id, completeData, stopPointsDispatch)
-      console.log('Stop point saved successfully')
-      window.reload();
-      onCancel()
+      setIsloading(true);
+      await sp_api.upsertStopPoint(id, completeData, stopPointsDispatch);
+      alert('Stop point saved successfully');
+      // Soft refresh: revalidates data without full reload
+      router.refresh();  // Import { useRouter } from 'next/navigation'
     } catch (error) {
-      setIsloading(false)
-      console.error('Error saving stop point:', error)
-      alert('There was an error saving the stop point. Please try again.')
+      setIsloading(false);
+      console.error('Error saving stop point:', error);
+      alert('There was an error saving the stop point. Please try again.');
     }
   }
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
+  const handleSubmit = () => {
     onSubmit(formData)
   }
 

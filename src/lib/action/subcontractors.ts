@@ -11,7 +11,7 @@ export async function createSubcontractor(formData: FormData) {
     email: formData.get('email') as string,
     phone: formData.get('phone') as string,
     skills: (formData.get('skills') as string).split(',').map(s => s.trim()),
-    availability: formData.get('availability') === 'true',
+    availability: formData.get('availability') || true || null,
     rating: parseFloat(formData.get('rating') as string) || 0,
     hourly_rate: parseFloat(formData.get('hourly_rate') as string) || 0,
   }
@@ -34,7 +34,7 @@ export async function updateSubcontractor(id: string, formData: FormData) {
     email: formData.get('email') as string,
     phone: formData.get('phone') as string,
     skills: (formData.get('skills') as string).split(',').map(s => s.trim()),
-    availability: formData.get('availability') === 'true',
+    availability: formData.get('availability') || false || null,
     rating: parseFloat(formData.get('rating') as string) || 0,
     hourly_rate: parseFloat(formData.get('hourly_rate') as string) || 0,
   }
