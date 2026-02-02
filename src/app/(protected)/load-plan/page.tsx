@@ -271,9 +271,9 @@ export default function LoadPlanPage() {
         { data: loadsData, error: loadsError },
         { data: clientsData, error: clientsError },
         { data: vehiclesData, error: vehiclesError },
-        { data: driversData, error: driversError },
         { data: costCentersData, error: costCentersError },
         trackingResponse,
+        driversResponse,
       ] = await Promise.all([
         supabase
           .from("trips")
@@ -290,22 +290,24 @@ export default function LoadPlanPage() {
           .select(
             "*"
           ),
-        supabase.from("drivers").select("*"),
         supabase.from("cost_centers").select("*"),
         fetch("/api/vehicles"),
+        fetch("/api/maysene-drivers"),
       ]);
 
       console.log("Supabase errors:", {
         loadsError,
         clientsError,
         vehiclesError,
-        driversError,
         costCentersError,
       });
 
       const trackingData = await trackingResponse.json();
       const vehicleData =
         trackingData?.result?.data || trackingData?.data || trackingData || [];
+
+      const driversResult = await driversResponse.json();
+      const driversData = driversResult.drivers || [];
 
       // Format drivers from drivers table
       const formattedDrivers = (driversData || []).map((driver) => ({
