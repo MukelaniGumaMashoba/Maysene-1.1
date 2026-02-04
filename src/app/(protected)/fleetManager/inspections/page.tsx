@@ -40,7 +40,7 @@ type Inspection = {
   timing: {
     end: string;
     start: string;
-    duration_seconds: number;
+    duration_seconds: number | null;
   }
 };
 
@@ -322,7 +322,7 @@ export default function InspectionsPage() {
                   {insp.timing && (
                     <span>
                       {" "}
-                      | Time Taken: {getExt(insp.timing?.duration_seconds)}{" "}
+                      | Time Taken: {getExt(insp.timing?.duration_seconds || 0)}{" "}
                     </span>
                   )}
                 </div>

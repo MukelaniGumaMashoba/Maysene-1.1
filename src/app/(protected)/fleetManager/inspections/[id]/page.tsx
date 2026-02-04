@@ -201,8 +201,8 @@ export default function InspectionDetail() {
 
                 <div>
                   <strong>Time Taken:</strong>{" "}
-                  <p>{inspection.timing?.duration_seconds || "N/A"} seconds</p>
-                  <p>{getExt(inspection.timing?.duration_seconds)}</p>
+                  <p>{inspection.timing?.duration_seconds || null} seconds</p>
+                  <p>{getExt(inspection.timing?.duration_seconds || null)}</p>
                 </div>
               </div>
 
