@@ -61,6 +61,7 @@ import {
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { LocationAutocomplete } from "@/components/ui/location-autocomplete";
+import { ClientLocationDropdown } from "@/components/ui/client-location-dropdown";
 import { ProgressWithWaypoints } from "@/components/ui/progress-with-waypoints";
 import { RouteOptimizer } from "@/components/ui/route-optimizer";
 import { RouteTracker } from "@/components/ui/route-tracker";
@@ -68,12 +69,12 @@ import { RoutePreviewMap } from "@/components/ui/route-preview-map";
 import { RouteConfirmationModal } from "@/components/ui/route-confirmation-modal";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { CommodityDropdown } from "@/components/ui/commodity-dropdown";
-import { ClientDropdown } from "@/components/ui/client-dropdown";
 import { ClientAddressPopup } from "@/components/ui/client-address-popup";
 import { Toast, useToast } from "@/components/ui/toast";
 import { DriverDropdown } from "@/components/ui/driver-dropdown";
 import { StopPointDropdown } from "@/components/ui/stop-point-dropdown";
 import { markDriversUnavailable } from "@/lib/utils/driver-availability";
+import { ClientDropdown } from "@/components/ui/client-dropdown";
 
 export default function LoadPlanPage() {
   console.log("LoadPlanPage component rendering");
@@ -1569,27 +1570,12 @@ export default function LoadPlanPage() {
                       />
                     </div>
                     <div>
-                      <LocationAutocomplete
+                      <ClientLocationDropdown
                         label="Loading Location"
                         value={loadingLocation}
                         onChange={setLoadingLocation}
-                        placeholder="Search for loading location"
-                        clientLocations={useMemo(() => {
-                          const selectedClient = clients.find(
-                            (c) => c.name === client
-                          );
-                          if (!selectedClient) return [];
-                          try {
-                            return typeof selectedClient.pickupLocations ===
-                              "string"
-                              ? JSON.parse(selectedClient.pickupLocations)
-                              : selectedClient.pickupLocations ||
-                                  selectedClient.pickup_locations ||
-                                  [];
-                          } catch {
-                            return [];
-                          }
-                        }, [clients, client])}
+                        placeholder="Search for client location"
+                        clients={clients}
                       />
                     </div>
                     <div>
@@ -1601,27 +1587,12 @@ export default function LoadPlanPage() {
                       />
                     </div>
                     <div>
-                      <LocationAutocomplete
+                      <ClientLocationDropdown
                         label="Drop Off Point"
                         value={dropOffPoint}
                         onChange={setDropOffPoint}
                         placeholder="Search for drop off location"
-                        clientLocations={useMemo(() => {
-                          const selectedClient = clients.find(
-                            (c) => c.name === client
-                          );
-                          if (!selectedClient) return [];
-                          try {
-                            return typeof selectedClient.dropoffLocations ===
-                              "string"
-                              ? JSON.parse(selectedClient.dropoffLocations)
-                              : selectedClient.dropoffLocations ||
-                                  selectedClient.dropoff_locations ||
-                                  [];
-                          } catch {
-                            return [];
-                          }
-                        }, [clients, client])}
+                        clients={clients}
                       />
                     </div>
                   </div>
