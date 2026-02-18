@@ -323,6 +323,7 @@ export default function InspectionsPage() {
                     <span>
                       {" "}
                       | Time Taken: {getExt(insp.timing?.duration_seconds || 0)}{" "}
+                        Seconds Duration : {insp.timing?.duration_seconds}
                     </span>
                   )}
                 </div>
