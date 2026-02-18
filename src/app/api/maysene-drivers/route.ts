@@ -7,7 +7,7 @@ export async function GET() {
     const data = await response.json();
     
     const supabase = await createClient();
-    const { data: dbDrivers, error } = await supabase.from('drivers').select('*');
+    const { data: dbDrivers, error } = await supabase.from('drivers').select('*').neq("deleted", true);
     
     if (error) {
       console.error('Supabase error:', error);

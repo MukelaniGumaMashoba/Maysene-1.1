@@ -16,7 +16,7 @@ export async function GET(request) {
     .from('drivers')
     .select('*')
     .eq('client_id', token.clientId)
-
+    .neq("deleted", true) // Exclude deleted drivers
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

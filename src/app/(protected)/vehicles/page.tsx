@@ -123,7 +123,7 @@ export default function Vehicles() {
 
   useEffect(() => {
     const getDrivers = async () => {
-      const { data, error } = await supabase.from("drivers").select("*");
+      const { data, error } = await supabase.from("drivers").select("*").neq("deleted", true);
       if (error) {
         console.error("Error fetching drivers:", error);
         setDrivers([]);

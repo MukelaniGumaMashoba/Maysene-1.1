@@ -29,6 +29,7 @@ export default function DriverVehicleHistory({
         .from("drivers")
         .select("*")
         .eq("id", driverId)
+        .neq("deleted", true)
         .single();
       if (driverError) {
         console.error("Error fetching driver:", driverError.message);

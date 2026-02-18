@@ -109,7 +109,8 @@ export async function getdrivers() {
     const supabase = createClient();
     const { count, error } = await (await supabase)
         .from('drivers')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .neq("deleted", true);
     if (error) throw error;
     return count || 0;
 }

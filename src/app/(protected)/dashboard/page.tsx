@@ -439,7 +439,7 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
           onClick={async () => {
             if (userRole === "fleet manager") return;
             const supabase = createClient();
-            const { data: drivers } = await supabase.from('drivers').select('*');
+            const { data: drivers } = await supabase.from('drivers').select('*').neq("deleted", true);
             setAvailableDrivers(drivers || []);
             setCurrentTripForChange(trip);
             setChangeDriverOpen(true);

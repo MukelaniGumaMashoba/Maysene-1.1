@@ -62,6 +62,7 @@ type Driver = {
   created_at?: string | null;
   created_by?: string | null;
   user_id?: string | null;
+  deleted?: boolean;
 };
 
 export default function Drivers() {
@@ -118,6 +119,7 @@ export default function Drivers() {
       const { data, error } = await supabase
         .from("drivers")
         .select("*")
+        .neq("deleted", true)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -206,7 +208,7 @@ export default function Drivers() {
     try {
       const { error } = await supabase
         .from("drivers")
-        .delete()
+        .update({ deleted: true })
         .eq("id", driverId);
       if (error) throw error;
       toast.success("Driver deleted");
@@ -260,9 +262,10 @@ export default function Drivers() {
       };
 
       if (isEditing && editingDriverId) {
+        const { id, ...updatePayload } = payload;
         const { error } = await supabase
           .from("drivers")
-          .update(payload)
+          .update(updatePayload)
           .eq("id", editingDriverId);
 
         if (error) throw error;

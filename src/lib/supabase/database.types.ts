@@ -432,6 +432,7 @@ export type Database = {
           before_photos: Json | null
           completion_date: string | null
           completion_notes: string | null
+          contact_person: string | null
           created_at: string | null
           created_by: string | null
           customer_address: string | null
@@ -441,6 +442,7 @@ export type Database = {
           customer_phone: string | null
           customer_satisfaction_rating: number | null
           customer_signature_obtained: boolean | null
+          decommission_date: string | null
           documents: Json | null
           due_date: string | null
           end_time: string | null
@@ -509,6 +511,7 @@ export type Database = {
           before_photos?: Json | null
           completion_date?: string | null
           completion_notes?: string | null
+          contact_person?: string | null
           created_at?: string | null
           created_by?: string | null
           customer_address?: string | null
@@ -518,6 +521,7 @@ export type Database = {
           customer_phone?: string | null
           customer_satisfaction_rating?: number | null
           customer_signature_obtained?: boolean | null
+          decommission_date?: string | null
           documents?: Json | null
           due_date?: string | null
           end_time?: string | null
@@ -586,6 +590,7 @@ export type Database = {
           before_photos?: Json | null
           completion_date?: string | null
           completion_notes?: string | null
+          contact_person?: string | null
           created_at?: string | null
           created_by?: string | null
           customer_address?: string | null
@@ -595,6 +600,7 @@ export type Database = {
           customer_phone?: string | null
           customer_satisfaction_rating?: number | null
           customer_signature_obtained?: boolean | null
+          decommission_date?: string | null
           documents?: Json | null
           due_date?: string | null
           end_time?: string | null
@@ -904,18 +910,21 @@ export type Database = {
           cost_code: string | null
           created_at: string
           id: string
+          validated: boolean | null
         }
         Insert: {
           company?: string | null
           cost_code?: string | null
           created_at?: string
           id?: string
+          validated?: boolean | null
         }
         Update: {
           company?: string | null
           cost_code?: string | null
           created_at?: string
           id?: string
+          validated?: boolean | null
         }
         Relationships: []
       }
@@ -1056,6 +1065,7 @@ export type Database = {
           before_photos: Json | null
           completion_date: string | null
           completion_notes: string | null
+          contact_person: string | null
           created_at: string | null
           created_by: string | null
           customer_address: string | null
@@ -1065,6 +1075,7 @@ export type Database = {
           customer_phone: string | null
           customer_satisfaction_rating: number | null
           customer_signature_obtained: boolean | null
+          decommission_date: string | null
           documents: Json | null
           due_date: string | null
           end_time: string | null
@@ -1133,6 +1144,7 @@ export type Database = {
           before_photos?: Json | null
           completion_date?: string | null
           completion_notes?: string | null
+          contact_person?: string | null
           created_at?: string | null
           created_by?: string | null
           customer_address?: string | null
@@ -1142,6 +1154,7 @@ export type Database = {
           customer_phone?: string | null
           customer_satisfaction_rating?: number | null
           customer_signature_obtained?: boolean | null
+          decommission_date?: string | null
           documents?: Json | null
           due_date?: string | null
           end_time?: string | null
@@ -1210,6 +1223,7 @@ export type Database = {
           before_photos?: Json | null
           completion_date?: string | null
           completion_notes?: string | null
+          contact_person?: string | null
           created_at?: string | null
           created_by?: string | null
           customer_address?: string | null
@@ -1219,6 +1233,7 @@ export type Database = {
           customer_phone?: string | null
           customer_satisfaction_rating?: number | null
           customer_signature_obtained?: boolean | null
+          decommission_date?: string | null
           documents?: Json | null
           due_date?: string | null
           end_time?: string | null
@@ -1295,6 +1310,7 @@ export type Database = {
           count_of_products: string | null
           created_at: string
           creator: string | null
+          customer_validated: boolean | null
           date_added: string | null
           date_modified: string | null
           divisions: string | null
@@ -1326,6 +1342,8 @@ export type Database = {
           skylink_name: string | null
           switchboard: string | null
           trading_name: string | null
+          validated_at: string | null
+          validated_by: string | null
           vat_exempt_number: string | null
           vat_number: string | null
         }
@@ -1344,6 +1362,7 @@ export type Database = {
           count_of_products?: string | null
           created_at?: string
           creator?: string | null
+          customer_validated?: boolean | null
           date_added?: string | null
           date_modified?: string | null
           divisions?: string | null
@@ -1375,6 +1394,8 @@ export type Database = {
           skylink_name?: string | null
           switchboard?: string | null
           trading_name?: string | null
+          validated_at?: string | null
+          validated_by?: string | null
           vat_exempt_number?: string | null
           vat_number?: string | null
         }
@@ -1393,6 +1414,7 @@ export type Database = {
           count_of_products?: string | null
           created_at?: string
           creator?: string | null
+          customer_validated?: boolean | null
           date_added?: string | null
           date_modified?: string | null
           divisions?: string | null
@@ -1424,6 +1446,8 @@ export type Database = {
           skylink_name?: string | null
           switchboard?: string | null
           trading_name?: string | null
+          validated_at?: string | null
+          validated_by?: string | null
           vat_exempt_number?: string | null
           vat_number?: string | null
         }
@@ -1434,28 +1458,34 @@ export type Database = {
           all_account_numbers: string | null
           all_new_account_numbers: string | null
           company_group: string | null
+          contact_details: Json | null
           cost_code: string | null
           created_at: string
           id: number
           legal_names: string | null
+          validate: boolean | null
         }
         Insert: {
           all_account_numbers?: string | null
           all_new_account_numbers?: string | null
           company_group?: string | null
+          contact_details?: Json | null
           cost_code?: string | null
           created_at?: string
           id?: never
           legal_names?: string | null
+          validate?: boolean | null
         }
         Update: {
           all_account_numbers?: string | null
           all_new_account_numbers?: string | null
           company_group?: string | null
+          contact_details?: Json | null
           cost_code?: string | null
           created_at?: string
           id?: never
           legal_names?: string | null
+          validate?: boolean | null
         }
         Relationships: []
       }
@@ -1530,6 +1560,7 @@ export type Database = {
           cell_number: string | null
           created_at: string | null
           created_by: string | null
+          deleted: boolean | null
           driver_code: string | null
           driver_restriction_code: string | null
           email_address: string | null
@@ -1565,6 +1596,7 @@ export type Database = {
           cell_number?: string | null
           created_at?: string | null
           created_by?: string | null
+          deleted?: boolean | null
           driver_code?: string | null
           driver_restriction_code?: string | null
           email_address?: string | null
@@ -1600,6 +1632,7 @@ export type Database = {
           cell_number?: string | null
           created_at?: string | null
           created_by?: string | null
+          deleted?: boolean | null
           driver_code?: string | null
           driver_restriction_code?: string | null
           email_address?: string | null
@@ -2911,6 +2944,7 @@ export type Database = {
           before_photos: Json | null
           completion_date: string | null
           completion_notes: string | null
+          contact_person: string | null
           created_at: string | null
           created_by: string | null
           customer_address: string | null
@@ -2920,6 +2954,7 @@ export type Database = {
           customer_phone: string | null
           customer_satisfaction_rating: number | null
           customer_signature_obtained: boolean | null
+          decommission_date: string | null
           documents: Json | null
           due_date: string | null
           end_time: string | null
@@ -2989,6 +3024,7 @@ export type Database = {
           before_photos?: Json | null
           completion_date?: string | null
           completion_notes?: string | null
+          contact_person?: string | null
           created_at?: string | null
           created_by?: string | null
           customer_address?: string | null
@@ -2998,6 +3034,7 @@ export type Database = {
           customer_phone?: string | null
           customer_satisfaction_rating?: number | null
           customer_signature_obtained?: boolean | null
+          decommission_date?: string | null
           documents?: Json | null
           due_date?: string | null
           end_time?: string | null
@@ -3067,6 +3104,7 @@ export type Database = {
           before_photos?: Json | null
           completion_date?: string | null
           completion_notes?: string | null
+          contact_person?: string | null
           created_at?: string | null
           created_by?: string | null
           customer_address?: string | null
@@ -3076,6 +3114,7 @@ export type Database = {
           customer_phone?: string | null
           customer_satisfaction_rating?: number | null
           customer_signature_obtained?: boolean | null
+          decommission_date?: string | null
           documents?: Json | null
           due_date?: string | null
           end_time?: string | null
@@ -4231,8 +4270,10 @@ export type Database = {
           availability: boolean | null
           created_at: string | null
           email: string
+          hourly_rate: number | null
           id: string
           name: string
+          phone: string | null
           rating: number | null
           skills: string[]
           updated_at: string | null
@@ -4241,8 +4282,10 @@ export type Database = {
           availability?: boolean | null
           created_at?: string | null
           email: string
+          hourly_rate?: number | null
           id?: string
           name: string
+          phone?: string | null
           rating?: number | null
           skills?: string[]
           updated_at?: string | null
@@ -4251,8 +4294,10 @@ export type Database = {
           availability?: boolean | null
           created_at?: string | null
           email?: string
+          hourly_rate?: number | null
           id?: string
           name?: string
+          phone?: string | null
           rating?: number | null
           skills?: string[]
           updated_at?: string | null
@@ -4821,6 +4866,101 @@ export type Database = {
           id?: number
           trailer_id?: number | null
           vehicle_id?: number | null
+        }
+        Relationships: []
+      }
+      user_activity_logs: {
+        Row: {
+          action_description: string | null
+          action_type: string
+          email: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          page_url: string | null
+          resource_id: string | null
+          resource_type: string | null
+          session_id: string | null
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          action_description?: string | null
+          action_type: string
+          email: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          page_url?: string | null
+          resource_id?: string | null
+          resource_type?: string | null
+          session_id?: string | null
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          action_description?: string | null
+          action_type?: string
+          email?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          page_url?: string | null
+          resource_id?: string | null
+          resource_type?: string | null
+          session_id?: string | null
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_activity_logs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "user_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_sessions: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          ip_address: string | null
+          last_activity: string
+          login_time: string
+          logout_time: string | null
+          role: string | null
+          session_duration_minutes: number | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          ip_address?: string | null
+          last_activity?: string
+          login_time?: string
+          logout_time?: string | null
+          role?: string | null
+          session_duration_minutes?: number | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          ip_address?: string | null
+          last_activity?: string
+          login_time?: string
+          logout_time?: string | null
+          role?: string | null
+          session_duration_minutes?: number | null
+          user_agent?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -5700,6 +5840,1266 @@ export type Database = {
         Relationships: []
       }
       vehicles: {
+        Row: {
+          _10m_cable_for_camera_4pin: string | null
+          _10m_cable_for_camera_4pin_rental: string | null
+          _1m_extension_cable: string | null
+          _1m_extension_cable_rental: string | null
+          _3m_extension_cable: string | null
+          _3m_extension_cable_rental: string | null
+          _4ch_mdvr: string | null
+          _4ch_mdvr_rental: string | null
+          _4ch_mdvr_sub: string | null
+          _5ch_mdvr: string | null
+          _5ch_mdvr_rental: string | null
+          _5ch_mdvr_sub: string | null
+          _5m_cable_6pin: string | null
+          _5m_cable_6pin_rental: string | null
+          _5m_cable_for_camera_4pin: string | null
+          _5m_cable_for_camera_4pin_rental: string | null
+          _7m_harness_for_probe: string | null
+          _7m_harness_for_probe_rental: string | null
+          _8ch_mdvr: string | null
+          _8ch_mdvr_rental: string | null
+          _8ch_mdvr_sub: string | null
+          a2_dash_cam: string | null
+          a2_dash_cam_rental: string | null
+          a2_dash_cam_sub: string | null
+          a2_mec_5: string | null
+          a2_mec_5_rental: string | null
+          a3_dash_cam_ai: string | null
+          a3_dash_cam_ai_rental: string | null
+          account_number: string | null
+          adas_02_road_facing: string | null
+          adas_02_road_facing_rental: string | null
+          after_hours: string | null
+          beame_1: string | null
+          beame_1_rental: string | null
+          beame_1_sub: string | null
+          beame_2: string | null
+          beame_2_rental: string | null
+          beame_2_sub: string | null
+          beame_3: string | null
+          beame_3_rental: string | null
+          beame_3_sub: string | null
+          beame_4: string | null
+          beame_4_rental: string | null
+          beame_4_sub: string | null
+          beame_5: string | null
+          beame_5_rental: string | null
+          beame_5_sub: string | null
+          branch: string | null
+          breathaloc: string | null
+          breathaloc_rental: string | null
+          buzzer: string | null
+          buzzer_rental: string | null
+          cia: string | null
+          cia_rental: string | null
+          colour: string | null
+          company: string | null
+          consultancy: string | null
+          controlroom: string | null
+          corpconnect_data_no: string | null
+          corpconnect_sim_no: string | null
+          created_at: string
+          data_number: string | null
+          dms01_driver_facing: string | null
+          dms01_driver_facing_rental: string | null
+          dual_probe_rental: string | null
+          dual_probe_sub: string | null
+          early_warning: string | null
+          early_warning_rental: string | null
+          engine: string | null
+          flat_panic: string | null
+          flat_panic_rental: string | null
+          fleet_number: string | null
+          fm_unit: string | null
+          fm_unit_rental: string | null
+          fm_unit_sub: string | null
+          fuel_probe_1: string | null
+          fuel_probe_2: string | null
+          gps: string | null
+          gps_rental: string | null
+          gsm: string | null
+          gsm_rental: string | null
+          id: number
+          idata: string | null
+          idata_rental: string | null
+          industrial_panic: string | null
+          industrial_panic_rental: string | null
+          keypad: string | null
+          keypad_rental: string | null
+          keypad_waterproof: string | null
+          main_fm_harness: string | null
+          main_fm_harness_rental: string | null
+          maintenance: string | null
+          make: string | null
+          mic: string | null
+          mic_rental: string | null
+          model: string | null
+          new_account_number: string | null
+          pfk_10m: string | null
+          pfk_10m_rental: string | null
+          pfk_15m: string | null
+          pfk_15m_rental: string | null
+          pfk_20m: string | null
+          pfk_20m_rental: string | null
+          pfk_5m: string | null
+          pfk_5m_rental: string | null
+          pfk_corpconnect_data_number: string | null
+          pfk_corpconnect_sim_number: string | null
+          pfk_dome_1: string | null
+          pfk_dome_1_rental: string | null
+          pfk_dome_2: string | null
+          pfk_dome_2_rental: string | null
+          pfk_driver_facing: string | null
+          pfk_driver_facing_rental: string | null
+          pfk_main_unit: string | null
+          pfk_main_unit_rental: string | null
+          pfk_main_unit_sub: string | null
+          pfk_road_facing: string | null
+          pfk_road_facing_rental: string | null
+          reg: string | null
+          roaming: string | null
+          roller_door_switches: string | null
+          roller_door_switches_rental: string | null
+          sd_card_1tb: string | null
+          sd_card_1tb_rental: string | null
+          sd_card_250gb: string | null
+          sd_card_250gb_rental: string | null
+          sd_card_256gb: string | null
+          sd_card_256gb_rental: string | null
+          sd_card_2tb: string | null
+          sd_card_2tb_rental: string | null
+          sd_card_480gb: string | null
+          sd_card_480gb_rental: string | null
+          sd_card_512gb: string | null
+          sd_card_512gb_rental: string | null
+          sim_card_number: string | null
+          sim_id: string | null
+          single_probe_rental: string | null
+          single_probe_sub: string | null
+          sky_ican: string | null
+          sky_ican_rental: string | null
+          sky_idata: string | null
+          sky_idata_rental: string | null
+          sky_on_batt_ign_rental: string | null
+          sky_on_batt_ign_unit_ip: string | null
+          sky_on_batt_ign_unit_serial_number: string | null
+          sky_on_batt_sub: string | null
+          sky_safety: string | null
+          sky_scout_12v_ip: string | null
+          sky_scout_12v_rental: string | null
+          sky_scout_12v_serial_number: string | null
+          sky_scout_12v_sub: string | null
+          sky_scout_24v_ip: string | null
+          sky_scout_24v_rental: string | null
+          sky_scout_24v_serial_number: string | null
+          sky_scout_24v_sub: string | null
+          skylink_data_number: string | null
+          skylink_pro_ip: string | null
+          skylink_pro_rental: string | null
+          skylink_pro_serial_number: string | null
+          skylink_pro_sub: string | null
+          skylink_sim_card_no: string | null
+          skylink_trailer_sub: string | null
+          skylink_trailer_unit_ip: string | null
+          skylink_trailer_unit_rental: string | null
+          skylink_trailer_unit_serial_number: string | null
+          skylink_voice_kit_ip: string | null
+          skylink_voice_kit_rental: string | null
+          skylink_voice_kit_serial_number: string | null
+          skylink_voice_kit_sub: string | null
+          speaker: string | null
+          speaker_rental: string | null
+          tag: string | null
+          tag_: string | null
+          tag_reader: string | null
+          tag_reader_: string | null
+          tag_reader_rental: string | null
+          tag_reader_rental_: string | null
+          tag_rental: string | null
+          tag_rental_: string | null
+          total_rental: number | null
+          total_rental_sub: number | null
+          total_sub: number | null
+          tpiece: string | null
+          tpiece_rental: string | null
+          unique_id: string | null
+          vin: string | null
+          vw100ip_driver_facing_ip: string | null
+          vw100ip_driver_facing_rental: string | null
+          vw300_dakkie_dome_1: string | null
+          vw300_dakkie_dome_1_rental: string | null
+          vw300_dakkie_dome_2: string | null
+          vw300_dakkie_dome_2_rental: string | null
+          vw303_driver_facing_camera: string | null
+          vw303_driver_facing_camera_rental: string | null
+          vw306_dvr_road_facing_for_4ch_8ch: string | null
+          vw306_dvr_road_facing_for_4ch_8ch_rental: string | null
+          vw306m_a2_dash_cam: string | null
+          vw306m_a2_dash_cam_rental: string | null
+          vw400_dome_1: string | null
+          vw400_dome_1_rental: string | null
+          vw400_dome_2: string | null
+          vw400_dome_2_rental: string | null
+          vw502_dual_lens_camera: string | null
+          vw502_dual_lens_camera_rental: string | null
+          vw502f_road_facing_camera: string | null
+          vw502f_road_facing_camera_rental: string | null
+          year: string | null
+        }
+        Insert: {
+          _10m_cable_for_camera_4pin?: string | null
+          _10m_cable_for_camera_4pin_rental?: string | null
+          _1m_extension_cable?: string | null
+          _1m_extension_cable_rental?: string | null
+          _3m_extension_cable?: string | null
+          _3m_extension_cable_rental?: string | null
+          _4ch_mdvr?: string | null
+          _4ch_mdvr_rental?: string | null
+          _4ch_mdvr_sub?: string | null
+          _5ch_mdvr?: string | null
+          _5ch_mdvr_rental?: string | null
+          _5ch_mdvr_sub?: string | null
+          _5m_cable_6pin?: string | null
+          _5m_cable_6pin_rental?: string | null
+          _5m_cable_for_camera_4pin?: string | null
+          _5m_cable_for_camera_4pin_rental?: string | null
+          _7m_harness_for_probe?: string | null
+          _7m_harness_for_probe_rental?: string | null
+          _8ch_mdvr?: string | null
+          _8ch_mdvr_rental?: string | null
+          _8ch_mdvr_sub?: string | null
+          a2_dash_cam?: string | null
+          a2_dash_cam_rental?: string | null
+          a2_dash_cam_sub?: string | null
+          a2_mec_5?: string | null
+          a2_mec_5_rental?: string | null
+          a3_dash_cam_ai?: string | null
+          a3_dash_cam_ai_rental?: string | null
+          account_number?: string | null
+          adas_02_road_facing?: string | null
+          adas_02_road_facing_rental?: string | null
+          after_hours?: string | null
+          beame_1?: string | null
+          beame_1_rental?: string | null
+          beame_1_sub?: string | null
+          beame_2?: string | null
+          beame_2_rental?: string | null
+          beame_2_sub?: string | null
+          beame_3?: string | null
+          beame_3_rental?: string | null
+          beame_3_sub?: string | null
+          beame_4?: string | null
+          beame_4_rental?: string | null
+          beame_4_sub?: string | null
+          beame_5?: string | null
+          beame_5_rental?: string | null
+          beame_5_sub?: string | null
+          branch?: string | null
+          breathaloc?: string | null
+          breathaloc_rental?: string | null
+          buzzer?: string | null
+          buzzer_rental?: string | null
+          cia?: string | null
+          cia_rental?: string | null
+          colour?: string | null
+          company?: string | null
+          consultancy?: string | null
+          controlroom?: string | null
+          corpconnect_data_no?: string | null
+          corpconnect_sim_no?: string | null
+          created_at?: string
+          data_number?: string | null
+          dms01_driver_facing?: string | null
+          dms01_driver_facing_rental?: string | null
+          dual_probe_rental?: string | null
+          dual_probe_sub?: string | null
+          early_warning?: string | null
+          early_warning_rental?: string | null
+          engine?: string | null
+          flat_panic?: string | null
+          flat_panic_rental?: string | null
+          fleet_number?: string | null
+          fm_unit?: string | null
+          fm_unit_rental?: string | null
+          fm_unit_sub?: string | null
+          fuel_probe_1?: string | null
+          fuel_probe_2?: string | null
+          gps?: string | null
+          gps_rental?: string | null
+          gsm?: string | null
+          gsm_rental?: string | null
+          id?: number
+          idata?: string | null
+          idata_rental?: string | null
+          industrial_panic?: string | null
+          industrial_panic_rental?: string | null
+          keypad?: string | null
+          keypad_rental?: string | null
+          keypad_waterproof?: string | null
+          main_fm_harness?: string | null
+          main_fm_harness_rental?: string | null
+          maintenance?: string | null
+          make?: string | null
+          mic?: string | null
+          mic_rental?: string | null
+          model?: string | null
+          new_account_number?: string | null
+          pfk_10m?: string | null
+          pfk_10m_rental?: string | null
+          pfk_15m?: string | null
+          pfk_15m_rental?: string | null
+          pfk_20m?: string | null
+          pfk_20m_rental?: string | null
+          pfk_5m?: string | null
+          pfk_5m_rental?: string | null
+          pfk_corpconnect_data_number?: string | null
+          pfk_corpconnect_sim_number?: string | null
+          pfk_dome_1?: string | null
+          pfk_dome_1_rental?: string | null
+          pfk_dome_2?: string | null
+          pfk_dome_2_rental?: string | null
+          pfk_driver_facing?: string | null
+          pfk_driver_facing_rental?: string | null
+          pfk_main_unit?: string | null
+          pfk_main_unit_rental?: string | null
+          pfk_main_unit_sub?: string | null
+          pfk_road_facing?: string | null
+          pfk_road_facing_rental?: string | null
+          reg?: string | null
+          roaming?: string | null
+          roller_door_switches?: string | null
+          roller_door_switches_rental?: string | null
+          sd_card_1tb?: string | null
+          sd_card_1tb_rental?: string | null
+          sd_card_250gb?: string | null
+          sd_card_250gb_rental?: string | null
+          sd_card_256gb?: string | null
+          sd_card_256gb_rental?: string | null
+          sd_card_2tb?: string | null
+          sd_card_2tb_rental?: string | null
+          sd_card_480gb?: string | null
+          sd_card_480gb_rental?: string | null
+          sd_card_512gb?: string | null
+          sd_card_512gb_rental?: string | null
+          sim_card_number?: string | null
+          sim_id?: string | null
+          single_probe_rental?: string | null
+          single_probe_sub?: string | null
+          sky_ican?: string | null
+          sky_ican_rental?: string | null
+          sky_idata?: string | null
+          sky_idata_rental?: string | null
+          sky_on_batt_ign_rental?: string | null
+          sky_on_batt_ign_unit_ip?: string | null
+          sky_on_batt_ign_unit_serial_number?: string | null
+          sky_on_batt_sub?: string | null
+          sky_safety?: string | null
+          sky_scout_12v_ip?: string | null
+          sky_scout_12v_rental?: string | null
+          sky_scout_12v_serial_number?: string | null
+          sky_scout_12v_sub?: string | null
+          sky_scout_24v_ip?: string | null
+          sky_scout_24v_rental?: string | null
+          sky_scout_24v_serial_number?: string | null
+          sky_scout_24v_sub?: string | null
+          skylink_data_number?: string | null
+          skylink_pro_ip?: string | null
+          skylink_pro_rental?: string | null
+          skylink_pro_serial_number?: string | null
+          skylink_pro_sub?: string | null
+          skylink_sim_card_no?: string | null
+          skylink_trailer_sub?: string | null
+          skylink_trailer_unit_ip?: string | null
+          skylink_trailer_unit_rental?: string | null
+          skylink_trailer_unit_serial_number?: string | null
+          skylink_voice_kit_ip?: string | null
+          skylink_voice_kit_rental?: string | null
+          skylink_voice_kit_serial_number?: string | null
+          skylink_voice_kit_sub?: string | null
+          speaker?: string | null
+          speaker_rental?: string | null
+          tag?: string | null
+          tag_?: string | null
+          tag_reader?: string | null
+          tag_reader_?: string | null
+          tag_reader_rental?: string | null
+          tag_reader_rental_?: string | null
+          tag_rental?: string | null
+          tag_rental_?: string | null
+          total_rental?: number | null
+          total_rental_sub?: number | null
+          total_sub?: number | null
+          tpiece?: string | null
+          tpiece_rental?: string | null
+          unique_id?: string | null
+          vin?: string | null
+          vw100ip_driver_facing_ip?: string | null
+          vw100ip_driver_facing_rental?: string | null
+          vw300_dakkie_dome_1?: string | null
+          vw300_dakkie_dome_1_rental?: string | null
+          vw300_dakkie_dome_2?: string | null
+          vw300_dakkie_dome_2_rental?: string | null
+          vw303_driver_facing_camera?: string | null
+          vw303_driver_facing_camera_rental?: string | null
+          vw306_dvr_road_facing_for_4ch_8ch?: string | null
+          vw306_dvr_road_facing_for_4ch_8ch_rental?: string | null
+          vw306m_a2_dash_cam?: string | null
+          vw306m_a2_dash_cam_rental?: string | null
+          vw400_dome_1?: string | null
+          vw400_dome_1_rental?: string | null
+          vw400_dome_2?: string | null
+          vw400_dome_2_rental?: string | null
+          vw502_dual_lens_camera?: string | null
+          vw502_dual_lens_camera_rental?: string | null
+          vw502f_road_facing_camera?: string | null
+          vw502f_road_facing_camera_rental?: string | null
+          year?: string | null
+        }
+        Update: {
+          _10m_cable_for_camera_4pin?: string | null
+          _10m_cable_for_camera_4pin_rental?: string | null
+          _1m_extension_cable?: string | null
+          _1m_extension_cable_rental?: string | null
+          _3m_extension_cable?: string | null
+          _3m_extension_cable_rental?: string | null
+          _4ch_mdvr?: string | null
+          _4ch_mdvr_rental?: string | null
+          _4ch_mdvr_sub?: string | null
+          _5ch_mdvr?: string | null
+          _5ch_mdvr_rental?: string | null
+          _5ch_mdvr_sub?: string | null
+          _5m_cable_6pin?: string | null
+          _5m_cable_6pin_rental?: string | null
+          _5m_cable_for_camera_4pin?: string | null
+          _5m_cable_for_camera_4pin_rental?: string | null
+          _7m_harness_for_probe?: string | null
+          _7m_harness_for_probe_rental?: string | null
+          _8ch_mdvr?: string | null
+          _8ch_mdvr_rental?: string | null
+          _8ch_mdvr_sub?: string | null
+          a2_dash_cam?: string | null
+          a2_dash_cam_rental?: string | null
+          a2_dash_cam_sub?: string | null
+          a2_mec_5?: string | null
+          a2_mec_5_rental?: string | null
+          a3_dash_cam_ai?: string | null
+          a3_dash_cam_ai_rental?: string | null
+          account_number?: string | null
+          adas_02_road_facing?: string | null
+          adas_02_road_facing_rental?: string | null
+          after_hours?: string | null
+          beame_1?: string | null
+          beame_1_rental?: string | null
+          beame_1_sub?: string | null
+          beame_2?: string | null
+          beame_2_rental?: string | null
+          beame_2_sub?: string | null
+          beame_3?: string | null
+          beame_3_rental?: string | null
+          beame_3_sub?: string | null
+          beame_4?: string | null
+          beame_4_rental?: string | null
+          beame_4_sub?: string | null
+          beame_5?: string | null
+          beame_5_rental?: string | null
+          beame_5_sub?: string | null
+          branch?: string | null
+          breathaloc?: string | null
+          breathaloc_rental?: string | null
+          buzzer?: string | null
+          buzzer_rental?: string | null
+          cia?: string | null
+          cia_rental?: string | null
+          colour?: string | null
+          company?: string | null
+          consultancy?: string | null
+          controlroom?: string | null
+          corpconnect_data_no?: string | null
+          corpconnect_sim_no?: string | null
+          created_at?: string
+          data_number?: string | null
+          dms01_driver_facing?: string | null
+          dms01_driver_facing_rental?: string | null
+          dual_probe_rental?: string | null
+          dual_probe_sub?: string | null
+          early_warning?: string | null
+          early_warning_rental?: string | null
+          engine?: string | null
+          flat_panic?: string | null
+          flat_panic_rental?: string | null
+          fleet_number?: string | null
+          fm_unit?: string | null
+          fm_unit_rental?: string | null
+          fm_unit_sub?: string | null
+          fuel_probe_1?: string | null
+          fuel_probe_2?: string | null
+          gps?: string | null
+          gps_rental?: string | null
+          gsm?: string | null
+          gsm_rental?: string | null
+          id?: number
+          idata?: string | null
+          idata_rental?: string | null
+          industrial_panic?: string | null
+          industrial_panic_rental?: string | null
+          keypad?: string | null
+          keypad_rental?: string | null
+          keypad_waterproof?: string | null
+          main_fm_harness?: string | null
+          main_fm_harness_rental?: string | null
+          maintenance?: string | null
+          make?: string | null
+          mic?: string | null
+          mic_rental?: string | null
+          model?: string | null
+          new_account_number?: string | null
+          pfk_10m?: string | null
+          pfk_10m_rental?: string | null
+          pfk_15m?: string | null
+          pfk_15m_rental?: string | null
+          pfk_20m?: string | null
+          pfk_20m_rental?: string | null
+          pfk_5m?: string | null
+          pfk_5m_rental?: string | null
+          pfk_corpconnect_data_number?: string | null
+          pfk_corpconnect_sim_number?: string | null
+          pfk_dome_1?: string | null
+          pfk_dome_1_rental?: string | null
+          pfk_dome_2?: string | null
+          pfk_dome_2_rental?: string | null
+          pfk_driver_facing?: string | null
+          pfk_driver_facing_rental?: string | null
+          pfk_main_unit?: string | null
+          pfk_main_unit_rental?: string | null
+          pfk_main_unit_sub?: string | null
+          pfk_road_facing?: string | null
+          pfk_road_facing_rental?: string | null
+          reg?: string | null
+          roaming?: string | null
+          roller_door_switches?: string | null
+          roller_door_switches_rental?: string | null
+          sd_card_1tb?: string | null
+          sd_card_1tb_rental?: string | null
+          sd_card_250gb?: string | null
+          sd_card_250gb_rental?: string | null
+          sd_card_256gb?: string | null
+          sd_card_256gb_rental?: string | null
+          sd_card_2tb?: string | null
+          sd_card_2tb_rental?: string | null
+          sd_card_480gb?: string | null
+          sd_card_480gb_rental?: string | null
+          sd_card_512gb?: string | null
+          sd_card_512gb_rental?: string | null
+          sim_card_number?: string | null
+          sim_id?: string | null
+          single_probe_rental?: string | null
+          single_probe_sub?: string | null
+          sky_ican?: string | null
+          sky_ican_rental?: string | null
+          sky_idata?: string | null
+          sky_idata_rental?: string | null
+          sky_on_batt_ign_rental?: string | null
+          sky_on_batt_ign_unit_ip?: string | null
+          sky_on_batt_ign_unit_serial_number?: string | null
+          sky_on_batt_sub?: string | null
+          sky_safety?: string | null
+          sky_scout_12v_ip?: string | null
+          sky_scout_12v_rental?: string | null
+          sky_scout_12v_serial_number?: string | null
+          sky_scout_12v_sub?: string | null
+          sky_scout_24v_ip?: string | null
+          sky_scout_24v_rental?: string | null
+          sky_scout_24v_serial_number?: string | null
+          sky_scout_24v_sub?: string | null
+          skylink_data_number?: string | null
+          skylink_pro_ip?: string | null
+          skylink_pro_rental?: string | null
+          skylink_pro_serial_number?: string | null
+          skylink_pro_sub?: string | null
+          skylink_sim_card_no?: string | null
+          skylink_trailer_sub?: string | null
+          skylink_trailer_unit_ip?: string | null
+          skylink_trailer_unit_rental?: string | null
+          skylink_trailer_unit_serial_number?: string | null
+          skylink_voice_kit_ip?: string | null
+          skylink_voice_kit_rental?: string | null
+          skylink_voice_kit_serial_number?: string | null
+          skylink_voice_kit_sub?: string | null
+          speaker?: string | null
+          speaker_rental?: string | null
+          tag?: string | null
+          tag_?: string | null
+          tag_reader?: string | null
+          tag_reader_?: string | null
+          tag_reader_rental?: string | null
+          tag_reader_rental_?: string | null
+          tag_rental?: string | null
+          tag_rental_?: string | null
+          total_rental?: number | null
+          total_rental_sub?: number | null
+          total_sub?: number | null
+          tpiece?: string | null
+          tpiece_rental?: string | null
+          unique_id?: string | null
+          vin?: string | null
+          vw100ip_driver_facing_ip?: string | null
+          vw100ip_driver_facing_rental?: string | null
+          vw300_dakkie_dome_1?: string | null
+          vw300_dakkie_dome_1_rental?: string | null
+          vw300_dakkie_dome_2?: string | null
+          vw300_dakkie_dome_2_rental?: string | null
+          vw303_driver_facing_camera?: string | null
+          vw303_driver_facing_camera_rental?: string | null
+          vw306_dvr_road_facing_for_4ch_8ch?: string | null
+          vw306_dvr_road_facing_for_4ch_8ch_rental?: string | null
+          vw306m_a2_dash_cam?: string | null
+          vw306m_a2_dash_cam_rental?: string | null
+          vw400_dome_1?: string | null
+          vw400_dome_1_rental?: string | null
+          vw400_dome_2?: string | null
+          vw400_dome_2_rental?: string | null
+          vw502_dual_lens_camera?: string | null
+          vw502_dual_lens_camera_rental?: string | null
+          vw502f_road_facing_camera?: string | null
+          vw502f_road_facing_camera_rental?: string | null
+          year?: string | null
+        }
+        Relationships: []
+      }
+      vehicles_duplicate: {
+        Row: {
+          _10m_cable_for_camera_4pin: string | null
+          _10m_cable_for_camera_4pin_rental: string | null
+          _1m_extension_cable: string | null
+          _1m_extension_cable_rental: string | null
+          _3m_extension_cable: string | null
+          _3m_extension_cable_rental: string | null
+          _4ch_mdvr: string | null
+          _4ch_mdvr_rental: string | null
+          _4ch_mdvr_sub: string | null
+          _5ch_mdvr: string | null
+          _5ch_mdvr_rental: string | null
+          _5ch_mdvr_sub: string | null
+          _5m_cable_6pin: string | null
+          _5m_cable_6pin_rental: string | null
+          _5m_cable_for_camera_4pin: string | null
+          _5m_cable_for_camera_4pin_rental: string | null
+          _7m_harness_for_probe: string | null
+          _7m_harness_for_probe_rental: string | null
+          _8ch_mdvr: string | null
+          _8ch_mdvr_rental: string | null
+          _8ch_mdvr_sub: string | null
+          a2_dash_cam: string | null
+          a2_dash_cam_rental: string | null
+          a2_dash_cam_sub: string | null
+          a2_mec_5: string | null
+          a2_mec_5_rental: string | null
+          a3_dash_cam_ai: string | null
+          a3_dash_cam_ai_rental: string | null
+          account_number: string | null
+          adas_02_road_facing: string | null
+          adas_02_road_facing_rental: string | null
+          after_hours: string | null
+          beame_1: string | null
+          beame_1_rental: string | null
+          beame_1_sub: string | null
+          beame_2: string | null
+          beame_2_rental: string | null
+          beame_2_sub: string | null
+          beame_3: string | null
+          beame_3_rental: string | null
+          beame_3_sub: string | null
+          beame_4: string | null
+          beame_4_rental: string | null
+          beame_4_sub: string | null
+          beame_5: string | null
+          beame_5_rental: string | null
+          beame_5_sub: string | null
+          branch: string | null
+          breathaloc: string | null
+          breathaloc_rental: string | null
+          buzzer: string | null
+          buzzer_rental: string | null
+          cia: string | null
+          cia_rental: string | null
+          colour: string | null
+          company: string | null
+          consultancy: string | null
+          controlroom: string | null
+          corpconnect_data_no: string | null
+          corpconnect_sim_no: string | null
+          created_at: string
+          data_number: string | null
+          dms01_driver_facing: string | null
+          dms01_driver_facing_rental: string | null
+          dual_probe_rental: string | null
+          dual_probe_sub: string | null
+          early_warning: string | null
+          early_warning_rental: string | null
+          engine: string | null
+          flat_panic: string | null
+          flat_panic_rental: string | null
+          fleet_number: string | null
+          fm_unit: string | null
+          fm_unit_rental: string | null
+          fm_unit_sub: string | null
+          fuel_probe_1: string | null
+          fuel_probe_2: string | null
+          gps: string | null
+          gps_rental: string | null
+          gsm: string | null
+          gsm_rental: string | null
+          id: number
+          idata: string | null
+          idata_rental: string | null
+          industrial_panic: string | null
+          industrial_panic_rental: string | null
+          keypad: string | null
+          keypad_rental: string | null
+          keypad_waterproof: string | null
+          main_fm_harness: string | null
+          main_fm_harness_rental: string | null
+          maintenance: string | null
+          make: string | null
+          mic: string | null
+          mic_rental: string | null
+          model: string | null
+          new_account_number: string | null
+          pfk_10m: string | null
+          pfk_10m_rental: string | null
+          pfk_15m: string | null
+          pfk_15m_rental: string | null
+          pfk_20m: string | null
+          pfk_20m_rental: string | null
+          pfk_5m: string | null
+          pfk_5m_rental: string | null
+          pfk_corpconnect_data_number: string | null
+          pfk_corpconnect_sim_number: string | null
+          pfk_dome_1: string | null
+          pfk_dome_1_rental: string | null
+          pfk_dome_2: string | null
+          pfk_dome_2_rental: string | null
+          pfk_driver_facing: string | null
+          pfk_driver_facing_rental: string | null
+          pfk_main_unit: string | null
+          pfk_main_unit_rental: string | null
+          pfk_main_unit_sub: string | null
+          pfk_road_facing: string | null
+          pfk_road_facing_rental: string | null
+          reg: string | null
+          roaming: string | null
+          roller_door_switches: string | null
+          roller_door_switches_rental: string | null
+          sd_card_1tb: string | null
+          sd_card_1tb_rental: string | null
+          sd_card_250gb: string | null
+          sd_card_250gb_rental: string | null
+          sd_card_256gb: string | null
+          sd_card_256gb_rental: string | null
+          sd_card_2tb: string | null
+          sd_card_2tb_rental: string | null
+          sd_card_480gb: string | null
+          sd_card_480gb_rental: string | null
+          sd_card_512gb: string | null
+          sd_card_512gb_rental: string | null
+          sim_card_number: string | null
+          sim_id: string | null
+          single_probe_rental: string | null
+          single_probe_sub: string | null
+          sky_ican: string | null
+          sky_ican_rental: string | null
+          sky_idata: string | null
+          sky_idata_rental: string | null
+          sky_on_batt_ign_rental: string | null
+          sky_on_batt_ign_unit_ip: string | null
+          sky_on_batt_ign_unit_serial_number: string | null
+          sky_on_batt_sub: string | null
+          sky_safety: string | null
+          sky_scout_12v_ip: string | null
+          sky_scout_12v_rental: string | null
+          sky_scout_12v_serial_number: string | null
+          sky_scout_12v_sub: string | null
+          sky_scout_24v_ip: string | null
+          sky_scout_24v_rental: string | null
+          sky_scout_24v_serial_number: string | null
+          sky_scout_24v_sub: string | null
+          skylink_data_number: string | null
+          skylink_pro_ip: string | null
+          skylink_pro_rental: string | null
+          skylink_pro_serial_number: string | null
+          skylink_pro_sub: string | null
+          skylink_sim_card_no: string | null
+          skylink_trailer_sub: string | null
+          skylink_trailer_unit_ip: string | null
+          skylink_trailer_unit_rental: string | null
+          skylink_trailer_unit_serial_number: string | null
+          skylink_voice_kit_ip: string | null
+          skylink_voice_kit_rental: string | null
+          skylink_voice_kit_serial_number: string | null
+          skylink_voice_kit_sub: string | null
+          speaker: string | null
+          speaker_rental: string | null
+          tag: string | null
+          tag_: string | null
+          tag_reader: string | null
+          tag_reader_: string | null
+          tag_reader_rental: string | null
+          tag_reader_rental_: string | null
+          tag_rental: string | null
+          tag_rental_: string | null
+          total_rental: number | null
+          total_rental_sub: number | null
+          total_sub: number | null
+          tpiece: string | null
+          tpiece_rental: string | null
+          unique_id: string | null
+          vin: string | null
+          vw100ip_driver_facing_ip: string | null
+          vw100ip_driver_facing_rental: string | null
+          vw300_dakkie_dome_1: string | null
+          vw300_dakkie_dome_1_rental: string | null
+          vw300_dakkie_dome_2: string | null
+          vw300_dakkie_dome_2_rental: string | null
+          vw303_driver_facing_camera: string | null
+          vw303_driver_facing_camera_rental: string | null
+          vw306_dvr_road_facing_for_4ch_8ch: string | null
+          vw306_dvr_road_facing_for_4ch_8ch_rental: string | null
+          vw306m_a2_dash_cam: string | null
+          vw306m_a2_dash_cam_rental: string | null
+          vw400_dome_1: string | null
+          vw400_dome_1_rental: string | null
+          vw400_dome_2: string | null
+          vw400_dome_2_rental: string | null
+          vw502_dual_lens_camera: string | null
+          vw502_dual_lens_camera_rental: string | null
+          vw502f_road_facing_camera: string | null
+          vw502f_road_facing_camera_rental: string | null
+          year: string | null
+        }
+        Insert: {
+          _10m_cable_for_camera_4pin?: string | null
+          _10m_cable_for_camera_4pin_rental?: string | null
+          _1m_extension_cable?: string | null
+          _1m_extension_cable_rental?: string | null
+          _3m_extension_cable?: string | null
+          _3m_extension_cable_rental?: string | null
+          _4ch_mdvr?: string | null
+          _4ch_mdvr_rental?: string | null
+          _4ch_mdvr_sub?: string | null
+          _5ch_mdvr?: string | null
+          _5ch_mdvr_rental?: string | null
+          _5ch_mdvr_sub?: string | null
+          _5m_cable_6pin?: string | null
+          _5m_cable_6pin_rental?: string | null
+          _5m_cable_for_camera_4pin?: string | null
+          _5m_cable_for_camera_4pin_rental?: string | null
+          _7m_harness_for_probe?: string | null
+          _7m_harness_for_probe_rental?: string | null
+          _8ch_mdvr?: string | null
+          _8ch_mdvr_rental?: string | null
+          _8ch_mdvr_sub?: string | null
+          a2_dash_cam?: string | null
+          a2_dash_cam_rental?: string | null
+          a2_dash_cam_sub?: string | null
+          a2_mec_5?: string | null
+          a2_mec_5_rental?: string | null
+          a3_dash_cam_ai?: string | null
+          a3_dash_cam_ai_rental?: string | null
+          account_number?: string | null
+          adas_02_road_facing?: string | null
+          adas_02_road_facing_rental?: string | null
+          after_hours?: string | null
+          beame_1?: string | null
+          beame_1_rental?: string | null
+          beame_1_sub?: string | null
+          beame_2?: string | null
+          beame_2_rental?: string | null
+          beame_2_sub?: string | null
+          beame_3?: string | null
+          beame_3_rental?: string | null
+          beame_3_sub?: string | null
+          beame_4?: string | null
+          beame_4_rental?: string | null
+          beame_4_sub?: string | null
+          beame_5?: string | null
+          beame_5_rental?: string | null
+          beame_5_sub?: string | null
+          branch?: string | null
+          breathaloc?: string | null
+          breathaloc_rental?: string | null
+          buzzer?: string | null
+          buzzer_rental?: string | null
+          cia?: string | null
+          cia_rental?: string | null
+          colour?: string | null
+          company?: string | null
+          consultancy?: string | null
+          controlroom?: string | null
+          corpconnect_data_no?: string | null
+          corpconnect_sim_no?: string | null
+          created_at?: string
+          data_number?: string | null
+          dms01_driver_facing?: string | null
+          dms01_driver_facing_rental?: string | null
+          dual_probe_rental?: string | null
+          dual_probe_sub?: string | null
+          early_warning?: string | null
+          early_warning_rental?: string | null
+          engine?: string | null
+          flat_panic?: string | null
+          flat_panic_rental?: string | null
+          fleet_number?: string | null
+          fm_unit?: string | null
+          fm_unit_rental?: string | null
+          fm_unit_sub?: string | null
+          fuel_probe_1?: string | null
+          fuel_probe_2?: string | null
+          gps?: string | null
+          gps_rental?: string | null
+          gsm?: string | null
+          gsm_rental?: string | null
+          id?: number
+          idata?: string | null
+          idata_rental?: string | null
+          industrial_panic?: string | null
+          industrial_panic_rental?: string | null
+          keypad?: string | null
+          keypad_rental?: string | null
+          keypad_waterproof?: string | null
+          main_fm_harness?: string | null
+          main_fm_harness_rental?: string | null
+          maintenance?: string | null
+          make?: string | null
+          mic?: string | null
+          mic_rental?: string | null
+          model?: string | null
+          new_account_number?: string | null
+          pfk_10m?: string | null
+          pfk_10m_rental?: string | null
+          pfk_15m?: string | null
+          pfk_15m_rental?: string | null
+          pfk_20m?: string | null
+          pfk_20m_rental?: string | null
+          pfk_5m?: string | null
+          pfk_5m_rental?: string | null
+          pfk_corpconnect_data_number?: string | null
+          pfk_corpconnect_sim_number?: string | null
+          pfk_dome_1?: string | null
+          pfk_dome_1_rental?: string | null
+          pfk_dome_2?: string | null
+          pfk_dome_2_rental?: string | null
+          pfk_driver_facing?: string | null
+          pfk_driver_facing_rental?: string | null
+          pfk_main_unit?: string | null
+          pfk_main_unit_rental?: string | null
+          pfk_main_unit_sub?: string | null
+          pfk_road_facing?: string | null
+          pfk_road_facing_rental?: string | null
+          reg?: string | null
+          roaming?: string | null
+          roller_door_switches?: string | null
+          roller_door_switches_rental?: string | null
+          sd_card_1tb?: string | null
+          sd_card_1tb_rental?: string | null
+          sd_card_250gb?: string | null
+          sd_card_250gb_rental?: string | null
+          sd_card_256gb?: string | null
+          sd_card_256gb_rental?: string | null
+          sd_card_2tb?: string | null
+          sd_card_2tb_rental?: string | null
+          sd_card_480gb?: string | null
+          sd_card_480gb_rental?: string | null
+          sd_card_512gb?: string | null
+          sd_card_512gb_rental?: string | null
+          sim_card_number?: string | null
+          sim_id?: string | null
+          single_probe_rental?: string | null
+          single_probe_sub?: string | null
+          sky_ican?: string | null
+          sky_ican_rental?: string | null
+          sky_idata?: string | null
+          sky_idata_rental?: string | null
+          sky_on_batt_ign_rental?: string | null
+          sky_on_batt_ign_unit_ip?: string | null
+          sky_on_batt_ign_unit_serial_number?: string | null
+          sky_on_batt_sub?: string | null
+          sky_safety?: string | null
+          sky_scout_12v_ip?: string | null
+          sky_scout_12v_rental?: string | null
+          sky_scout_12v_serial_number?: string | null
+          sky_scout_12v_sub?: string | null
+          sky_scout_24v_ip?: string | null
+          sky_scout_24v_rental?: string | null
+          sky_scout_24v_serial_number?: string | null
+          sky_scout_24v_sub?: string | null
+          skylink_data_number?: string | null
+          skylink_pro_ip?: string | null
+          skylink_pro_rental?: string | null
+          skylink_pro_serial_number?: string | null
+          skylink_pro_sub?: string | null
+          skylink_sim_card_no?: string | null
+          skylink_trailer_sub?: string | null
+          skylink_trailer_unit_ip?: string | null
+          skylink_trailer_unit_rental?: string | null
+          skylink_trailer_unit_serial_number?: string | null
+          skylink_voice_kit_ip?: string | null
+          skylink_voice_kit_rental?: string | null
+          skylink_voice_kit_serial_number?: string | null
+          skylink_voice_kit_sub?: string | null
+          speaker?: string | null
+          speaker_rental?: string | null
+          tag?: string | null
+          tag_?: string | null
+          tag_reader?: string | null
+          tag_reader_?: string | null
+          tag_reader_rental?: string | null
+          tag_reader_rental_?: string | null
+          tag_rental?: string | null
+          tag_rental_?: string | null
+          total_rental?: number | null
+          total_rental_sub?: number | null
+          total_sub?: number | null
+          tpiece?: string | null
+          tpiece_rental?: string | null
+          unique_id?: string | null
+          vin?: string | null
+          vw100ip_driver_facing_ip?: string | null
+          vw100ip_driver_facing_rental?: string | null
+          vw300_dakkie_dome_1?: string | null
+          vw300_dakkie_dome_1_rental?: string | null
+          vw300_dakkie_dome_2?: string | null
+          vw300_dakkie_dome_2_rental?: string | null
+          vw303_driver_facing_camera?: string | null
+          vw303_driver_facing_camera_rental?: string | null
+          vw306_dvr_road_facing_for_4ch_8ch?: string | null
+          vw306_dvr_road_facing_for_4ch_8ch_rental?: string | null
+          vw306m_a2_dash_cam?: string | null
+          vw306m_a2_dash_cam_rental?: string | null
+          vw400_dome_1?: string | null
+          vw400_dome_1_rental?: string | null
+          vw400_dome_2?: string | null
+          vw400_dome_2_rental?: string | null
+          vw502_dual_lens_camera?: string | null
+          vw502_dual_lens_camera_rental?: string | null
+          vw502f_road_facing_camera?: string | null
+          vw502f_road_facing_camera_rental?: string | null
+          year?: string | null
+        }
+        Update: {
+          _10m_cable_for_camera_4pin?: string | null
+          _10m_cable_for_camera_4pin_rental?: string | null
+          _1m_extension_cable?: string | null
+          _1m_extension_cable_rental?: string | null
+          _3m_extension_cable?: string | null
+          _3m_extension_cable_rental?: string | null
+          _4ch_mdvr?: string | null
+          _4ch_mdvr_rental?: string | null
+          _4ch_mdvr_sub?: string | null
+          _5ch_mdvr?: string | null
+          _5ch_mdvr_rental?: string | null
+          _5ch_mdvr_sub?: string | null
+          _5m_cable_6pin?: string | null
+          _5m_cable_6pin_rental?: string | null
+          _5m_cable_for_camera_4pin?: string | null
+          _5m_cable_for_camera_4pin_rental?: string | null
+          _7m_harness_for_probe?: string | null
+          _7m_harness_for_probe_rental?: string | null
+          _8ch_mdvr?: string | null
+          _8ch_mdvr_rental?: string | null
+          _8ch_mdvr_sub?: string | null
+          a2_dash_cam?: string | null
+          a2_dash_cam_rental?: string | null
+          a2_dash_cam_sub?: string | null
+          a2_mec_5?: string | null
+          a2_mec_5_rental?: string | null
+          a3_dash_cam_ai?: string | null
+          a3_dash_cam_ai_rental?: string | null
+          account_number?: string | null
+          adas_02_road_facing?: string | null
+          adas_02_road_facing_rental?: string | null
+          after_hours?: string | null
+          beame_1?: string | null
+          beame_1_rental?: string | null
+          beame_1_sub?: string | null
+          beame_2?: string | null
+          beame_2_rental?: string | null
+          beame_2_sub?: string | null
+          beame_3?: string | null
+          beame_3_rental?: string | null
+          beame_3_sub?: string | null
+          beame_4?: string | null
+          beame_4_rental?: string | null
+          beame_4_sub?: string | null
+          beame_5?: string | null
+          beame_5_rental?: string | null
+          beame_5_sub?: string | null
+          branch?: string | null
+          breathaloc?: string | null
+          breathaloc_rental?: string | null
+          buzzer?: string | null
+          buzzer_rental?: string | null
+          cia?: string | null
+          cia_rental?: string | null
+          colour?: string | null
+          company?: string | null
+          consultancy?: string | null
+          controlroom?: string | null
+          corpconnect_data_no?: string | null
+          corpconnect_sim_no?: string | null
+          created_at?: string
+          data_number?: string | null
+          dms01_driver_facing?: string | null
+          dms01_driver_facing_rental?: string | null
+          dual_probe_rental?: string | null
+          dual_probe_sub?: string | null
+          early_warning?: string | null
+          early_warning_rental?: string | null
+          engine?: string | null
+          flat_panic?: string | null
+          flat_panic_rental?: string | null
+          fleet_number?: string | null
+          fm_unit?: string | null
+          fm_unit_rental?: string | null
+          fm_unit_sub?: string | null
+          fuel_probe_1?: string | null
+          fuel_probe_2?: string | null
+          gps?: string | null
+          gps_rental?: string | null
+          gsm?: string | null
+          gsm_rental?: string | null
+          id?: number
+          idata?: string | null
+          idata_rental?: string | null
+          industrial_panic?: string | null
+          industrial_panic_rental?: string | null
+          keypad?: string | null
+          keypad_rental?: string | null
+          keypad_waterproof?: string | null
+          main_fm_harness?: string | null
+          main_fm_harness_rental?: string | null
+          maintenance?: string | null
+          make?: string | null
+          mic?: string | null
+          mic_rental?: string | null
+          model?: string | null
+          new_account_number?: string | null
+          pfk_10m?: string | null
+          pfk_10m_rental?: string | null
+          pfk_15m?: string | null
+          pfk_15m_rental?: string | null
+          pfk_20m?: string | null
+          pfk_20m_rental?: string | null
+          pfk_5m?: string | null
+          pfk_5m_rental?: string | null
+          pfk_corpconnect_data_number?: string | null
+          pfk_corpconnect_sim_number?: string | null
+          pfk_dome_1?: string | null
+          pfk_dome_1_rental?: string | null
+          pfk_dome_2?: string | null
+          pfk_dome_2_rental?: string | null
+          pfk_driver_facing?: string | null
+          pfk_driver_facing_rental?: string | null
+          pfk_main_unit?: string | null
+          pfk_main_unit_rental?: string | null
+          pfk_main_unit_sub?: string | null
+          pfk_road_facing?: string | null
+          pfk_road_facing_rental?: string | null
+          reg?: string | null
+          roaming?: string | null
+          roller_door_switches?: string | null
+          roller_door_switches_rental?: string | null
+          sd_card_1tb?: string | null
+          sd_card_1tb_rental?: string | null
+          sd_card_250gb?: string | null
+          sd_card_250gb_rental?: string | null
+          sd_card_256gb?: string | null
+          sd_card_256gb_rental?: string | null
+          sd_card_2tb?: string | null
+          sd_card_2tb_rental?: string | null
+          sd_card_480gb?: string | null
+          sd_card_480gb_rental?: string | null
+          sd_card_512gb?: string | null
+          sd_card_512gb_rental?: string | null
+          sim_card_number?: string | null
+          sim_id?: string | null
+          single_probe_rental?: string | null
+          single_probe_sub?: string | null
+          sky_ican?: string | null
+          sky_ican_rental?: string | null
+          sky_idata?: string | null
+          sky_idata_rental?: string | null
+          sky_on_batt_ign_rental?: string | null
+          sky_on_batt_ign_unit_ip?: string | null
+          sky_on_batt_ign_unit_serial_number?: string | null
+          sky_on_batt_sub?: string | null
+          sky_safety?: string | null
+          sky_scout_12v_ip?: string | null
+          sky_scout_12v_rental?: string | null
+          sky_scout_12v_serial_number?: string | null
+          sky_scout_12v_sub?: string | null
+          sky_scout_24v_ip?: string | null
+          sky_scout_24v_rental?: string | null
+          sky_scout_24v_serial_number?: string | null
+          sky_scout_24v_sub?: string | null
+          skylink_data_number?: string | null
+          skylink_pro_ip?: string | null
+          skylink_pro_rental?: string | null
+          skylink_pro_serial_number?: string | null
+          skylink_pro_sub?: string | null
+          skylink_sim_card_no?: string | null
+          skylink_trailer_sub?: string | null
+          skylink_trailer_unit_ip?: string | null
+          skylink_trailer_unit_rental?: string | null
+          skylink_trailer_unit_serial_number?: string | null
+          skylink_voice_kit_ip?: string | null
+          skylink_voice_kit_rental?: string | null
+          skylink_voice_kit_serial_number?: string | null
+          skylink_voice_kit_sub?: string | null
+          speaker?: string | null
+          speaker_rental?: string | null
+          tag?: string | null
+          tag_?: string | null
+          tag_reader?: string | null
+          tag_reader_?: string | null
+          tag_reader_rental?: string | null
+          tag_reader_rental_?: string | null
+          tag_rental?: string | null
+          tag_rental_?: string | null
+          total_rental?: number | null
+          total_rental_sub?: number | null
+          total_sub?: number | null
+          tpiece?: string | null
+          tpiece_rental?: string | null
+          unique_id?: string | null
+          vin?: string | null
+          vw100ip_driver_facing_ip?: string | null
+          vw100ip_driver_facing_rental?: string | null
+          vw300_dakkie_dome_1?: string | null
+          vw300_dakkie_dome_1_rental?: string | null
+          vw300_dakkie_dome_2?: string | null
+          vw300_dakkie_dome_2_rental?: string | null
+          vw303_driver_facing_camera?: string | null
+          vw303_driver_facing_camera_rental?: string | null
+          vw306_dvr_road_facing_for_4ch_8ch?: string | null
+          vw306_dvr_road_facing_for_4ch_8ch_rental?: string | null
+          vw306m_a2_dash_cam?: string | null
+          vw306m_a2_dash_cam_rental?: string | null
+          vw400_dome_1?: string | null
+          vw400_dome_1_rental?: string | null
+          vw400_dome_2?: string | null
+          vw400_dome_2_rental?: string | null
+          vw502_dual_lens_camera?: string | null
+          vw502_dual_lens_camera_rental?: string | null
+          vw502f_road_facing_camera?: string | null
+          vw502f_road_facing_camera_rental?: string | null
+          year?: string | null
+        }
+        Relationships: []
+      }
+      vehicles_duplicate_duplicate: {
         Row: {
           _10m_cable_for_camera_4pin: string | null
           _10m_cable_for_camera_4pin_rental: string | null
@@ -7652,6 +9052,7 @@ export type Database = {
           job_number: string
         }[]
       }
+      close_inactive_sessions: { Args: never; Returns: number }
       force_assign_technician: {
         Args: {
           p_job_date: string
