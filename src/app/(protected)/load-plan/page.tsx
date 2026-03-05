@@ -75,6 +75,7 @@ import { DriverDropdown } from "@/components/ui/driver-dropdown";
 import { StopPointDropdown } from "@/components/ui/stop-point-dropdown";
 import { markDriversUnavailable } from "@/lib/utils/driver-availability";
 import { ClientDropdown } from "@/components/ui/client-dropdown";
+import { set } from "date-fns";
 
 export default function LoadPlanPage() {
   console.log("LoadPlanPage component rendering");
@@ -100,6 +101,7 @@ export default function LoadPlanPage() {
   const [costCenters, setCostCenters] = useState([]);
   const [availableDrivers, setAvailableDrivers] = useState([]);
   const [vehicleTrackingData, setVehicleTrackingData] = useState([]);
+  const [trailer, setTrailer] = useState<any[]>([]);
 
   // Create Load form state
   const [client, setClient] = useState("");
@@ -114,7 +116,7 @@ export default function LoadPlanPage() {
   //     .toString()
   //     .padStart(5, "0")}`
   // );
-    const [orderNumber, setOrderNumber] = useState("");
+  const [orderNumber, setOrderNumber] = useState("");
   const [comment, setComment] = useState("");
   // Address & ETA section
   const [etaPickup, setEtaPickup] = useState("");
@@ -240,6 +242,21 @@ export default function LoadPlanPage() {
     },
   };
 
+  const fetchTrailers = async () => {
+    const { data: trailerData, error: trailerError } = await supabase
+      .from("trailer")
+      .select("*");
+    if (trailerError) {
+      console.error("Trailer error:", trailerError);
+    } else {
+      setTrailer((trailerData as unknown) || []);
+    }
+  };
+
+  useEffect(() => {
+    fetchTrailers();
+  }, []);
+
   // Fetch loads and reference data
   // Fetch stop points with pagination and caching
   const fetchStopPoints = async () => {
@@ -283,14 +300,10 @@ export default function LoadPlanPage() {
         supabase
           .from("clients")
           .select(
-            "id, name, client_id, address, contact_person, phone, pickup_locations, dropoff_locations"
+            "id, name, client_id, address, contact_person, phone, pickup_locations, dropoff_locations, commodity",
           )
           .eq("status", "Active"),
-        supabase
-          .from("vehiclesc")
-          .select(
-            "*"
-          ),
+        supabase.from("vehiclesc").select("*"),
         supabase.from("cost_centers").select("*"),
         fetch("/api/vehicles"),
         fetch("/api/maysene-drivers"),
@@ -321,7 +334,7 @@ export default function LoadPlanPage() {
 
       // Filter available drivers
       const availableDriversList = formattedDrivers.filter(
-        (d) => d.available === true
+        (d) => d.available === true,
       );
 
       // Helper function to parse JSON fields
@@ -377,20 +390,22 @@ export default function LoadPlanPage() {
   }, []);
 
   // Vehicle type options
-  const vehicleTypeOptions = [
-    "TAUTLINER",
-    "TAUT X-BRDER - BOTSWANA",
-    "TAUT X-BRDER - NAMIBIA",
-    "CITRUS LOAD (+1 DAY STANDING FPT)",
-    "14M/15M COMBO (NEW)",
-    "14M/15M REEFER",
-    "9 METER (NEW)",
-    "8T JHB (NEW - EPS)",
-    "8T JHB (NEW) - X-BRDER - MOZ",
-    "8T JHB (OLD)",
-    "14 TON CURTAIN",
-    "1TON BAKKIE",
-  ];
+  const vehicleTypeOptions = ["Horse", "Tanker"];
+
+  // const vehicleTypeOptions = [
+  //   "TAUTLINER",
+  //   "TAUT X-BRDER - BOTSWANA",
+  //   "TAUT X-BRDER - NAMIBIA",
+  //   "CITRUS LOAD (+1 DAY STANDING FPT)",
+  //   "14M/15M COMBO (NEW)",
+  //   "14M/15M REEFER",
+  //   "9 METER (NEW)",
+  //   "8T JHB (NEW - EPS)",
+  //   "8T JHB (NEW) - X-BRDER - MOZ",
+  //   "8T JHB (OLD)",
+  //   "14 TON CURTAIN",
+  //   "1TON BAKKIE",
+  // ];
 
   // Filter vehicles based on selected type
   const filteredVehicles = useMemo(() => {
@@ -417,7 +432,7 @@ export default function LoadPlanPage() {
       const searchText =
         `${vehicle.make} ${vehicle.model} ${vehicle.sub_model} ${vehicle.vehicle_type}`.toLowerCase();
       return typeKeywords.some((keyword) =>
-        searchText.includes(keyword.toLowerCase())
+        searchText.includes(keyword.toLowerCase()),
       );
     });
   }, [vehicles, selectedVehicleType]);
@@ -425,12 +440,12 @@ export default function LoadPlanPage() {
   // Memoized vehicle and driver lookups
   const vehicleMap = useMemo(
     () => new Map(vehicles.map((v) => [v.id, v.registration_number])),
-    [vehicles]
+    [vehicles],
   );
 
   const driverMap = useMemo(
     () => new Map(drivers.map((d) => [d.id, `${d.first_name} ${d.surname}`])),
-    [drivers]
+    [drivers],
   );
 
   // Calculate distance between two coordinates
@@ -457,8 +472,8 @@ export default function LoadPlanPage() {
 
       const response = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-          location
-        )}.json?access_token=${mapboxToken}&country=za&limit=1`
+          location,
+        )}.json?access_token=${mapboxToken}&country=za&limit=1`,
       );
       const data = await response.json();
       if (data.features?.[0]?.center) {
@@ -493,7 +508,6 @@ export default function LoadPlanPage() {
           const longer = str1.length > str2.length ? str1 : str2;
           const shorter = str1.length > str2.length ? str2 : str1;
           if (longer.length === 0) return 1.0;
-          
           const editDistance = (s1, s2) => {
             const costs = [];
             for (let i = 0; i <= s2.length; i++) {
@@ -503,7 +517,8 @@ export default function LoadPlanPage() {
                 else if (j > 0) {
                   let newValue = costs[j - 1];
                   if (s1.charAt(j - 1) !== s2.charAt(i - 1))
-                    newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                    newValue =
+                      Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
                   costs[j - 1] = lastValue;
                   lastValue = newValue;
                 }
@@ -512,26 +527,36 @@ export default function LoadPlanPage() {
             }
             return costs[s1.length];
           };
-          
-          return (longer.length - editDistance(longer, shorter)) / longer.length;
+
+          return (
+            (longer.length - editDistance(longer, shorter)) / longer.length
+          );
         };
 
-        const dbDriverName = `${driver.first_name} ${driver.surname}`.toLowerCase();
+        const dbDriverName =
+          `${driver.first_name} ${driver.surname}`.toLowerCase();
         let bestVehicleMatch = null;
         let bestMatchScore = 0;
-        
-        trackingData.forEach(vehicle => {
-          if (!vehicle.driver_name || vehicle.driver_name === 'UNKNOWN') return;
-          
-          const cleanTrackingName = vehicle.driver_name.replace(/\d+/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
-          const similarity = calculateSimilarity(dbDriverName, cleanTrackingName);
-          
+
+        trackingData.forEach((vehicle) => {
+          if (!vehicle.driver_name || vehicle.driver_name === "UNKNOWN") return;
+
+          const cleanTrackingName = vehicle.driver_name
+            .replace(/\d+/g, "")
+            .replace(/\s+/g, " ")
+            .trim()
+            .toLowerCase();
+          const similarity = calculateSimilarity(
+            dbDriverName,
+            cleanTrackingName,
+          );
+
           if (similarity > 0.7 && similarity > bestMatchScore) {
             bestVehicleMatch = vehicle;
             bestMatchScore = similarity;
           }
         });
-        
+
         const matchingVehicle = bestVehicleMatch;
 
         if (matchingVehicle?.latitude && matchingVehicle?.longitude) {
@@ -539,7 +564,7 @@ export default function LoadPlanPage() {
             pickupCoords.lat,
             pickupCoords.lon,
             parseFloat(matchingVehicle.latitude),
-            parseFloat(matchingVehicle.longitude)
+            parseFloat(matchingVehicle.longitude),
           );
           return { ...driver, distance: Math.round(distance * 10) / 10 };
         }
@@ -555,7 +580,7 @@ export default function LoadPlanPage() {
         return a.distance - b.distance;
       });
     },
-    [drivers, calculateDistance, getPickupCoordinates, vehicleTrackingData]
+    [drivers, calculateDistance, getPickupCoordinates, vehicleTrackingData],
   );
 
   // State for sorted drivers
@@ -627,7 +652,7 @@ export default function LoadPlanPage() {
         setSortedDrivers(sorted);
         // Also update available drivers with distance info
         const availableWithDistance = sorted.filter(
-          (d) => d.available === true
+          (d) => d.available === true,
         );
         setAvailableDrivers(availableWithDistance);
       });
@@ -660,20 +685,20 @@ export default function LoadPlanPage() {
           "Calculating distance between:",
           loadingLocation,
           "and",
-          dropOffPoint
+          dropOffPoint,
         );
 
         // First geocode the locations to get coordinates
         const [originResponse, destResponse] = await Promise.all([
           fetch(
             `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-              loadingLocation
-            )}.json?access_token=${mapboxToken}&country=za&limit=1`
+              loadingLocation,
+            )}.json?access_token=${mapboxToken}&country=za&limit=1`,
           ),
           fetch(
             `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-              dropOffPoint
-            )}.json?access_token=${mapboxToken}&country=za&limit=1`
+              dropOffPoint,
+            )}.json?access_token=${mapboxToken}&country=za&limit=1`,
           ),
         ]);
 
@@ -693,7 +718,7 @@ export default function LoadPlanPage() {
         console.log("Origin coords:", originCoords, "Dest coords:", destCoords);
 
         const response = await fetch(
-          `https://api.mapbox.com/directions/v5/mapbox/driving/${originCoords[0]},${originCoords[1]};${destCoords[0]},${destCoords[1]}?access_token=${mapboxToken}&geometries=geojson`
+          `https://api.mapbox.com/directions/v5/mapbox/driving/${originCoords[0]},${originCoords[1]};${destCoords[0]},${destCoords[1]}?access_token=${mapboxToken}&geometries=geojson`,
         );
         const data = await response.json();
         console.log("Mapbox response:", data);
@@ -760,7 +785,7 @@ export default function LoadPlanPage() {
         ppk_cost,
       };
     },
-    [RATE_CARD_SYSTEM]
+    [RATE_CARD_SYSTEM],
   );
 
   // Calculate costs when relevant values change
@@ -769,15 +794,15 @@ export default function LoadPlanPage() {
       const costBreakdown = calculateRateCardCost(
         selectedVehicleType,
         estimatedDistance,
-        tripDays
+        tripDays,
       );
 
       setApproximateFuelCost(costBreakdown.fuel_cost);
       setApproximatedVehicleCost(
-        costBreakdown.base_cost + costBreakdown.ppk_cost
+        costBreakdown.base_cost + costBreakdown.ppk_cost,
       );
       setApproximatedDriverCost(
-        costBreakdown.standing_day_cost + costBreakdown.extra_stop_cost
+        costBreakdown.standing_day_cost + costBreakdown.extra_stop_cost,
       );
       setTotalVehicleCost(costBreakdown.total_transport);
 
@@ -806,7 +831,7 @@ export default function LoadPlanPage() {
       const costBreakdown = calculateRateCardCost(
         selectedVehicleType,
         estimatedDistance,
-        tripDays
+        tripDays,
       );
       const total =
         costBreakdown.total_transport +
@@ -869,7 +894,7 @@ export default function LoadPlanPage() {
       }
       return minDistance;
     },
-    [calculateDistance]
+    [calculateDistance],
   );
 
   // Filter stop points within 25km of route and between origin/destination
@@ -918,14 +943,14 @@ export default function LoadPlanPage() {
           avgLat,
           avgLng,
           originLat,
-          originLng
+          originLng,
         );
         const distToDest = calculateDistance(avgLat, avgLng, destLat, destLng);
         const originToDestDist = calculateDistance(
           originLat,
           originLng,
           destLat,
-          destLng
+          destLng,
         );
 
         // Point is between origin and destination if sum of distances is roughly equal to direct distance
@@ -948,7 +973,7 @@ export default function LoadPlanPage() {
     return stopPoints
       .map((pointId) => {
         const point = availableStopPoints.find(
-          (p) => p.id.toString() === pointId
+          (p) => p.id.toString() === pointId,
         );
         if (point?.coordinates) {
           try {
@@ -1006,7 +1031,7 @@ export default function LoadPlanPage() {
           const longer = str1.length > str2.length ? str1 : str2;
           const shorter = str1.length > str2.length ? str2 : str1;
           if (longer.length === 0) return 1.0;
-          
+
           const editDistance = (s1, s2) => {
             const costs = [];
             for (let i = 0; i <= s2.length; i++) {
@@ -1016,7 +1041,8 @@ export default function LoadPlanPage() {
                 else if (j > 0) {
                   let newValue = costs[j - 1];
                   if (s1.charAt(j - 1) !== s2.charAt(i - 1))
-                    newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                    newValue =
+                      Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
                   costs[j - 1] = lastValue;
                   lastValue = newValue;
                 }
@@ -1025,26 +1051,36 @@ export default function LoadPlanPage() {
             }
             return costs[s1.length];
           };
-          
-          return (longer.length - editDistance(longer, shorter)) / longer.length;
+
+          return (
+            (longer.length - editDistance(longer, shorter)) / longer.length
+          );
         };
 
-        const selectedDriverName = `${selectedDriver.first_name} ${selectedDriver.surname}`.toLowerCase();
+        const selectedDriverName =
+          `${selectedDriver.first_name} ${selectedDriver.surname}`.toLowerCase();
         let bestDriverMatch = null;
         let bestDriverScore = 0;
-        
-        trackingData.forEach(vehicle => {
-          if (!vehicle.driver_name || vehicle.driver_name === 'UNKNOWN') return;
-          
-          const cleanTrackingName = vehicle.driver_name.replace(/\d+/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
-          const similarity = calculateSimilarity(selectedDriverName, cleanTrackingName);
-          
+
+        trackingData.forEach((vehicle) => {
+          if (!vehicle.driver_name || vehicle.driver_name === "UNKNOWN") return;
+
+          const cleanTrackingName = vehicle.driver_name
+            .replace(/\d+/g, "")
+            .replace(/\s+/g, " ")
+            .trim()
+            .toLowerCase();
+          const similarity = calculateSimilarity(
+            selectedDriverName,
+            cleanTrackingName,
+          );
+
           if (similarity > 0.7 && similarity > bestDriverScore) {
             bestDriverMatch = vehicle;
             bestDriverScore = similarity;
           }
         });
-        
+
         const matchingVehicle = bestDriverMatch;
 
         if (matchingVehicle?.latitude && matchingVehicle?.longitude) {
@@ -1057,7 +1093,7 @@ export default function LoadPlanPage() {
         }
       }
     },
-    [drivers, vehicleTrackingData]
+    [drivers, vehicleTrackingData],
   );
 
   const addDriver = useCallback(() => {
@@ -1084,7 +1120,7 @@ export default function LoadPlanPage() {
       }
       setIsCalculatingDistance(false);
     },
-    [loadingLocation, getSortedDriversByDistance, handleDriverChange]
+    [loadingLocation, getSortedDriversByDistance, handleDriverChange],
   );
 
   // Helper to get assigned vehicles/drivers display
@@ -1145,7 +1181,7 @@ export default function LoadPlanPage() {
       setShowAddressPopup(true);
     } else {
       setClient(
-        typeof clientData === "string" ? clientData : clientData?.name || ""
+        typeof clientData === "string" ? clientData : clientData?.name || "",
       );
       setSelectedClient(clientData);
       setManualClientName(""); // Clear manual input
@@ -1291,25 +1327,25 @@ export default function LoadPlanPage() {
       if (error) throw error;
 
       // Mark assigned drivers as unavailable
-      const assignedDriverIds = driverAssignments
-        .map((d) => d.id)
-        .filter((id) => id);
+      // const assignedDriverIds = driverAssignments
+      //   .map((d) => d.id)
+      //   .filter((id) => id);
 
-      if (assignedDriverIds.length > 0) {
-        try {
-          await markDriversUnavailable(assignedDriverIds);
-          showToast(
-            `${assignedDriverIds.length} driver(s) marked as unavailable`,
-            "success"
-          );
-        } catch (error) {
-          console.error("Error updating driver availability:", error);
-          showToast(
-            "Load created successfully, but failed to update driver availability",
-            "warning"
-          );
-        }
-      }
+      // if (assignedDriverIds.length > 0) {
+      //   try {
+      //     await markDriversUnavailable(assignedDriverIds);
+      //     showToast(
+      //       `${assignedDriverIds.length} driver(s) marked as unavailable`,
+      //       "success"
+      //     );
+      //   } catch (error) {
+      //     console.error("Error updating driver availability:", error);
+      //     showToast(
+      //       "Load created successfully, but failed to update driver availability",
+      //       "warning"
+      //     );
+      //   }
+      // }
 
       // Reset form
       setClient("");
@@ -1473,10 +1509,10 @@ export default function LoadPlanPage() {
                               row.status === "completed"
                                 ? "bg-green-100 text-green-800"
                                 : row.status === "in-transit"
-                                ? "bg-blue-100 text-blue-800"
-                                : row.status === "pending"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-red-100 text-red-800"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : row.status === "pending"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : "bg-red-100 text-red-800",
                             )}
                           >
                             {row.status || "pending"}
@@ -1668,7 +1704,7 @@ export default function LoadPlanPage() {
                             size="sm"
                             onClick={() => {
                               const updated = stopPoints.filter(
-                                (_, i) => i !== index
+                                (_, i) => i !== index,
                               );
                               setStopPoints(updated);
                             }}
@@ -1822,17 +1858,17 @@ export default function LoadPlanPage() {
                           <SelectValue placeholder="Select trailer" />
                         </SelectTrigger>
                         <SelectContent>
-                          {vehicles
-                            .filter(
-                              (vehicle) => vehicle.vehicle_type !== "vehicle"
-                            )
-                            .map((vehicle) => (
+                          {trailer
+                            // .filter(
+                            //   (vehicle) => vehicle.vehicle_type !== "vehicle"
+                            // )
+                            .map((trailerItem, index) => (
                               <SelectItem
-                                key={vehicle.id}
-                                value={vehicle.id.toString()}
+                                key={index}
+                                value={trailerItem.id.toString()}
                               >
-                                {vehicle.registration_number} - {vehicle.make}{" "}
-                                {vehicle.model} ({vehicle.vehicle_type})
+                                {trailerItem?.registration || "Unknown"} -{" "}
+                                {trailerItem?.fleet_number || "N/A"}{" "}
                               </SelectItem>
                             ))}
                         </SelectContent>
@@ -2002,7 +2038,7 @@ export default function LoadPlanPage() {
                                       {
                                         name: "Premium",
                                         value: parseFloat(
-                                          goodsInTransitPremium
+                                          goodsInTransitPremium,
                                         ),
                                         fill: "url(#premiumGradient)",
                                       },
@@ -2249,10 +2285,10 @@ export default function LoadPlanPage() {
                               trip.status === "completed"
                                 ? "bg-emerald-100 text-emerald-700"
                                 : trip.status === "in-transit"
-                                ? "bg-blue-100 text-blue-700"
-                                : trip.status === "pending"
-                                ? "bg-amber-100 text-amber-700"
-                                : "bg-slate-100 text-slate-700"
+                                  ? "bg-blue-100 text-blue-700"
+                                  : trip.status === "pending"
+                                    ? "bg-amber-100 text-amber-700"
+                                    : "bg-slate-100 text-slate-700",
                             )}
                           >
                             {trip.status || "pending"}
@@ -2313,7 +2349,7 @@ export default function LoadPlanPage() {
                                     "w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-medium transition-colors",
                                     step.completed
                                       ? "bg-slate-600 border-slate-600 text-white"
-                                      : "bg-white border-slate-300 text-slate-400"
+                                      : "bg-white border-slate-300 text-slate-400",
                                   )}
                                 >
                                   {index + 1}
@@ -2323,7 +2359,7 @@ export default function LoadPlanPage() {
                                     "text-xs mt-2 font-medium",
                                     step.completed
                                       ? "text-slate-900"
-                                      : "text-slate-400"
+                                      : "text-slate-400",
                                   )}
                                 >
                                   {step.label}
@@ -2335,7 +2371,7 @@ export default function LoadPlanPage() {
                                       step.completed &&
                                         array[index + 1].completed
                                         ? "bg-slate-600"
-                                        : "bg-slate-200"
+                                        : "bg-slate-200",
                                     )}
                                     style={{ width: "calc(100% + 2rem)" }}
                                   />
@@ -2372,7 +2408,7 @@ export default function LoadPlanPage() {
                                 <p className="text-xs text-slate-500">
                                   {pickup.scheduled_time
                                     ? new Date(
-                                        pickup.scheduled_time
+                                        pickup.scheduled_time,
                                       ).toLocaleString()
                                     : "Time TBD"}
                                 </p>
@@ -2399,7 +2435,7 @@ export default function LoadPlanPage() {
                                 <p className="text-xs text-slate-500">
                                   {dropoff.scheduled_time
                                     ? new Date(
-                                        dropoff.scheduled_time
+                                        dropoff.scheduled_time,
                                       ).toLocaleString()
                                     : "Time TBD"}
                                 </p>

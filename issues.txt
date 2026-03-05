@@ -204,3 +204,15 @@ icon change for fuel
 
 
 FIX THE ID PAGE TO BE ABLE TO EDIT CLIENT, EDIT THE STOP POINTS
+
+
+
+Afrimat Lichtenburg
+Matla Power Station ( Ash)
+Lethabo Power Station (Ash)
+PPC Slurry (Cement)
+PPC Hercules (Cement)
+PPC Dwaalboom (Cement)
+
+
+Issue to be raised the vehicle type and the trailers are wrong 

@@ -5,7 +5,11 @@ import { ChevronDown, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const COMMODITIES = [
-  'Ash','Cement'
+  "Soda Ash",
+  "Dolomite",
+  "Lime",
+  "Silica Sand",
+  "Other"
 ]
 
 export function CommodityDropdown({ value, onChange, placeholder = "Select commodity" }) {
