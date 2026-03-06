@@ -130,6 +130,47 @@ export default function LoadPlanPage() {
   const [optimizedRoute, setOptimizedRoute] = useState<any>(null);
   const [showRouteModal, setShowRouteModal] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
+
+  const normalizeLocationValue = useCallback((value: unknown): string => {
+    if (typeof value === "string") return value;
+    if (!value || typeof value !== "object") return "";
+
+    const locationValue = value as {
+      address?: unknown;
+      coordinates?: unknown;
+      name?: unknown;
+    };
+
+    if (
+      typeof locationValue.address === "string" &&
+      locationValue.address.trim()
+    ) {
+      return locationValue.address;
+    }
+
+    if (
+      typeof locationValue.coordinates === "string" &&
+      locationValue.coordinates.trim()
+    ) {
+      return locationValue.coordinates;
+    }
+
+    if (typeof locationValue.name === "string" && locationValue.name.trim()) {
+      return locationValue.name;
+    }
+
+    return "";
+  }, []);
+
+  const normalizedLoadingLocation = useMemo(
+    () => normalizeLocationValue(loadingLocation),
+    [loadingLocation, normalizeLocationValue],
+  );
+
+  const normalizedDropOffPoint = useMemo(
+    () => normalizeLocationValue(dropOffPoint),
+    [dropOffPoint, normalizeLocationValue],
+  );
   // Driver assignments state
   const [driverAssignments, setDriverAssignments] = useState([
     { id: "", name: "" },
@@ -593,7 +634,7 @@ export default function LoadPlanPage() {
   // Preview route when locations change (only for national trips) - without saving
   useEffect(() => {
     const previewRoute = async () => {
-      if (!loadingLocation || !dropOffPoint) {
+      if (!normalizedLoadingLocation || !normalizedDropOffPoint) {
         setOptimizedRoute(null);
         return;
       }
@@ -621,8 +662,8 @@ export default function LoadPlanPage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            origin: loadingLocation,
-            destination: dropOffPoint,
+            origin: normalizedLoadingLocation,
+            destination: normalizedDropOffPoint,
             pickupTime: etaPickup,
             waypoints: waypoints,
           }),
@@ -640,8 +681,8 @@ export default function LoadPlanPage() {
 
     previewRoute();
   }, [
-    loadingLocation,
-    dropOffPoint,
+    normalizedLoadingLocation,
+    normalizedDropOffPoint,
     orderNumber,
     etaPickup,
     tripType,
@@ -650,8 +691,8 @@ export default function LoadPlanPage() {
 
   // Update sorted drivers when pickup location changes
   useEffect(() => {
-    if (loadingLocation) {
-      getSortedDriversByDistance(loadingLocation).then((sorted) => {
+    if (normalizedLoadingLocation) {
+      getSortedDriversByDistance(normalizedLoadingLocation).then((sorted) => {
         setSortedDrivers(sorted);
         // Also update available drivers with distance info
         const availableWithDistance = sorted.filter(
@@ -663,15 +704,15 @@ export default function LoadPlanPage() {
       setSortedDrivers(drivers);
       setAvailableDrivers(drivers.filter((d) => d.available === true));
     }
-  }, [loadingLocation, getSortedDriversByDistance, drivers]);
+  }, [normalizedLoadingLocation, getSortedDriversByDistance, drivers]);
 
   // Calculate estimated distance when locations change
   useEffect(() => {
     const calculateRouteDistance = async () => {
-      if (!loadingLocation || !dropOffPoint) {
+      if (!normalizedLoadingLocation || !normalizedDropOffPoint) {
         console.log("Missing locations for distance calc:", {
-          loadingLocation,
-          dropOffPoint,
+          loadingLocation: normalizedLoadingLocation,
+          dropOffPoint: normalizedDropOffPoint,
         });
         setEstimatedDistance(0);
         return;
@@ -686,21 +727,21 @@ export default function LoadPlanPage() {
 
         console.log(
           "Calculating distance between:",
-          loadingLocation,
+          normalizedLoadingLocation,
           "and",
-          dropOffPoint,
+          normalizedDropOffPoint,
         );
 
         // First geocode the locations to get coordinates
         const [originResponse, destResponse] = await Promise.all([
           fetch(
             `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-              loadingLocation,
+              normalizedLoadingLocation,
             )}.json?access_token=${mapboxToken}&country=za&limit=1`,
           ),
           fetch(
             `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-              dropOffPoint,
+              normalizedDropOffPoint,
             )}.json?access_token=${mapboxToken}&country=za&limit=1`,
           ),
         ]);
@@ -739,7 +780,7 @@ export default function LoadPlanPage() {
     };
 
     calculateRouteDistance();
-  }, [loadingLocation, dropOffPoint]);
+  }, [normalizedLoadingLocation, normalizedDropOffPoint]);
 
   // Rate Card Calculation Function
   const calculateRateCardCost = useCallback(
@@ -903,8 +944,8 @@ export default function LoadPlanPage() {
   // Filter stop points within 25km of route and between origin/destination
   const filteredStopPoints = useMemo(() => {
     if (
-      !loadingLocation ||
-      !dropOffPoint ||
+      !normalizedLoadingLocation ||
+      !normalizedDropOffPoint ||
       !optimizedRoute?.route?.geometry?.coordinates
     ) {
       return availableStopPoints;
@@ -964,8 +1005,8 @@ export default function LoadPlanPage() {
     });
   }, [
     availableStopPoints,
-    loadingLocation,
-    dropOffPoint,
+    normalizedLoadingLocation,
+    normalizedDropOffPoint,
     optimizedRoute,
     distanceToRoute,
     calculateDistance,
@@ -1106,11 +1147,13 @@ export default function LoadPlanPage() {
   // Auto-select closest driver when dropdown is opened
   const handleDriverDropdownOpen = useCallback(
     async (driverIndex) => {
-      if (!loadingLocation) return;
+      if (!normalizedLoadingLocation) return;
 
       setIsCalculatingDistance(true);
       try {
-        const sorted = await getSortedDriversByDistance(loadingLocation);
+        const sorted = await getSortedDriversByDistance(
+          normalizedLoadingLocation,
+        );
         setSortedDrivers(sorted);
 
         // Auto-select closest driver if available
@@ -1123,7 +1166,7 @@ export default function LoadPlanPage() {
       }
       setIsCalculatingDistance(false);
     },
-    [loadingLocation, getSortedDriversByDistance, handleDriverChange],
+    [normalizedLoadingLocation, getSortedDriversByDistance, handleDriverChange],
   );
 
   // Helper to get assigned vehicles/drivers display
@@ -1213,7 +1256,11 @@ export default function LoadPlanPage() {
     try {
       // Save route to database only when creating the load
       let routeId = null;
-      if (tripType === "national" && loadingLocation && dropOffPoint) {
+      if (
+        tripType === "national" &&
+        normalizedLoadingLocation &&
+        normalizedDropOffPoint
+      ) {
         try {
           const selectedStopPoints = getSelectedStopPointsData();
           const waypoints = selectedStopPoints.map((point) => {
@@ -1229,8 +1276,8 @@ export default function LoadPlanPage() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              origin: loadingLocation,
-              destination: dropOffPoint,
+              origin: normalizedLoadingLocation,
+              destination: normalizedDropOffPoint,
               orderId: orderNumber,
               pickupTime: etaPickup,
               waypoints: waypoints,
@@ -1255,8 +1302,8 @@ export default function LoadPlanPage() {
         ordernumber: orderNumber,
         rate: rate,
         cargo: commodity,
-        origin: loadingLocation,
-        destination: dropOffPoint,
+        origin: normalizedLoadingLocation,
+        destination: normalizedDropOffPoint,
         notes: comment,
         status: "pending",
         startdate: etaPickup ? etaPickup.split("T")[0] : null,
@@ -1282,15 +1329,15 @@ export default function LoadPlanPage() {
             },
         pickuplocations: [
           {
-            location: loadingLocation || "",
-            address: loadingLocation || "",
+            location: normalizedLoadingLocation || "",
+            address: normalizedLoadingLocation || "",
             scheduled_time: etaPickup || "",
           },
         ],
         dropofflocations: [
           {
-            location: dropOffPoint || "",
-            address: dropOffPoint || "",
+            location: normalizedDropOffPoint || "",
+            address: normalizedDropOffPoint || "",
             scheduled_time: etaDropoff || "",
           },
         ],
@@ -1623,7 +1670,9 @@ export default function LoadPlanPage() {
                       <ClientLoadingDropdown
                         label="Loading Location"
                         value={loadingLocation}
-                        onChange={setLoadingLocation}
+                        onChange={(value) =>
+                          setLoadingLocation(normalizeLocationValue(value))
+                        }
                         placeholder="Search for client location"
                         clients={clients}
                       />
@@ -1640,7 +1689,9 @@ export default function LoadPlanPage() {
                       <ClientLocationDropdown
                         label="Drop Off Point"
                         value={dropOffPoint}
-                        onChange={setDropOffPoint}
+                        onChange={(value) =>
+                          setDropOffPoint(normalizeLocationValue(value))
+                        }
                         placeholder="Search for drop off location"
                         clients={clients}
                       />
@@ -1731,7 +1782,7 @@ export default function LoadPlanPage() {
                   )}
 
                   {/* Route Preview */}
-                  {loadingLocation && dropOffPoint && (
+                  {normalizedLoadingLocation && normalizedDropOffPoint && (
                     <div className="col-span-full">
                       <div className="space-y-4">
                         {isOptimizing && tripType === "national" && (
@@ -1741,8 +1792,8 @@ export default function LoadPlanPage() {
                           </div>
                         )}
                         <RoutePreviewMap
-                          origin={loadingLocation}
-                          destination={dropOffPoint}
+                          origin={normalizedLoadingLocation}
+                          destination={normalizedDropOffPoint}
                           routeData={
                             tripType === "national" ? optimizedRoute : null
                           }
