@@ -16,7 +16,7 @@ export function ClientLocationDropdown({
   const dropdownRef = useRef(null)
   const searchInputRef = useRef(null)
 
-  // Filter clients by name - will show clients that match the search term
+  // Filter clients by name - will show clients that match the search term and isloading field is true
   const filteredClients = clients.filter(client =>
     client.name?.toLowerCase().includes(searchTerm.toLowerCase())
   )
@@ -56,6 +56,7 @@ export function ClientLocationDropdown({
   const displayValue = selectedClient 
     ? `${selectedClient.name}${selectedClient.address ? ' - ' + selectedClient.address : ''}`
     : value || ''
+
 
   return (
     <div className="relative" ref={dropdownRef}>

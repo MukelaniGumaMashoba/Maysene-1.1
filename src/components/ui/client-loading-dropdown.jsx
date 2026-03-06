@@ -4,16 +4,21 @@ import React, { useState, useRef, useEffect } from 'react'
 import { ChevronDown, Search, Building2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-export function ClientDropdown({ value, onChange, clients = [], placeholder = "Select client" }) {
+export function ClientLoadingDropdown({ value, onChange, clients = [], placeholder = "Select loading client" , label= ""}) {
   const [isOpen, setIsOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const dropdownRef = useRef(null)
   const searchInputRef = useRef(null)
 
-  const filteredClients = clients.filter(client =>
+  // Filter clients to show only those where IsLoading is true
+  const loadingClients = clients.filter(client => client.IsLoading === true)
+
+  const filteredClients = loadingClients.filter(client =>
     client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.client_id?.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  console.log("Loading clients:", loadingClients)
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -39,10 +44,8 @@ export function ClientDropdown({ value, onChange, clients = [], placeholder = "S
     setSearchTerm('')
   }
 
-  const selectedClient = typeof value === 'object' ? value : clients.find(c => c.name === value)
+  const selectedClient = typeof value === 'object' ? value : loadingClients.find(c => c.name === value)
   const displayValue = selectedClient?.name || (typeof value === 'string' ? value : '')
-
-    const preDefinedCClients = ["PPC", "AFRIMAT", "ASH RESOURCES"];
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -68,35 +71,39 @@ export function ClientDropdown({ value, onChange, clients = [], placeholder = "S
             <input
               ref={searchInputRef}
               className="flex h-8 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-              placeholder="Search clients..."
+              placeholder="Search loading clients..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <div className="max-h-60 overflow-auto p-1">
-            {preDefinedCClients.length === 0 ? (
-              <div className="py-6 text-center text-sm">No clients found.</div>
+            {filteredClients.length === 0 ? (
+              <div className="py-6 text-center text-sm">
+                {loadingClients.length === 0 
+                  ? "No loading clients available." 
+                  : "No clients found."}
+              </div>
             ) : (
-              preDefinedCClients.map((clientName) => (
+              filteredClients.map((client) => (
                 <div
-                  key={clientName}
+                  key={client.id}
                   className={cn(
                     "relative flex cursor-default select-none items-start rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                    (selectedClient?.name === clientName || displayValue === clientName) && "bg-accent text-accent-foreground"
+                    (selectedClient?.id === client.id || displayValue === client.name) && "bg-accent text-accent-foreground"
                   )}
-                  onClick={() => handleSelect({ name: clientName })}
+                  onClick={() => handleSelect(client)}
                 >
                   <div className="flex flex-col gap-1 flex-1 min-w-0">
-                    <div className="font-medium truncate">{clientName}</div>
-                    {/* <div className="text-xs text-muted-foreground flex items-center gap-2">
-                      <span>{client.client_id}</span>
+                    <div className="font-medium truncate">{client.name}</div>
+                    <div className="text-xs text-muted-foreground flex items-center gap-2">
+                      {client.client_id && <span>{client.client_id}</span>}
                       {client.address && (
                         <>
                           <span>•</span>
                           <span className="truncate">{client.address}</span>
                         </>
                       )}
-                    </div> */}
+                    </div>
                   </div>
                 </div>
               ))

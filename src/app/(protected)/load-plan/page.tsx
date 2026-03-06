@@ -75,6 +75,7 @@ import { DriverDropdown } from "@/components/ui/driver-dropdown";
 import { StopPointDropdown } from "@/components/ui/stop-point-dropdown";
 import { markDriversUnavailable } from "@/lib/utils/driver-availability";
 import { ClientDropdown } from "@/components/ui/client-dropdown";
+import { ClientLoadingDropdown } from "@/components/ui/client-loading-dropdown";
 import { set } from "date-fns";
 
 export default function LoadPlanPage() {
@@ -300,7 +301,7 @@ export default function LoadPlanPage() {
         supabase
           .from("clients")
           .select(
-            "id, name, client_id, address, contact_person, phone, pickup_locations, dropoff_locations, commodity",
+            "id, name, client_id, address, contact_person, phone, pickup_locations, dropoff_locations, commodity, IsLoading",
           )
           .eq("status", "Active"),
         supabase.from("vehiclesc").select("*"),
@@ -1606,7 +1607,7 @@ export default function LoadPlanPage() {
                       />
                     </div>
                     <div>
-                      <ClientLocationDropdown
+                      <ClientLoadingDropdown
                         label="Loading Location"
                         value={loadingLocation}
                         onChange={setLoadingLocation}
