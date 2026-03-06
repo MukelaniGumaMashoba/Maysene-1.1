@@ -76,6 +76,7 @@ import { StopPointDropdown } from "@/components/ui/stop-point-dropdown";
 import { markDriversUnavailable } from "@/lib/utils/driver-availability";
 import { ClientDropdown } from "@/components/ui/client-dropdown";
 import { ClientLoadingDropdown } from "@/components/ui/client-loading-dropdown";
+import { ClientLoadingLocationModal } from "@/components/ui/client-loading-location-modal";
 import { set } from "date-fns";
 
 export default function LoadPlanPage() {
@@ -153,6 +154,7 @@ export default function LoadPlanPage() {
   const [availableStopPoints, setAvailableStopPoints] = useState([]);
   const [isLoadingStopPoints, setIsLoadingStopPoints] = useState(false);
   const [tripDays, setTripDays] = useState(1);
+  const [showLoadingLocationModal, setShowLoadingLocationModal] = useState(false);
 
   // Rate Card System - Variable Costs
   const RATE_CARD_SYSTEM = {
@@ -1383,7 +1385,17 @@ export default function LoadPlanPage() {
 
   return (
     <div className="p-6 space-y-6 w-full">
-      <h1 className="text-2xl font-bold mb-6">Load Plan</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Load Plan</h1>
+        <Button
+          onClick={() => setShowLoadingLocationModal(true)}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          <MapPin className="h-4 w-4" />
+          Manage Loading Locations
+        </Button>
+      </div>
 
       <Tabs defaultValue="loads" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
@@ -1607,6 +1619,7 @@ export default function LoadPlanPage() {
                       />
                     </div>
                     <div>
+                      <Label htmlFor="loadingLocation">Loading Location</Label> 
                       <ClientLoadingDropdown
                         label="Loading Location"
                         value={loadingLocation}
@@ -2525,6 +2538,15 @@ export default function LoadPlanPage() {
         type={toast.type}
         isVisible={toast.isVisible}
         onClose={hideToast}
+      />
+
+      <ClientLoadingLocationModal
+        isOpen={showLoadingLocationModal}
+        onClose={() => setShowLoadingLocationModal(false)}
+        onSuccess={() => {
+          fetchData(); // Refresh clients data after updating
+          setShowLoadingLocationModal(false);
+        }}
       />
     </div>
   );
