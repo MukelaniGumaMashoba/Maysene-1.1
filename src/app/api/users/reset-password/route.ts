@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
               <div class="logo-circle">
                 <img src="https://jbactgkcijnkjpyqqzxv.supabase.co/storage/v1/object/public/assets/Logo.png" alt="Logo" width="48" height="48" style="border-radius: 50%;" />
               </div>
-              <h1 class="brand">Breakdown Logistics</h1>
+              <h1 class="brand">Solflo</h1>
               <p class="subtitle">Welcome back to your Maysene Logistics</p>
             </div>
             <div class="content">

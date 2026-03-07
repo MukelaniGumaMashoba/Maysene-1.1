@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
             <div style="width: 80px; height: 80px; background: black; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
               <span style="color: white; font-size: 32px; font-weight: bold;">M</span>
             </div>
-            <h1 style="color: #1e293b; margin: 0; font-size: 28px;">Breakdown Logistics</h1>
+            <h1 style="color: #1e293b; margin: 0; font-size: 28px;">Solflo</h1>
             <p style="color: #64748b; margin: 10px 0 0 0;">Maysene Transport Solutions</p>
           </div>
           <div style="background: #f8fafc; border-left: 4px solid #2563eb; padding: 20px; margin: 30px 0; border-radius: 8px;">

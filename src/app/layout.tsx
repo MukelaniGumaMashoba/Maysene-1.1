@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Breakdown",
-  description: "Breakdown",
-  authors: [{ name: "Kilig Mukelani", url: "" }],
+  title: "Solflo || Maysene Logistics",
+  description: "Smart Route Optimization for Logistics",
+  authors: [{ name: "Mukelani", url: "" }],
 };
 
 export default function RootLayout({

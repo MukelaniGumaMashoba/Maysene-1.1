@@ -30,7 +30,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-black rounded-full mb-4">
               <Image src="/Logo.png" alt="Eagle Eye" width={150} height={150} className="object-fill rounded-full" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Breakdown Logistics</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Solflo</h1>
             <p className="text-gray-600">Welcome back to your Maysene Logistics</p>
           </div>
 
