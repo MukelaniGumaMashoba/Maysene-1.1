@@ -47,9 +47,12 @@ const roleNavigation = {
     { name: "Vehicles", href: "/vehicles", Icon: <Car /> },
     { name: "Clients", href: "/fleetManager/clients", Icon: <Building2 /> },
     { name: "Financials", href: "/audit", Icon: <Settings2Icon /> },
-    { name: "Fuel Can Bus", href: "/fuel", Icon: <Truck /> },
+    // { name: "Fuel Can Bus", href: "/fuel", Icon: <Truck /> },
     { name: "User Management", href: "/userManagement", Icon: <PlusSquare /> }, 
     { name: "System Settings", href: "/settings", Icon: <Settings /> },
+
+    // New section call it workshop
+    { name: "Workshop", href: "/workshop", Icon: <Building2 /> },
   ],
   fc: [
     { name: "Dashboard", href: "/dashboard", Icon: <ChartBar /> },
