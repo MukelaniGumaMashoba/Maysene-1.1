@@ -59,6 +59,7 @@ import RequestedParts from "@/components/RequestedParts";
 import RejectedJobs from "@/components/workshop/RejectedJobs";
 import CompletedJobsReport from "@/components/workshop/CompletedJobsReport";
 import JobCardPrinter from "@/components/ui-personal/job-card-printer";
+import FleetJobsForAdmin from "@/components/workshop/FleetJobsForAdmin";
 
 interface Job {
   id: number;
@@ -279,7 +280,7 @@ export default function FleetJobsPage() {
     // const getJobs = async () => {
     //   const { data: jobs, error } = await supabase
     //     .from('job_assignments')
-    //     .select(`*, vehiclesc_workshop(*)`)
+    //     .select(`*, vehiclesc(*)`)
     //     .neq('status', 'completed')
     //     .neq('status', 'cancelled')
     //     .order('created_at', { ascending: false });
@@ -493,7 +494,7 @@ export default function FleetJobsPage() {
       return null;
     }
     const { data, error } = await supabase
-      .from("vehiclesc_workshop")
+      .from("vehiclesc")
       .select()
       .eq("registration_number", registrationNumber)
       .single();
@@ -792,7 +793,7 @@ export default function FleetJobsPage() {
 
       <Tabs defaultValue="workshopJobs" className="space-y-6">
         <TabsList className="bg-white shadow rounded-lg border flex flex-wrap">
-          {["workshopJobs", "changes", "kanban", "analytics", "rejected", "completed"].map((tab) => (
+          {["workshopJobs", "fleetJobs", "changes", "kanban", "analytics", "rejected", "completed"].map((tab) => (
             <TabsTrigger
               key={tab}
               value={tab}
@@ -800,6 +801,8 @@ export default function FleetJobsPage() {
             >
               {tab === "workshopJobs"
                 ? "Workshop Jobs"
+                : tab === "fleetJobs"
+                  ? "Fleet Jobs"
                 : tab === "changes"
                   ? "Changes"
                 : tab === "kanban"
@@ -966,7 +969,6 @@ export default function FleetJobsPage() {
                         size="sm"
                         disabled={
                           job.status?.includes("Awaiting Approval") &&
-                          // (!job.technician || !jobsWithParts.has(job.id))
                           (!job.technician)
                         }
                         onClick={() => {
@@ -975,7 +977,6 @@ export default function FleetJobsPage() {
                         }}
                         title={
                           job.status?.includes("Awaiting Approval") &&
-                          // (!job.technician || !jobsWithParts.has(job.id))
                           (!job.technician)
                             ? !job.technician && !jobsWithParts.has(job.id)
                               ? "Technician and parts must be assigned before approval"
@@ -996,12 +997,42 @@ export default function FleetJobsPage() {
                           View Details
                         </Button>
                       </Link>
+                      {/* Send to Fleet Manager for approval once admin has processed */}
+                      {(job.status === "Approved" || job.status === "Part Assigned" || job.status === "Part Ordered") && (
+                        <Button
+                          size="sm"
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                          onClick={async () => {
+                            const { error } = await supabase
+                              .from("workshop_job")
+                              .update({ status: "Awaiting Fleet Approval" })
+                              .eq("id", job.id);
+                            if (error) {
+                              toast.error("Failed to send for fleet approval");
+                            } else {
+                              toast.success(`Job ${job.jobId_workshop} sent to fleet manager for approval`);
+                              // refresh
+                              const { data: WorkJ } = await supabase.from("workshop_job").select("*").order("created_at", { ascending: false });
+                              if (WorkJ) setWorkshopsJob(WorkJ as unknown as WorkshopJob[]);
+                            }
+                          }}
+                        >
+                          Send for Fleet Approval
+                        </Button>
+                      )}
                     </CardFooter>
                   </Card>
                 ))}
               </div>
             )}
           </div>
+        </TabsContent>
+        <TabsContent value="fleetJobs" className="space-y-6 p-6 bg-gray-50 min-h-screen">
+          <FleetJobsForAdmin supabase={supabase} onJobUpdated={() => {
+            supabase.from("workshop_job").select("*").order("created_at", { ascending: false }).then(({ data }) => {
+              if (data) setWorkshopsJob(data as unknown as WorkshopJob[]);
+            });
+          }} />
         </TabsContent>
         <TabsContent value="changes" className="space-y-6 p-6 bg-gray-50 min-h-screen">
           <div className="flex flex-col space-y-4">

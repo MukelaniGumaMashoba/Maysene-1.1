@@ -420,9 +420,9 @@ export default function PersonnelReportDetailPage() {
                         </td>
                         <td className="p-3">
                           <div>
-                            <div className="font-medium">{item.vehiclesc_workshop?.registration_number || '-'}</div>
+                            <div className="font-medium">{item.vehiclescber || '-'}</div>
                             <div className="text-sm text-gray-500">
-                              {`${item.vehiclesc_workshop?.make || ''} ${item.vehiclesc_workshop?.model || ''}`.trim() || '-'}
+                              {`${item.vehiclesc ''} ${item.vehiclescvehiclesc| ''}`.trim() || '-'}
                             </div>
                           </div>
                         </td>

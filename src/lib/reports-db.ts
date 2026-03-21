@@ -17,7 +17,7 @@ export async function getVehicleReports() {
 
   try {
     const { data: vehicles, error } = await supabase
-      .from('vehiclesc_workshop')
+      .from('vehiclesc')
       .select('*')
       .order('id', { ascending: false })
 
@@ -189,7 +189,7 @@ export async function getTechnicianAssignments() {
     .select(`
       *,
       technicians_klaver!technician_vassign_tech_id_fkey(name, phone),
-      vehiclesc_workshop!technician_vassign_vehicle_id_fkey(registration_number, make, model)
+      vehiclesc!technician_vassign_vehicle_id_fkey(registration_number, make, model)
     `)
     .order('created_at', { ascending: false })
 
@@ -260,7 +260,7 @@ export async function getStockReports() {
   const supabase = createClient()
 
   const { data: stock, error } = await supabase
-    .from('stock')
+    .mstock
     .select('*')
     .order('id', { ascending: false })
 
@@ -276,7 +276,7 @@ export async function getStockOrderReports() {
   const supabase = createClient()
 
   const { data: orders, error } = await supabase
-    .from('stock_orders')
+    .from('mstock_orders')
     .select('*')
     .order('created_at', { ascending: false })
 

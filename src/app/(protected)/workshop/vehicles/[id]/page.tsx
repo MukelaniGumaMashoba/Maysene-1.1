@@ -76,7 +76,7 @@ export default function VehicleDetailsPage() {
   const fetchVehicle = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
-      .from("vehiclesc_workshop")
+      .from("vehiclesc")
       .select("*")
       .eq("id", Number(params.id))
       .single();
@@ -99,7 +99,7 @@ export default function VehicleDetailsPage() {
     setDeleting(true);
 
     const { error } = await supabase
-      .from("vehiclesc_workshop")
+      .from("vehiclesc")
       .delete()
       .eq("id", vehicle.id);
 
@@ -117,7 +117,7 @@ export default function VehicleDetailsPage() {
   const handleUpdate = async () => {
     if (!editData) return;
     const { error } = await supabase
-      .from("vehiclesc_workshop")
+      .from("vehiclesc")
       .update(editData)
       .eq("id", editData.id);
     if (error) {

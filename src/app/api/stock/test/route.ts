@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
     // Test basic query
     const { data, error } = await supabase
-      .from('stock')
+      .mstock
       .select('*')
       .limit(5);
 
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     ];
 
     const { data, error } = await supabase
-      .from('stock')
+      .mstock
       .insert(testStockItems)
       .select('*');
 

@@ -430,7 +430,7 @@ export default function VehicleReportDetailPage() {
                               {item?.registration_no || "-"}
                             </div>
                             {/* <div className="text-sm text-gray-500">
-                              {`${item.vehiclesc_workshop?.make || ''} ${item.vehiclesc_workshop?.model || ''}`.trim() || '-'}
+                              {`${item.vehiclesc ''} ${item.vehiclescim() || '-'}
                             </div> */}
                           </div>
                         </td>

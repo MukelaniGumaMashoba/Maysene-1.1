@@ -185,7 +185,7 @@ export async function POST(request: NextRequest) {
     // First, verify the order exists and get its details
     console.log('Looking up order:', orderNumber);
     const { data: order, error: orderError } = await supabase
-      .from('stock_orders')
+      .from('mstock_orders')
       .select('*')
       .eq('order_number', orderNumber)
       .single();
@@ -242,7 +242,7 @@ export async function POST(request: NextRequest) {
     // Update the order to mark it as paid
     console.log('Updating order status to paid...');
     const { data: updatedOrder, error: updateError } = await supabase
-      .from('stock_orders')
+      .from('mstock_orders')
       .update({ 
         status: 'paid',
         updated_at: new Date().toISOString()

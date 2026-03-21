@@ -238,7 +238,7 @@ export default function InventoryPage() {
   const fetchStockLevels = async () => {
     try {
       const { data, error } = await supabase
-        .from('stock')
+        .mstock
         .select('*')
         .order('id', { ascending: false });
       if (error) {

@@ -38,6 +38,16 @@ const roles = [
     name: 'cost centre',
     path: ['/dashboard', '/ccenter', '/jobs', '/profile', '/quotation', '/notification', '/login', '/signup', '/', '/logout', '/userManagement'],
   },
+  {
+    name: 'admin',
+    path: ['/workshop', '/workshop/dashboard'
+      , '/workshop/admin/sublets', '/workshop/admin/suppliers', '/workshop/jobs',
+      '/workshop/profile', '/quotation', '/notification', '/login',
+      '/signup', '/', '/logout', '/userManagement', '/workshop/inspections', '/workshop/clients', '/workshop/stop-points', '/workshop/load-plan',
+      '/workshop/fuel', '/workshop/audit', '/workshop/settings', '/workshop/callcenter', '/workshop/technicians',
+      '/workshop/vehicles', '/workshop/drivers', '/workshop/callcenter/technicians', '/workshop/sublets', '/workshop/inventory', '/workshop/inventory/stock-levels'
+    ],
+  },
 ]
 
 const publicRoutes = ['/login', '/signup', '/', '/logout', '/register',

@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     
     // Fetch all approved stock orders
     const { data: orders, error } = await supabase
-      .from('stock_orders')
+      .from('mstock_orders')
       .select('*')
       .eq('approved', true)
       .order('created_at', { ascending: false });

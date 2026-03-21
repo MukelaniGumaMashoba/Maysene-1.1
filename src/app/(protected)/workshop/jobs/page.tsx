@@ -236,7 +236,7 @@ export default function JobsPage() {
 
     try {
       const { data, error } = await supabase
-        .from("vehiclesc_workshop")
+        .from("vehiclesc")
         .select("*")
         .eq("registration_number", registrationNumber.toUpperCase())
         .single();

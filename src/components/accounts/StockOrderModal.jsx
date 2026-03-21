@@ -159,7 +159,7 @@ export default function StockOrderModal({ onOrderSubmitted }) {
       };
 
       const { data, error } = await supabase
-        .from('stock_orders')
+        .from('mstock_orders')
         .insert([orderData])
         .select();
 

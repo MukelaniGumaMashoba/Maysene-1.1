@@ -45,6 +45,38 @@ export default function InspectionDetail() {
 
   if (!inspection) return <div className="p-6">Loading inspection...</div>;
 
+  const hasFaults = inspection.checklist?.some((section: any) =>
+    section.items?.some((item: any) => item.status === "Faulty")
+  );
+
+  const faultyItems = inspection.checklist?.flatMap((section: any) =>
+    (section.items || []).filter((item: any) => item.status === "Faulty").map((item: any) => item.label)
+  ) || [];
+
+  const handleSendToAdmin = async () => {
+    const year = new Date().getFullYear();
+    const jobId_workshop = 'JC-' + year + '-' + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+
+    const { error } = await supabase.from('workshop_job').insert({
+      jobId_workshop,
+      registration_no: inspection.vehicle?.registration_number || '',
+      job_type: 'inspection-fault',
+      description: `Inspection #${inspection.id} faults: ${faultyItems.join(', ')}`,
+      status: 'Pending Admin Review',
+      priority: 'medium',
+      client_name: inspection.driver ? `${inspection.driver.first_name} ${inspection.driver.surname}` : '',
+      location: inspection.location || '',
+      source: 'inspection',
+      source_id: inspection.id,
+    });
+
+    if (error) {
+      alert('Failed to send to admin: ' + error.message);
+    } else {
+      alert(`Job card ${jobId_workshop} sent to admin successfully!`);
+    }
+  };
+
   const handleDownloadPdf = () => {
     if (!contentRef.current) return;
     const doc = new jsPDF({
@@ -95,6 +127,15 @@ export default function InspectionDetail() {
         >
           Download PDF
         </Button>
+
+        {hasFaults && (
+          <Button
+            onClick={handleSendToAdmin}
+            className="mb-6 ml-2 bg-red-600 text-white hover:bg-red-700"
+          >
+            ⚠️ Send Faults to Admin (Create Job Card)
+          </Button>
+        )}
 
         <div ref={contentRef}>
           <h1 className="text-4xl font-extrabold text-gray-800 text-center drop-shadow-sm">

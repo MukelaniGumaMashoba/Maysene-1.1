@@ -22,6 +22,10 @@ import {
   Route,
   Construction,
   StepForward,
+  ClipboardList,
+  Package,
+  ArrowRightLeft,
+  Store,
 } from "lucide-react";
 import GlobalProvider from "@/context/global-context/provider";
 
@@ -32,7 +36,7 @@ interface ProtectedLayoutProps {
 // Role-based navigation configuration
 const roleNavigation = {
   "fleet manager": [
-    { name: "Dashboard", href: "/dashboard", Icon: <ChartBar /> },    
+    { name: "Dashboard", href: "/dashboard", Icon: <ChartBar /> },
     { name: "Load Plan", href: "/load-plan", Icon: <Route /> },
     { name: "Statistics", href: "/statistics", Icon: <StepForward /> },
     { name: "Jobs", href: "/jobsFleet", Icon: <Briefcase /> },
@@ -40,19 +44,47 @@ const roleNavigation = {
       name: "Inspections",
       href: "/fleetManager/inspections",
       Icon: <QrCode />,
-    },  
+    },
     { name: "Stop Points", href: "/fleetManager/stop-points", Icon: <Route /> },
-    {name : "Subcontractors", href: "/fleetManager/subcontractors", Icon: <Construction /> },
+    {
+      name: "Subcontractors",
+      href: "/fleetManager/subcontractors",
+      Icon: <Construction />,
+    },
     { name: "Drivers", href: "/drivers", Icon: <Users /> },
     { name: "Vehicles", href: "/vehicles", Icon: <Car /> },
     { name: "Clients", href: "/fleetManager/clients", Icon: <Building2 /> },
     { name: "Financials", href: "/audit", Icon: <Settings2Icon /> },
-    // { name: "Fuel Can Bus", href: "/fuel", Icon: <Truck /> },
-    { name: "User Management", href: "/userManagement", Icon: <PlusSquare /> }, 
+    { name: "Workshop Jobs", href: "/workshop/jobWorkShop", Icon: <Wrench /> },
+    {
+      name: "Stock Levels",
+      href: "/workshop/inventory/stock-levels",
+      Icon: <Briefcase />,
+    },
+    { name: "User Management", href: "/userManagement", Icon: <PlusSquare /> },
     { name: "System Settings", href: "/settings", Icon: <Settings /> },
-
-    // New section call it workshop
-    { name: "Workshop", href: "/workshop", Icon: <Building2 /> },
+  ],
+  admin: [
+    // Workshop subsection
+    { name: "Dashboard", href: "/workshop/dashboard", Icon: <ChartBar /> },
+    { name: "Jobs", href: "/workshop/jobs", Icon: <Briefcase /> },
+    { name: "Workshop", href: "/workshop/callcenter", Icon: <Store /> },
+    { name: "Drivers", href: "/workshop/drivers", Icon: <Users /> },
+    { name: "Vehicles", href: "/workshop/vehicles", Icon: <Car /> },
+    {
+      name: "Technicians Assignment",
+      href: "/workshop/callcenter/technician",
+      Icon: <Wrench />,
+    },
+    { name: "Suppliers", href: "/workshop/admin/suppliers", Icon: <Building2 /> },
+    { name: "Sublets", href: "/workshop/admin/sublets", Icon: <ArrowRightLeft /> },
+    { name: "Inventory", href: "/workshop/inventory", Icon: <Package /> },
+    {
+      name: "Stock Levels",
+      href: "/workshop/inventory/stock-levels",
+      Icon: <ClipboardList />,
+    },
+    { name: "System Settings", href: "/settings", Icon: <Settings /> },
   ],
   fc: [
     { name: "Dashboard", href: "/dashboard", Icon: <ChartBar /> },
@@ -146,7 +178,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
         setNavigation(customerManagerNav);
         console.log(
           "Layout - Fleet Manager restricted to 2 items:",
-          customerManagerNav.length
+          customerManagerNav.length,
         );
       } else if (role === "customer") {
         const customerNav = [
@@ -162,7 +194,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
         setNavigation(customerNav);
         console.log(
           "Layout - Customer restricted to 4 items:",
-          customerNav.length
+          customerNav.length,
         );
       } else {
         setNavigation(roleNav);
@@ -172,7 +204,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
         "Layout - Navigation set for role:",
         role,
         "Items:",
-        navigation.length || roleNav.length
+        navigation.length || roleNav.length,
       );
     } else {
       console.log("Layout - No role found, redirecting to login");
@@ -355,7 +387,9 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
           </nav>
           {/* Footer */}
           <div className="p-4 border-t text-center text-xs text-gray-500">
-            <p className="m-3">{userRole === "customer" ? "workshop" : userRole || "User"}</p>
+            <p className="m-3">
+              {userRole === "customer" ? "workshop" : userRole || "User"}
+            </p>
             <Button
               onClick={handleLogout}
               variant="outline"

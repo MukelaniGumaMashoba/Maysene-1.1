@@ -151,7 +151,7 @@ export default function JobCardPrinter({
       // vehicle (if registration_no present)
       if (jobRow.registration_no) {
         const { data: vehicle } = await supabase
-          .from('vehiclesc_workshop')
+          .from('vehiclesc')
           .select('*')
           .eq('registration_number', jobRow.registration_no)
           .limit(1)

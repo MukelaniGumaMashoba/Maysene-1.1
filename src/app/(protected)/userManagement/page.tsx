@@ -229,8 +229,8 @@ export default function SettingsPage() {
   const handleUpdateSetting = (settingId: string, newValue: string) => {
     setSettings((prev) =>
       prev.map((setting) =>
-        setting.id === settingId ? { ...setting, value: newValue } : setting
-      )
+        setting.id === settingId ? { ...setting, value: newValue } : setting,
+      ),
     );
     toast.success("Setting Updated");
   };
@@ -243,8 +243,8 @@ export default function SettingsPage() {
               ...user,
               status: user.status === "active" ? "inactive" : "active",
             }
-          : user
-      )
+          : user,
+      ),
     );
   };
 
@@ -274,7 +274,7 @@ export default function SettingsPage() {
   const handleDeleteAccount = async (userId: string, userEmail: string) => {
     if (
       !confirm(
-        `Are you sure you want to delete the account for ${userEmail}? This action cannot be undone.`
+        `Are you sure you want to delete the account for ${userEmail}? This action cannot be undone.`,
       )
     ) {
       return;
@@ -316,13 +316,16 @@ export default function SettingsPage() {
     }
   };
 
-  const groupedSettings = settings.reduce((acc, setting) => {
-    if (!acc[setting.category]) {
-      acc[setting.category] = [];
-    }
-    acc[setting.category].push(setting);
-    return acc;
-  }, {} as Record<string, SystemSetting[]>);
+  const groupedSettings = settings.reduce(
+    (acc, setting) => {
+      if (!acc[setting.category]) {
+        acc[setting.category] = [];
+      }
+      acc[setting.category].push(setting);
+      return acc;
+    },
+    {} as Record<string, SystemSetting[]>,
+  );
 
   return (
     <>
@@ -389,9 +392,10 @@ export default function SettingsPage() {
                             Fleet Manager
                           </SelectItem>
                           <SelectItem value="driver">Driver</SelectItem>
-                          <SelectItem value="call centre">
+                          <SelectItem value="admin">
                             Administrator & Parts
                           </SelectItem>
+                          <SelectItem value="CAll Centre">call centre</SelectItem>
                           <SelectItem value="Technician">Technician</SelectItem>
                           <SelectItem value="Supervisor">Supervisor</SelectItem>
                         </SelectContent>

@@ -156,7 +156,7 @@ export default function WorkshopJobDetailPage() {
 
       if (jobData.registration_no) {
         const { data: vehicleData, error: vehicleError } = await supabase
-          .from("vehiclesc_workshop")
+          .from("vehiclesc")
           .select("*")
           .eq("registration_number", jobData.registration_no)
           .single();

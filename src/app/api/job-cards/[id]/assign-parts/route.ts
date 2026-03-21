@@ -34,7 +34,7 @@ export async function PUT(request: NextRequest, { params }) {
     const stockErrors = [];
     for (const part of parts) {
       const { data: stockItem, error: stockError } = await supabase
-        .from('stock')
+        .mstock
         .select('quantity')
         .eq('id', part.stock_id)
         .single();
@@ -60,7 +60,7 @@ export async function PUT(request: NextRequest, { params }) {
     // Update stock quantities and calculate new values
     for (const part of parts) {
       const { data: currentStock, error: stockError } = await supabase
-        .from('stock')
+        .mstock
         .select('quantity, cost_excl_vat_zar, total_value')
         .eq('id', part.stock_id)
         .single();
@@ -76,7 +76,7 @@ export async function PUT(request: NextRequest, { params }) {
       const newTotalValue = (newQuantity * costPerUnit).toFixed(2);
       
       const { error: updateError } = await supabase
-        .from('stock')
+        .mstock
         .update({ 
           quantity: newQuantity.toString(),
           total_value: newTotalValue

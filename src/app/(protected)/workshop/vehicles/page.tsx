@@ -264,7 +264,7 @@ export default function Vehicles() {
         });
 
       const { error } = await supabase
-        .from("vehiclesc_workshop")
+        .from("vehiclesc")
         .insert(vehicleData);
 
       if (error) throw error;
@@ -273,7 +273,7 @@ export default function Vehicles() {
       setSelectedFile(null);
       // Refresh vehicles list
       const { data: vehicles } = await supabase
-        .from("vehiclesc_workshop")
+        .from("vehiclesc")
         .select("*");
       setVehicles(vehicles as []);
     } catch (error) {
@@ -324,7 +324,7 @@ export default function Vehicles() {
   //   const fetchVehicles = async () => {
   //     // Filter for Klava company vehicles only
   //     const { data: vehicles, error } = await supabase
-  //       .from("vehiclesc_workshop")
+  //       .from("vehiclesc")
   //       .select("*");
 
   //     if (error) {
@@ -338,7 +338,7 @@ export default function Vehicles() {
   //     .channel("schema-db-changes")
   //     .on(
   //       "postgres_changes",
-  //       { event: "*", schema: "public", table: "vehiclesc_workshop" },
+  //       { event: "*", schema: "public", table: "vehiclesc" },
   //       (payload) => {
   //         console.log("Change received!", payload);
   //       }
@@ -354,7 +354,7 @@ export default function Vehicles() {
     const fetchVehicles = async () => {
       // Filter for Klava company vehicles only
       const { data: vehicles, error } = await supabase
-        .from("vehiclesc_workshop")
+        .from("vehiclesc")
         .select("*");
 
       if (error) {
@@ -373,7 +373,7 @@ export default function Vehicles() {
         {
           event: "INSERT", // Only new vehicles
           schema: "public",
-          table: "vehiclesc_workshop",
+          table: "vehiclesc",
           // filter: `company_id=eq.${workshopId || 1}`, // Your company filter
         },
         (payload) => {
@@ -450,7 +450,7 @@ export default function Vehicles() {
     });
 
     const { data: vehicle, error } = await supabase
-      .from("vehiclesc_workshop")
+      .from("vehiclesc
       .insert([payload]);
     if (error) {
       console.error(error.message);
@@ -462,7 +462,7 @@ export default function Vehicles() {
       setIsAddingVehicle(false);
       // Refresh vehicles list
       const { data: vehicles } = await supabase
-        .from("vehiclesc_workshop")
+        .from("vehiclesc
         .select("*");
       setVehicles(vehicles as []);
     }
@@ -492,7 +492,7 @@ export default function Vehicles() {
 
   async function handleAssignDriver(vehicleId: number, driverId: number) {
     const { data, error } = await supabase
-      .from("vehiclesc_workshop")
+      .from("vehiclesc
       .update({ driver_id: driverId })
       .eq("id", vehicleId)
       .select();
@@ -508,7 +508,7 @@ export default function Vehicles() {
 
   async function handleAssign(vehicleId: number, techId: number) {
     const { data: datav, error: errorv } = await supabase
-      .from("vehiclesc_workshop")
+      .from("vehiclesc
       .update({ tech_id: techId })
       .eq("id", vehicleId)
       .select();
@@ -1222,7 +1222,7 @@ export default function Vehicles() {
                               )
                             ) {
                               const { error } = await supabase
-                                .from("vehiclesc_workshop")
+                                .from("vehiclesc")
                                 .delete()
                                 .eq("id", vehicle.id!);
 
@@ -1232,7 +1232,7 @@ export default function Vehicles() {
                                 toast.success("Vehicle deleted successfully");
                                 // Refresh list
                                 const { data: vehicles } = await supabase
-                                  .from("vehiclesc_workshop")
+                                  .from("vehiclesc")
                                   .select("*");
                                 setVehicles(vehicles as []);
                               }
@@ -1336,7 +1336,7 @@ export default function Vehicles() {
 //         onClick={async () => {
 //           // Clear driver assignment
 //           const { error } = await supabase
-//             .from('vehiclesc_workshop')
+//             .from('vehiclesc')
 //             .update({ driver_id: null })
 //             .eq('id', vehicle.id);
 
@@ -1347,7 +1347,7 @@ export default function Vehicles() {
 //             toast.success('Driver unassigned successfully');
 //             // Refresh vehicles list
 //             const { data: updatedVehicles } = await supabase
-//               .from('vehiclesc_workshop')
+//               .from('vehiclesc')
 //               .select('*')
 //               .eq('company_id', 1);
 //             setVehicles(updatedVehicles as []);
