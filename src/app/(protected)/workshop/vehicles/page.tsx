@@ -213,7 +213,7 @@ export default function Vehicles() {
         return;
       }
       const { data: techniciansData, error: techError } = await supabase
-        .from("technicians_klaver")
+        .from("technicians")
         .select("*");
       // .eq("type", "internal");
 
@@ -360,7 +360,6 @@ export default function Vehicles() {
       if (error) {
         console.error("the error is", error.name, error.message);
       } else {
-        // @ts-expect-error
         setVehicles(vehicles || []);
       }
     };
@@ -450,7 +449,7 @@ export default function Vehicles() {
     });
 
     const { data: vehicle, error } = await supabase
-      .from("vehiclesc
+      .from("vehiclesc")
       .insert([payload]);
     if (error) {
       console.error(error.message);
@@ -462,7 +461,7 @@ export default function Vehicles() {
       setIsAddingVehicle(false);
       // Refresh vehicles list
       const { data: vehicles } = await supabase
-        .from("vehiclesc
+        .from("vehiclesc")
         .select("*");
       setVehicles(vehicles as []);
     }
@@ -492,7 +491,7 @@ export default function Vehicles() {
 
   async function handleAssignDriver(vehicleId: number, driverId: number) {
     const { data, error } = await supabase
-      .from("vehiclesc
+      .from("vehiclesc")
       .update({ driver_id: driverId })
       .eq("id", vehicleId)
       .select();
@@ -508,7 +507,7 @@ export default function Vehicles() {
 
   async function handleAssign(vehicleId: number, techId: number) {
     const { data: datav, error: errorv } = await supabase
-      .from("vehiclesc
+      .from("vehiclesc")
       .update({ tech_id: techId })
       .eq("id", vehicleId)
       .select();
