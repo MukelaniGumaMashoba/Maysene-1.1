@@ -145,9 +145,9 @@ export default function UpdatedJobCardForm({ onSuccess, onCancel }: JobCardFormP
 
   const logWorkflowHistory = async (jobCardId: string, toStatus: string, notes?: string) => {
     await supabase
-      .from('job_card_workflow_history')
+      .from('workshop_job_status_history')
       .insert({
-        workshop_job_id: jobCardId,
+        job_id: parseInt(jobCardId) || 0,
         from_status: 'draft',
         to_status: toStatus,
         notes: notes

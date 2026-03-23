@@ -56,7 +56,7 @@ export async function getWorkshopReports() {
 
   try {
     const { data: workshops, error } = await supabase
-      .from('workshop_mayseneeee')
+      .from('workshop')
       .select('*')
       .order('created_at', { ascending: false })
 
@@ -149,8 +149,9 @@ export async function getWorkshopBreakdowns() {
 
   try {
     const { data: breakdowns, error } = await supabase
-      .from('workshop_breakdown')
+      .from('breakdowns')
       .select('*')
+      .not('workshop_id', 'is', null)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -205,7 +206,7 @@ export async function getDriverReports() {
   const supabase = createClient()
 
   const { data: drivers, error } = await supabase
-    .from('drivers_mayseneeee')
+    .from('drivers_maysene')
     .select('*')
     .order('created_at', { ascending: false })
 
@@ -260,7 +261,7 @@ export async function getStockReports() {
   const supabase = createClient()
 
   const { data: stock, error } = await supabase
-    .mstock
+    .from('mstock')
     .select('*')
     .order('id', { ascending: false })
 
@@ -337,7 +338,7 @@ export async function getQuotationReports() {
   const supabase = createClient()
 
   const { data: quotations, error } = await supabase
-    .from('quotations_maysene')
+    .from('quotations')
     .select('*')
     .order('created_at', { ascending: false })
 

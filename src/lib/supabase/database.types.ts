@@ -2548,6 +2548,78 @@ export type Database = {
         }
         Relationships: []
       }
+      drivers_klaver: {
+        Row: {
+          cell_number: string | null
+          created_at: string | null
+          created_by: string | null
+          driver_restriction_code: string | null
+          email_address: string | null
+          first_name: string
+          front_of_driver_pic: string | null
+          id: number
+          id_or_passport_document: string | null
+          id_or_passport_number: string
+          license_code: string | null
+          license_expiry_date: string | null
+          license_number: string | null
+          pdp_expiry_date: string | null
+          professional_driving_permit: boolean | null
+          rear_of_driver_pic: string | null
+          sa_issued: boolean | null
+          surname: string
+          user_id: string | null
+          vehicle_restriction_code: string | null
+          work_permit_upload: string | null
+        }
+        Insert: {
+          cell_number?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          driver_restriction_code?: string | null
+          email_address?: string | null
+          first_name: string
+          front_of_driver_pic?: string | null
+          id?: never
+          id_or_passport_document?: string | null
+          id_or_passport_number: string
+          license_code?: string | null
+          license_expiry_date?: string | null
+          license_number?: string | null
+          pdp_expiry_date?: string | null
+          professional_driving_permit?: boolean | null
+          rear_of_driver_pic?: string | null
+          sa_issued?: boolean | null
+          surname: string
+          user_id?: string | null
+          vehicle_restriction_code?: string | null
+          work_permit_upload?: string | null
+        }
+        Update: {
+          cell_number?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          driver_restriction_code?: string | null
+          email_address?: string | null
+          first_name?: string
+          front_of_driver_pic?: string | null
+          id?: never
+          id_or_passport_document?: string | null
+          id_or_passport_number?: string
+          license_code?: string | null
+          license_expiry_date?: string | null
+          license_number?: string | null
+          pdp_expiry_date?: string | null
+          professional_driving_permit?: boolean | null
+          rear_of_driver_pic?: string | null
+          sa_issued?: boolean | null
+          surname?: string
+          user_id?: string | null
+          vehicle_restriction_code?: string | null
+          work_permit_upload?: string | null
+        }
+        Relationships: []
+      }
       drivers_maysene: {
         Row: {
           cell_number: string | null
@@ -4053,6 +4125,82 @@ export type Database = {
           },
         ]
       }
+      job_card_approvals: {
+        Row: {
+          approved_at: string | null
+          approver_type: string | null
+          created_at: string | null
+          id: number
+          job_card_id: string | null
+          notes: string | null
+          status: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approver_type?: string | null
+          created_at?: string | null
+          id?: never
+          job_card_id?: string | null
+          notes?: string | null
+          status?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approver_type?: string | null
+          created_at?: string | null
+          id?: never
+          job_card_id?: string | null
+          notes?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_card_approvals_job_card_id_fkey"
+            columns: ["job_card_id"]
+            isOneToOne: false
+            referencedRelation: "job_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_card_workflow_history: {
+        Row: {
+          action_at: string | null
+          action_by: string | null
+          from_status: string | null
+          id: number
+          job_card_id: number | null
+          notes: string | null
+          to_status: string
+        }
+        Insert: {
+          action_at?: string | null
+          action_by?: string | null
+          from_status?: string | null
+          id?: never
+          job_card_id?: number | null
+          notes?: string | null
+          to_status: string
+        }
+        Update: {
+          action_at?: string | null
+          action_by?: string | null
+          from_status?: string | null
+          id?: never
+          job_card_id?: number | null
+          notes?: string | null
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_card_workflow_history_job_card_id_fkey"
+            columns: ["job_card_id"]
+            isOneToOne: false
+            referencedRelation: "workshop_job"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_cards: {
         Row: {
           access_requirements: string | null
@@ -5177,6 +5325,137 @@ export type Database = {
           },
         ]
       }
+      quotations_klaver: {
+        Row: {
+          additional_notes: string | null
+          breakdown_id: string | null
+          cost_center_id: string | null
+          created_at: string | null
+          created_by: string | null
+          createdat: string | null
+          description: string | null
+          drivername: string | null
+          estimate_amount: number | null
+          estimated_cost: number | null
+          estimated_time: string | null
+          id: string
+          issue: string | null
+          job_id: number | null
+          job_type: string | null
+          jobcard_id: number | null
+          laborcost: number | null
+          labourcost: number | null
+          markupPrice: number | null
+          orderno: string | null
+          paid: boolean | null
+          parts_needed: string[] | null
+          partscost: number | null
+          priority: string | null
+          reason: string | null
+          status: string | null
+          tech_id: number | null
+          totalcost: number | null
+          type: string | null
+          typeJob: string | null
+          vehiclereg: string | null
+        }
+        Insert: {
+          additional_notes?: string | null
+          breakdown_id?: string | null
+          cost_center_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          createdat?: string | null
+          description?: string | null
+          drivername?: string | null
+          estimate_amount?: number | null
+          estimated_cost?: number | null
+          estimated_time?: string | null
+          id?: string
+          issue?: string | null
+          job_id?: number | null
+          job_type?: string | null
+          jobcard_id?: number | null
+          laborcost?: number | null
+          labourcost?: number | null
+          markupPrice?: number | null
+          orderno?: string | null
+          paid?: boolean | null
+          parts_needed?: string[] | null
+          partscost?: number | null
+          priority?: string | null
+          reason?: string | null
+          status?: string | null
+          tech_id?: number | null
+          totalcost?: number | null
+          type?: string | null
+          typeJob?: string | null
+          vehiclereg?: string | null
+        }
+        Update: {
+          additional_notes?: string | null
+          breakdown_id?: string | null
+          cost_center_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          createdat?: string | null
+          description?: string | null
+          drivername?: string | null
+          estimate_amount?: number | null
+          estimated_cost?: number | null
+          estimated_time?: string | null
+          id?: string
+          issue?: string | null
+          job_id?: number | null
+          job_type?: string | null
+          jobcard_id?: number | null
+          laborcost?: number | null
+          labourcost?: number | null
+          markupPrice?: number | null
+          orderno?: string | null
+          paid?: boolean | null
+          parts_needed?: string[] | null
+          partscost?: number | null
+          priority?: string | null
+          reason?: string | null
+          status?: string | null
+          tech_id?: number | null
+          totalcost?: number | null
+          type?: string | null
+          typeJob?: string | null
+          vehiclereg?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotations_klaver_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotations_klaver_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "job_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotations_klaver_jobcard_id_fkey"
+            columns: ["jobcard_id"]
+            isOneToOne: false
+            referencedRelation: "job_card"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotations_klaver_tech_id_fkey"
+            columns: ["tech_id"]
+            isOneToOne: false
+            referencedRelation: "technicians"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quote_products: {
         Row: {
           cash_discount: number
@@ -5920,9 +6199,93 @@ export type Database = {
         }
         Relationships: []
       }
-      technicians_maysene: {
+      technicians_klaver: {
         Row: {
           availability: string | null
+          certifications: string[]
+          coordinates: Json
+          created_at: string | null
+          created_by: string | null
+          email: string
+          equipment_level: string
+          id: number
+          isActive: boolean | null
+          join_date: string
+          location: string
+          name: string
+          phone: string
+          rating: number | null
+          skill_levels: Json
+          specialties: string[]
+          status: boolean | null
+          type: string | null
+          vehicle_type: string
+          workshop_id: string | null
+        }
+        Insert: {
+          availability?: string | null
+          certifications?: string[]
+          coordinates?: Json
+          created_at?: string | null
+          created_by?: string | null
+          email: string
+          equipment_level: string
+          id?: never
+          isActive?: boolean | null
+          join_date: string
+          location: string
+          name: string
+          phone: string
+          rating?: number | null
+          skill_levels?: Json
+          specialties?: string[]
+          status?: boolean | null
+          type?: string | null
+          vehicle_type: string
+          workshop_id?: string | null
+        }
+        Update: {
+          availability?: string | null
+          certifications?: string[]
+          coordinates?: Json
+          created_at?: string | null
+          created_by?: string | null
+          email?: string
+          equipment_level?: string
+          id?: never
+          isActive?: boolean | null
+          join_date?: string
+          location?: string
+          name?: string
+          phone?: string
+          rating?: number | null
+          skill_levels?: Json
+          specialties?: string[]
+          status?: boolean | null
+          type?: string | null
+          vehicle_type?: string
+          workshop_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technicians_klaver_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "technicians_klaver_workshop_id_fkey"
+            columns: ["workshop_id"]
+            isOneToOne: false
+            referencedRelation: "workshop"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      technicians_maysene: {
+        Row: {
+          availability: Database["public"]["Enums"]["availability"] | null
           certifications: string[]
           coordinates: Json
           created_by: string | null
@@ -5943,7 +6306,7 @@ export type Database = {
           workshop_id: string | null
         }
         Insert: {
-          availability?: string | null
+          availability?: Database["public"]["Enums"]["availability"] | null
           certifications: string[]
           coordinates: Json
           created_by?: string | null
@@ -5964,7 +6327,7 @@ export type Database = {
           workshop_id?: string | null
         }
         Update: {
-          availability?: string | null
+          availability?: Database["public"]["Enums"]["availability"] | null
           certifications?: string[]
           coordinates?: Json
           created_by?: string | null
@@ -10220,6 +10583,44 @@ export type Database = {
           },
         ]
       }
+      workshop_breakdown: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: number
+          reported_by: number | null
+          status: string | null
+          vehicle_id: number | null
+          workshop_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: never
+          reported_by?: number | null
+          status?: string | null
+          vehicle_id?: number | null
+          workshop_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: never
+          reported_by?: number | null
+          status?: string | null
+          vehicle_id?: number | null
+          workshop_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workshop_breakdown_workshop_id_fkey"
+            columns: ["workshop_id"]
+            isOneToOne: false
+            referencedRelation: "workshop"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workshop_documents: {
         Row: {
           document_type: string
@@ -10850,7 +11251,16 @@ export type Database = {
       update_payments_on_22nd: { Args: never; Returns: undefined }
     }
     Enums: {
-      [_ in never]: never
+      availability: "available" | "busy" | "off-duty" | "emergency"
+      roles:
+        | "driver"
+        | "technician"
+        | "call centre"
+        | "cost centre"
+        | "fleet manager"
+        | "customer"
+        | "admin"
+      status: "Done" | "Onprogress"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -10977,6 +11387,18 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      availability: ["available", "busy", "off-duty", "emergency"],
+      roles: [
+        "driver",
+        "technician",
+        "call centre",
+        "cost centre",
+        "fleet manager",
+        "customer",
+        "admin",
+      ],
+      status: ["Done", "Onprogress"],
+    },
   },
 } as const
