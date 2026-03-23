@@ -177,7 +177,7 @@ export default function WorkshopJobDetailPage() {
       console.log("Assigned Technician ID:", tech);
       if (tech) {
         const { data: technicianData, error: techError } = await supabase
-          .from("technicians_klaver")
+          .from("technicians_maysene")
           .select("*")
           .eq("id", tech)
           .single();

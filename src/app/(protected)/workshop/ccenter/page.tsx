@@ -81,7 +81,7 @@ export default function CostCenterPage() {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from("quotations_klaver")
+        .from("quotations_maysene")
         .select(
           `
           id,

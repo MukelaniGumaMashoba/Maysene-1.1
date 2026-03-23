@@ -226,7 +226,7 @@ export default function WorkshopJobDetailPage() {
       const tech = techData?.tech_id || null;
       if (tech) {
         const { data: technicianData, error: techError } = await supabase
-          .from("technicians_klaver")
+          .from("technicians_maysene")
           .select("*")
           .eq("id", tech)
           .single();
@@ -254,7 +254,7 @@ export default function WorkshopJobDetailPage() {
   useEffect(() => {
     const fetchTechnician = async () => {
       const { data, error } = await supabase
-        .from("technicians_klaver")
+        .from("technicians_maysene")
         .select("*");
 
       if (error) {
@@ -289,7 +289,7 @@ export default function WorkshopJobDetailPage() {
     const techId = data.tech_id;
 
     const { data: techData, error: techError } = await supabase
-      .from("technicians_klaver")
+      .from("technicians_maysene")
       .select("*")
       .eq("id", techId || 0)
       .single();
@@ -313,7 +313,7 @@ export default function WorkshopJobDetailPage() {
     if (assignedTechId) {
       const fetchTech = async () => {
         const { data, error } = await supabase
-          .from("technicians_klaver")
+          .from("technicians_maysene")
           .select("*")
           .eq("id", assignedTechId)
           .single();
@@ -468,7 +468,7 @@ export default function WorkshopJobDetailPage() {
       setIsTechDialogOpen(false);
       // Refresh technician data
       const { data: techData } = await supabase
-        .from("technicians_klaver")
+        .from("technicians_maysene")
         .select("*")
         .eq("id", technicianId)
         .single();
@@ -518,7 +518,7 @@ export default function WorkshopJobDetailPage() {
       setIsTechDialogOpen(false);
       // Refresh technician data
       const { data: techData } = await supabase
-        .from("technicians_klaver")
+        .from("technicians_maysene")
         .select("*")
         .eq("id", technicianId)
         .single();

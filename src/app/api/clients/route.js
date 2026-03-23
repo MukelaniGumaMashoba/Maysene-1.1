@@ -18,7 +18,7 @@ export async function GET(request) {
   try {
     // Get user's company/organization info
     const { data: userProfile, error: profileError } = await supabase
-      .from('profiles')
+      .from('users')
       .select('client_id')
       .eq('id', session.user.id)
       .single()
@@ -58,7 +58,7 @@ export async function POST(request) {
     
     // Get user's company info
     const { data: userProfile, error: profileError } = await supabase
-      .from('profiles')
+      .from('users')
       .select('client_id')
       .eq('id', session.user.id)
       .single()

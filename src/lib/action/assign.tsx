@@ -134,7 +134,7 @@ export async function addTechnician(technician: Technician) {
         return;
     }
     const { data, error } = await supabase
-        .from('technicians')
+        .from('technicians_maysene')
         .insert({
             name: technician.name,
             phone: technician.phone,
@@ -172,7 +172,7 @@ export async function ExternaladdTechnician(technician: Technician) {
     if (!userId) {
         return;
     }
-    const { data: workshop } = await supabase.from("profiles").select('workshop_id').eq('id', userId).single()
+    const { data: workshop } = await supabase.from("users").select('workshop_id').eq('id', userId).single()
     if (!workshop) {
         return
     }

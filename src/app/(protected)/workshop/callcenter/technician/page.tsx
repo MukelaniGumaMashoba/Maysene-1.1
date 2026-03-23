@@ -162,7 +162,7 @@ export default function TechniciansPage() {
   const refreshData = async () => {
     // Fetch technicians
     const { data: techniciansData, error: techError } = await supabase
-      .from("technicians_klaver")
+      .from("technicians_maysene")
       .select("*");
     if (techError) {
       console.error("Error fetching technicians:", techError);
@@ -551,7 +551,7 @@ export default function TechniciansPage() {
         updated_at: new Date().toISOString(),
       };
       const { error } = await supabase
-        .from("technicians_klaver")
+        .from("technicians_maysene")
         .update(payload)
         .eq("id", editForm.id);
       if (error) {
@@ -585,7 +585,7 @@ export default function TechniciansPage() {
 
     try {
       const { error } = await supabase
-        .from("technicians_klaver")
+        .from("technicians_maysene")
         .delete()
         .eq("id", id);
 

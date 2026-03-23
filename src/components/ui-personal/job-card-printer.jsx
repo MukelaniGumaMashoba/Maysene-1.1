@@ -134,7 +134,7 @@ export default function JobCardPrinter({
         assembled.assignment = ta;
         if (ta.tech_id) {
           const { data: tech } = await supabase
-            .from('technicians_klaver')
+            .from('technicians_maysene')
             .select('*')
             .eq('id', ta.tech_id)
             .single();
@@ -350,7 +350,7 @@ export default function JobCardPrinter({
               <strong>Contact Information:</strong><br>
               Maintenance Workshop<br>
               Name: Lwazi
-              Email: stores@klaverplant.co.za<br>
+              Email: stores@mayseneplant.co.za<br>
               Phone: +27 11 123 4567
             </p>
           </div>

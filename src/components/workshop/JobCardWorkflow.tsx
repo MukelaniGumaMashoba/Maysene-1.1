@@ -60,7 +60,7 @@ export default function JobCardWorkflow() {
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
       const { data: profile } = await supabase
-        .from('profiles')
+        .from('users')
         .select('role, can_approve_jobs, can_reject_jobs, can_close_jobs')
         .eq('id', user.id)
         .single()

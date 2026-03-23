@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
 
     await resend.emails.send({
       from: 'Maintenance System <admin@skyfleet.online>',
-      to: ['mukelani@solflo.co.za', 'stores@klaverplant.co.za'],
+      to: ['mukelani@solflo.co.za', 'stores@mayseneplant.co.za'],
       subject: `🚨 Low Stock Alert - ${parts.length} Items Need Attention`,
       html: emailHtml,
     });

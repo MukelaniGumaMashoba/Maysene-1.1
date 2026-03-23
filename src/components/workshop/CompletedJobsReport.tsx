@@ -96,7 +96,7 @@ export default function CompletedJobsReport() {
 
   // const fetchTechnicians = async () => {
   //   const { data, error } = await supabase
-  //     .from('technicians_klaver')
+  //     .from('technicians_maysene')
   //     .select('id, name')
   //     .order('name')
 
@@ -141,7 +141,7 @@ export default function CompletedJobsReport() {
       const uniqueTechIds = Array.from(new Set(assignments.map(a => a.tech_id)))
       
       const { data: techniciansData, error: techniciansError } = await supabase
-        .from('technicians_klaver')
+        .from('technicians_maysene')
         .select('id, name')
         .order('name')
         .in('id', uniqueTechIds.length > 0 ? uniqueTechIds : [0])

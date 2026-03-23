@@ -26,7 +26,7 @@ export default function ApprovalWorkflow({ isOpen, onClose, jobCard, userRole })
       .from('job_card_approvals')
       .select(`
         *,
-        profiles(full_name)
+        users(full_name)
       `)
       .eq('job_card_id', jobCard.id)
       .order('created_at');

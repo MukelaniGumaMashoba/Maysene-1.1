@@ -61,7 +61,7 @@ export default function WorkshopRegistrationForm() {
             const user = await supabase.auth.getUser();
             if (!user?.data?.user) return;
             const { data, error } = await supabase
-                .from("profiles")
+                .from("users")
                 .select("company")
                 .eq("id", user.data.user?.id ?? "")
                 .single();
@@ -188,7 +188,7 @@ export default function WorkshopRegistrationForm() {
 
             // 4️⃣ Insert Fleet Manager profile
             const { data: fleetManagerProfile, error: fleetManagerError } = await supabase
-                .from("profiles")
+                .from("users")
                 .insert([{ ...fleetManagerData, id: user.user.id }])
                 .select("id")
                 .single();

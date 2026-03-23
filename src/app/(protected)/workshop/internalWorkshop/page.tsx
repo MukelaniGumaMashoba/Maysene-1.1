@@ -27,7 +27,7 @@ export default function InternalWorkshop() {
         const user = await supabase.auth.getUser();
         if (!user.data.user) return null;
         const { data: profile } = await supabase
-            .from("profiles")
+            .from("users")
             .select("company")
             .eq("id", user.data.user.id)
             .single();
@@ -61,7 +61,7 @@ export default function InternalWorkshop() {
                 .select(
                     `
             *,
-            profiles: fleet_manager (
+            users: fleet_manager (
               id,
               full_name,
               email,
@@ -205,12 +205,12 @@ export default function InternalWorkshop() {
                                             <p className="text-sm text-gray-600 mb-2">
                                                 Location: {workshop.city}, {workshop.province}
                                             </p>
-                                            {workshop.profiles ? (
+                                            {workshop.users ? (
                                                 <div className="text-sm">
                                                     <p className="font-semibold mb-1">Fleet Manager:</p>
-                                                    <p>{workshop.profiles.full_name}</p>
-                                                    <p>{workshop.profiles.email}</p>
-                                                    <p>{workshop.profiles.phone_number}</p>
+                                                    <p>{workshop.users.full_name}</p>
+                                                    <p>{workshop.usersail}</p>
+                                                    <p>{workshop.users.phone_number}</p>
                                                 </div>
                                             ) : (
                                                 <p className="text-gray-500">No fleet manager assigned</p>

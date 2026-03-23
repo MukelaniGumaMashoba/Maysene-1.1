@@ -152,7 +152,7 @@ export default function Vehicles() {
 
   useEffect(() => {
     const getDrivers = async () => {
-      const { data, error } = await supabase.from("drivers_klaver").select("*");
+      const { data, error } = await supabase.from("drivers_maysene").select("*");
       if (error) {
         console.error("Error fetching drivers:", error);
         setDrivers([]);
@@ -181,7 +181,7 @@ export default function Vehicles() {
         if (!userId) return;
 
         const { data, error } = await supabase
-          .from("profiles")
+          .from("users")
           .select("workshop_id")
           .eq("id", userId)
           .single();

@@ -18,7 +18,7 @@ export async function PUT(request, { params }) {
 
   try {
     const { data: profile, error: profileError } = await supabase
-      .from('profiles')
+      .from('users')
       .select('client_id')
       .eq('id', session.user.id)
       .single()
@@ -66,7 +66,7 @@ export async function DELETE(request, { params }) {
 
   try {
     const { data: profile, error: profileError } = await supabase
-      .from('profiles')
+      .from('users')
       .select('client_id')
       .eq('id', session.user.id)
       .single()

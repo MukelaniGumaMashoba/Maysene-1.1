@@ -822,7 +822,7 @@ export default function JobsPage() {
                       </div>
                       <div className="flex items-center gap-2 w-full sm:w-auto">
                         <Link
-                          href={`/jobs/${job.id}`}
+                          href={`/workshop/jobs/${job.id}`}
                           className="flex-1 sm:flex-none"
                         >
                           <Button
@@ -1017,7 +1017,7 @@ export default function JobsPage() {
                     </div>
                   </CardContent>
                   <CardFooter className="flex justify-end gap-2">
-                    <Link href={`/jobs/${job.id}`}>
+                    <Link href={`/workshop/jobs/${job.id}`}>
                       <Button variant="outline" size="sm">
                         <Eye className="h-4 w-4 mr-2" />
                         View Details

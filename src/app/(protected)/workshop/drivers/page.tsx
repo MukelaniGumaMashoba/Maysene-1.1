@@ -120,7 +120,7 @@ export default function Drivers() {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from("drivers_klaver")
+        .from("drivers_maysenee")
         .select("*")
         .order("created_at", { ascending: false });
 
@@ -209,7 +209,7 @@ export default function Drivers() {
     if (!confirm("Delete driver? This cannot be undone.")) return;
     try {
       const { error } = await supabase
-        .from("drivers_klaver")
+        .from("drivers_maysene")
         .delete()
         .eq("id", driverId);
       if (error) throw error;
@@ -265,7 +265,7 @@ export default function Drivers() {
 
       if (isEditing && editingDriverId) {
         const { error } = await supabase
-          .from("drivers_klaver")
+          .from("drivers_maysenee")
           .update(payload)
           .eq("id", editingDriverId);
 
@@ -273,7 +273,7 @@ export default function Drivers() {
         toast.success("Driver updated");
       } else {
         const { error } = await supabase
-          .from("drivers_klaver")
+          .from("drivers_maysene")
           .insert(payload as any);
 
         if (error) throw error;

@@ -148,7 +148,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const { data: profile } = await supabase
-      .from('profiles')
+      .from('users')
       .select('role')
       .eq('id', user.id)
       .single()

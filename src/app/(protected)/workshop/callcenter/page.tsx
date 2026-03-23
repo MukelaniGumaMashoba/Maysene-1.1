@@ -98,7 +98,7 @@ export default function CallCenterPage() {
 
     const getTechnicians = async () => {
       const { data: technicians, error } = await supabase
-        .from("technicians_klaver")
+        .from("technicians_maysene")
         .select("*")
         .eq("type", "internal");
       if (error) {

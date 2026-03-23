@@ -97,7 +97,7 @@ export default function RepairHistory({ vehicleId }: { vehicleId: string }) {
 
         // 4️⃣ Fetch technicians for those assignments
         const { data: techs, error: techError } = await supabase
-          .from("technicians_klaver")
+          .from("technicians_maysene")
           .select("*")
           .in("id", techIds);
 

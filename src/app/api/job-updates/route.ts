@@ -24,7 +24,7 @@ export async function PUT(request: NextRequest) {
 
     // Get user profile to track who made the change
     const { data: profile } = await supabase
-      .from("profiles")
+      .from("users")
       .select("role, first_name, surname")
       .eq("id", user.id)
       .single();

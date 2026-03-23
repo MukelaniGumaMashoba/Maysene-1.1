@@ -56,7 +56,7 @@ export async function getWorkshopReports() {
 
   try {
     const { data: workshops, error } = await supabase
-      .from('workshop_klaver')
+      .from('workshop_mayseneeee')
       .select('*')
       .order('created_at', { ascending: false })
 
@@ -169,7 +169,7 @@ export async function getTechnicianReports() {
   const supabase = createClient()
 
   const { data: technicians, error } = await supabase
-    .from('technicians_klaver')
+    .from('technicians_maysene')
     .select('*')
     .order('join_date', { ascending: false })
 
@@ -188,7 +188,7 @@ export async function getTechnicianAssignments() {
     .from('technician_vassign')
     .select(`
       *,
-      technicians_klaver!technician_vassign_tech_id_fkey(name, phone),
+      technicians_maysene!technician_vassign_tech_id_fkey(name, phone),
       vehiclesc!technician_vassign_vehicle_id_fkey(registration_number, make, model)
     `)
     .order('created_at', { ascending: false })
@@ -205,7 +205,7 @@ export async function getDriverReports() {
   const supabase = createClient()
 
   const { data: drivers, error } = await supabase
-    .from('drivers_klaver')
+    .from('drivers_mayseneeee')
     .select('*')
     .order('created_at', { ascending: false })
 
@@ -337,7 +337,7 @@ export async function getQuotationReports() {
   const supabase = createClient()
 
   const { data: quotations, error } = await supabase
-    .from('quotations_klaver')
+    .from('quotations_maysene')
     .select('*')
     .order('created_at', { ascending: false })
 

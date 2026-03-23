@@ -307,7 +307,7 @@ export default function SubletsAndSuppliersPage() {
           ${supplierInfo}
 
           <div class="section">
-            <h3>Klaver Plant Hire:  Parts Required</h3>
+            <h3>maysene Plant Hire:  Parts Required</h3>
             <table>
               <thead>
                 <tr>
@@ -339,9 +339,9 @@ export default function SubletsAndSuppliersPage() {
             <h3 style="margin:0 0 10px 0; color:#059669;">Workshop Contact</h3>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; font-size:14px;">
               <div>
-                <strong>Klaver Plant Hire: Skyfleet Workshop</strong>
+                <strong>maysene Plant Hire: Skyfleet Workshop</strong>
                 Name: Lwazi<br>
-                Email: stores@klaverplant.co.za
+                Email: stores@mayseneplant.co.za
               </div>
               <div style="text-align:right">
                 <strong>Phone:</strong> +27 71 442 7811<br>
@@ -414,8 +414,8 @@ Please confirm receipt and estimated delivery time.
 Required.
 
 Workshop Contact:
-Klaver Plant Hire - Lwazi Mhlongo
-Email: stores@klaverplant.co.za
+maysene Plant Hire - Lwazi Mhlongo
+Email: stores@mayseneplant.co.za
 Phone: +27 71 442 7811
 
 ---

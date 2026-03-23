@@ -414,8 +414,8 @@ export default function PersonnelReportDetailPage() {
                         <td className="p-3 font-medium text-purple-600">#{item.id}</td>
                         <td className="p-3">
                           <div>
-                            <div className="font-medium">{item.technicians_klaver?.name || '-'}</div>
-                            <div className="text-sm text-gray-500">{item.technicians_klaver?.phone || '-'}</div>
+                            <div className="font-medium">{item.technicians_maysene?.name || '-'}</div>
+                            <div className="text-sm text-gray-500">{item.technicians_maysene?.phone || '-'}</div>
                           </div>
                         </td>
                         <td className="p-3">

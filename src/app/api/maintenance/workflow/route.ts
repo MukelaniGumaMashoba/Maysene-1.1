@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
 
     // Verify user permissions
     const { data: profile } = await supabase
-      .from('profiles')
+      .from('users')
       .select('can_approve_jobs, can_reject_jobs, can_close_jobs')
       .eq('id', user.id)
       .single()

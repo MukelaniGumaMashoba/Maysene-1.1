@@ -83,7 +83,7 @@ export default function RejectedJobs() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         const { data: profile } = await supabase
-          .from('profiles')
+          .from('users')
           .select('role')
           .eq('id', user.id)
           .single()
@@ -110,7 +110,7 @@ export default function RejectedJobs() {
 
       if (!rejectedError && rejectedData && rejectedData.length > 0) {
         // Fetch profile names for rejected_by and reopened_by
-        const jobsWithProfiles = await Promise.all(
+        const jobsWithusers = await Promise.all(
           rejectedData.map(async (job: any) => {
             let rejectedByName = 'Unknown'
             let reopenedByName = null
@@ -118,7 +118,7 @@ export default function RejectedJobs() {
             if (job.rejected_by) {
               try {
                 const { data: profile } = await supabase
-                  .from('profiles')
+                  .from('users')
                   .select('full_name')
                   .eq('id', job.rejected_by)
                   .single()
@@ -131,7 +131,7 @@ export default function RejectedJobs() {
             if (job.reopened_by) {
               try {
                 const { data: profile } = await supabase
-                  .from('profiles')
+                  .from('users')
                   .select('*')
                   .eq('id', job.reopened_by)
                   .single()
@@ -149,7 +149,7 @@ export default function RejectedJobs() {
             }
           })
         )
-        setRejectedJobs(jobsWithProfiles as any)
+        setRejectedJobs(jobsWithusers as any)
       } else {
         // Fallback: get rejected jobs from workshop_job table
         const { data: allWorkshopJobs, error: workshopError } = await supabase
