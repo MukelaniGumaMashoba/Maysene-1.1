@@ -84,7 +84,7 @@ const roleNavigation = {
       href: "/workshop/inventory/stock-levels",
       Icon: <ClipboardList />,
     },
-    { name: "System Settings", href: "/settings", Icon: <Settings /> },
+    { name: "System Settings", href: "/workshop/settings", Icon: <Settings /> },
   ],
   fc: [
     { name: "Dashboard", href: "/dashboard", Icon: <ChartBar /> },
