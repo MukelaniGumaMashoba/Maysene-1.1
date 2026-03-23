@@ -40,7 +40,7 @@ const roles = [
   },
   {
     name: 'admin',
-    path: ['/workshop', '/workshop/dashboard'
+    path: ['/workshop/dashboard'
       , '/workshop/admin/sublets', '/workshop/admin/suppliers', '/workshop/jobs',
       '/workshop/profile', '/quotation', '/notification', '/login',
       '/signup', '/', '/logout', '/userManagement', '/workshop/inspections', '/workshop/clients', '/workshop/stop-points', '/workshop/load-plan',

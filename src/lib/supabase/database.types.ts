@@ -2548,6 +2548,33 @@ export type Database = {
         }
         Relationships: []
       }
+      drivers_maysene: {
+        Row: {
+          cell_number: string | null
+          created_at: string | null
+          email_address: string | null
+          first_name: string | null
+          id: number
+          surname: string | null
+        }
+        Insert: {
+          cell_number?: string | null
+          created_at?: string | null
+          email_address?: string | null
+          first_name?: string | null
+          id?: never
+          surname?: string | null
+        }
+        Update: {
+          cell_number?: string | null
+          created_at?: string | null
+          email_address?: string | null
+          first_name?: string | null
+          id?: never
+          surname?: string | null
+        }
+        Relationships: []
+      }
       eps_biweekly_category_points: {
         Row: {
           created_at: string | null
@@ -5893,6 +5920,80 @@ export type Database = {
         }
         Relationships: []
       }
+      technicians_maysene: {
+        Row: {
+          availability: string | null
+          certifications: string[]
+          coordinates: Json
+          created_by: string | null
+          email: string
+          equipment_level: string
+          id: number
+          isActive: boolean | null
+          join_date: string
+          location: string
+          name: string
+          phone: string
+          rating: number | null
+          skill_levels: Json
+          specialties: string[]
+          status: boolean | null
+          type: string | null
+          vehicle_type: string
+          workshop_id: string | null
+        }
+        Insert: {
+          availability?: string | null
+          certifications: string[]
+          coordinates: Json
+          created_by?: string | null
+          email: string
+          equipment_level: string
+          id?: number
+          isActive?: boolean | null
+          join_date: string
+          location: string
+          name: string
+          phone: string
+          rating?: number | null
+          skill_levels: Json
+          specialties: string[]
+          status?: boolean | null
+          type?: string | null
+          vehicle_type: string
+          workshop_id?: string | null
+        }
+        Update: {
+          availability?: string | null
+          certifications?: string[]
+          coordinates?: Json
+          created_by?: string | null
+          email?: string
+          equipment_level?: string
+          id?: number
+          isActive?: boolean | null
+          join_date?: string
+          location?: string
+          name?: string
+          phone?: string
+          rating?: number | null
+          skill_levels?: Json
+          specialties?: string[]
+          status?: boolean | null
+          type?: string | null
+          vehicle_type?: string
+          workshop_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technicians_maysene_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trailer: {
         Row: {
           available: boolean | null
@@ -6455,6 +6556,7 @@ export type Database = {
           second_level_admin: boolean | null
           site_id: string | null
           tech_admin: boolean | null
+          workshop_id: number | null
         }
         Insert: {
           company?: string | null
@@ -6470,6 +6572,7 @@ export type Database = {
           second_level_admin?: boolean | null
           site_id?: string | null
           tech_admin?: boolean | null
+          workshop_id?: number | null
         }
         Update: {
           company?: string | null
@@ -6485,6 +6588,7 @@ export type Database = {
           second_level_admin?: boolean | null
           site_id?: string | null
           tech_admin?: boolean | null
+          workshop_id?: number | null
         }
         Relationships: []
       }
@@ -10087,6 +10191,35 @@ export type Database = {
           },
         ]
       }
+      workshop_assignments: {
+        Row: {
+          created_at: string | null
+          id: number
+          job_id: number | null
+          tech_id: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: never
+          job_id?: number | null
+          tech_id?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: never
+          job_id?: number | null
+          tech_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workshop_assignments_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "workshop_job"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workshop_documents: {
         Row: {
           document_type: string
@@ -10157,6 +10290,7 @@ export type Database = {
           equipment_used: Json | null
           estimated_cost: number | null
           estimated_duration_hours: number | null
+          fleet_job_id: number | null
           grand_total: number | null
           hours: string | null
           id: number
@@ -10179,6 +10313,7 @@ export type Database = {
           registration_no: string | null
           requires_reapproval: boolean | null
           safety_checklist_completed: boolean | null
+          source: string | null
           start_time: string | null
           status: string | null
           sublet: number | null
@@ -10226,6 +10361,7 @@ export type Database = {
           equipment_used?: Json | null
           estimated_cost?: number | null
           estimated_duration_hours?: number | null
+          fleet_job_id?: number | null
           grand_total?: number | null
           hours?: string | null
           id?: never
@@ -10248,6 +10384,7 @@ export type Database = {
           registration_no?: string | null
           requires_reapproval?: boolean | null
           safety_checklist_completed?: boolean | null
+          source?: string | null
           start_time?: string | null
           status?: string | null
           sublet?: number | null
@@ -10295,6 +10432,7 @@ export type Database = {
           equipment_used?: Json | null
           estimated_cost?: number | null
           estimated_duration_hours?: number | null
+          fleet_job_id?: number | null
           grand_total?: number | null
           hours?: string | null
           id?: never
@@ -10317,6 +10455,7 @@ export type Database = {
           registration_no?: string | null
           requires_reapproval?: boolean | null
           safety_checklist_completed?: boolean | null
+          source?: string | null
           start_time?: string | null
           status?: string | null
           sublet?: number | null

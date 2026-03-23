@@ -196,7 +196,7 @@ export default function CallCenterPage() {
     const fetchLocations = async () => {
       const { data, error } = await supabase
         .from("breakdowns")
-        .select("*, technicians:tech_id(location)");
+        .select("*, technicians_maysene:tech_id(location)");
 
       if (error) {
         console.error(error);
@@ -205,8 +205,8 @@ export default function CallCenterPage() {
 
       if (data && data.length > 0) {
         const coordsArray = await Promise.all(
-          data.map(async (item) => {
-            const loc = item.technicians?.location;
+          data.map(async (item: any) => {
+            const loc = item.technicians_maysene?.location;
             if (!loc) {
               return null;
             }

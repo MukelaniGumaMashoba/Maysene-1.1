@@ -169,7 +169,7 @@ export default function StockLevelsPage() {
         .label,
       part.stock_threshold || "0",
       part.vehicle_brands?.name || "",
-      part.once_off ? "Yes" : "No",
+      part.once ? "Yes" : "No",
       part.suppliers?.name || "",
     ]);
 
