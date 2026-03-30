@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -11,7 +15,7 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "incremental": true,
     "plugins": [
       {
@@ -19,9 +23,43 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": [
+        "./src/*"
+      ]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/(protected)/layout.tsx", "src/components/map/display-map.jsx", "src/components/layout/dialog-screen.jsx", "src/app/(protected)/fleetManager/routes/page.jsx", "src/components/forms/client-form.jsx", "src/app/(protected)/fleetManager/trips/page.jsx", "src/components/dashboard/detail-pages/trip-details.jsx", "src/app/(protected)/fleetManager/trips/[id]/page.jsx", "src/app/api/auth/route.jsx", "src/app/api/clients/[id]/route.jsx", "src/app/api/clients/route.js", "src/app/api/cost-centres/[id]/route.js", "src/app/api/cost-centres/route.js", "src/app/api/drivers/route.js", "src/app/api/drivers/[id]/route.js", "src/app/api/stop-points/route.js", "src/app/api/stop-points/[id]/route.js", "src/app/api/trips/form-data/route.js", "src/app/api/trips/route.js", "src/app/api/users/[id]/route.js", "src/app/api/vehicles/route.js", "src/components/autocomplete.jsx", "src/app/(protected)/load-plan/page.jsx", "src/components/dashboard/trips.tsx"],
-  "exclude": ["node_modules"]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "src/app/(protected)/layout.tsx",
+    "src/components/map/display-map.jsx",
+    "src/components/layout/dialog-screen.jsx",
+    "src/app/(protected)/fleetManager/routes/page.jsx",
+    "src/components/forms/client-form.jsx",
+    "src/app/(protected)/fleetManager/trips/page.jsx",
+    "src/components/dashboard/detail-pages/trip-details.jsx",
+    "src/app/(protected)/fleetManager/trips/[id]/page.jsx",
+    "src/app/api/auth/route.jsx",
+    "src/app/api/clients/[id]/route.jsx",
+    "src/app/api/clients/route.js",
+    "src/app/api/cost-centres/[id]/route.js",
+    "src/app/api/cost-centres/route.js",
+    "src/app/api/drivers/route.js",
+    "src/app/api/drivers/[id]/route.js",
+    "src/app/api/stop-points/route.js",
+    "src/app/api/stop-points/[id]/route.js",
+    "src/app/api/trips/form-data/route.js",
+    "src/app/api/trips/route.js",
+    "src/app/api/users/[id]/route.js",
+    "src/app/api/vehicles/route.js",
+    "src/components/autocomplete.jsx",
+    "src/app/(protected)/load-plan/page.jsx",
+    "src/components/dashboard/trips.tsx",
+    ".next/dev/types/**/*.ts"
+, "src/app/(protected)/workshop/jobs/page.tsx"  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

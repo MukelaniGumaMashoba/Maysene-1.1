@@ -1,11 +1,11 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server'
 
-const supabase = createClient()
 // *****************************
 // update vehicle
 // *****************************
 export async function PUT(request, { params }) {
+  const supabase = await createClient()
   const { id } = params
   if (!id) return NextResponse.json({ error: 'Missing vehicle ID' }, { status: 400 })
 
@@ -32,6 +32,7 @@ export async function PUT(request, { params }) {
 // delete vehicle
 // *****************************
 export async function DELETE(request, { params }) {
+  const supabase = await createClient()
   const { id } = params
   if (!id) return NextResponse.json({ error: 'Missing vehicle ID' }, { status: 400 })
 

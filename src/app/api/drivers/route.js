@@ -3,10 +3,9 @@ import { createClient } from '@/lib/supabase/server';
 import { verifyAuth } from '@/lib/utils/verify-auth'
 import { logUserActivity } from '@/lib/utils/logUserActivity'
 
-const supabase = createClient()
-
 // GET: List drivers for authenticated user
 export async function GET(request) {
+  const supabase = await createClient()
   const token = await verifyAuth(request)
   if (!token) {
     return NextResponse.json({ error: 'not a valid user' }, { status: 401 })
@@ -26,6 +25,7 @@ export async function GET(request) {
 
 // POST: Add a new driver
 export async function POST(request) {
+  const supabase = await createClient()
   const token = await verifyAuth(request)
   if (!token) {
     return NextResponse.json({ error: 'not a valid user' }, { status: 401 })

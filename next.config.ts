@@ -7,7 +7,7 @@ module.exports = {
   },
   reactStrictMode: true,
   serverExternalPackages: ['mapbox-gl'],
-  webpack: (config) => {
+  webpack: (config: any) => {
     config.resolve.alias = {
       ...config.resolve.alias,
       'mapbox-gl': 'mapbox-gl/dist/mapbox-gl.js',

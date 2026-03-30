@@ -122,6 +122,7 @@ export default function VehicleDetailsPage() {
 
     const { error } = await supabase
       .from("vehiclesc")
+      // @ts-expect-error
       .update(updateData)
       .eq("id", id);
 

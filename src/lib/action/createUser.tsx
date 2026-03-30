@@ -29,7 +29,7 @@ export async function CreateUser(formData: FormData) {
         redirect("/login?message=You need to be logged in");
     }
 
-    // ✅ Fetch the logged-in user's workshop_id from profiles table
+    // ✅ Fetch the logged-in user's workshop_id from users table
     const { data: currentProfile, error: profileError } = await supabase
         .from("users")
         .select("workshop_id")

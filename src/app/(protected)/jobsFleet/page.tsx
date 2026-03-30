@@ -44,6 +44,11 @@ import {
   FileImage,
   Download,
   RefreshCcw,
+  Package,
+  AlertTriangle,
+  BarChart3,
+  TrendingDown,
+  Wrench,
 } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -51,6 +56,9 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Modal from "@/components/modals/modal";
 import { AllocateSubcontractorDialog } from "@/components/modals/subcontractors";
+import { SendToWorkshopDialog } from "@/components/modals/send-to-workshop";
+import PendingFleetApprovalTab from "@/components/workshop/PendingFleetApprovalTab";
+import JobCardWorkflow from "@/components/ui-personal/job-card-workflow";
 
 interface Job {
   id: number;
@@ -125,6 +133,18 @@ export default function FleetJobsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [completed, setCompleted] = useState<Job[]>([]);
+
+  // Workshop jobs state for fleet manager view
+  const [workshopJobs, setWorkshopJobs] = useState<any[]>([]);
+  const [workshopJobsLoading, setWorkshopJobsLoading] = useState(false);
+  const [workshopJobWorkflow, setWorkshopJobWorkflow] = useState<any>(null);
+  const [isWorkflowOpen, setIsWorkflowOpen] = useState(false);
+
+  // Stock levels state
+  const [stockParts, setStockParts] = useState<any[]>([]);
+  const [stockLoading, setStockLoading] = useState(false);
+  const [stockSearch, setStockSearch] = useState("");
+  const [stockFilter, setStockFilter] = useState("all");
 
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [searchTechnicianLocation, setSearchTechnicianLocation] = useState("");
@@ -302,6 +322,33 @@ export default function FleetJobsPage() {
   useEffect(() => {
     fetchTechnicians();
   }, []);
+
+  const fetchWorkshopJobs = async () => {
+    setWorkshopJobsLoading(true);
+    const { data, error } = await supabase
+      .from("workshop_job")
+      .select("*")
+      .not("fleet_job_id", "is", null)
+      .order("created_at", { ascending: false });
+    if (!error && data) setWorkshopJobs(data);
+    setWorkshopJobsLoading(false);
+  };
+
+  const fetchStockLevels = async () => {
+    setStockLoading(true);
+    const { data, error } = await supabase
+      .from("parts")
+      .select(`*, categories(name)`)
+      .order("description");
+    if (!error && data) setStockParts(data);
+    setStockLoading(false);
+  };
+
+  const getStockStatus = (quantity: number, threshold = 5) => {
+    if (quantity === 0) return { label: "Out of Stock", color: "bg-red-100 text-red-800" };
+    if (quantity <= threshold) return { label: "Low Stock", color: "bg-yellow-100 text-yellow-800" };
+    return { label: "In Stock", color: "bg-green-100 text-green-800" };
+  };
 
   // Assign the selected technician to the job
   const assignTechnicianToJob = async (
@@ -550,10 +597,199 @@ export default function FleetJobsPage() {
         <Tabs defaultValue="list" className="space-y-4">
           <TabsList>
             <TabsTrigger value="list">Job List</TabsTrigger>
+            <TabsTrigger value="pending-approval">Pending Fleet Approval</TabsTrigger>
+            <TabsTrigger value="workshop-jobs" onClick={fetchWorkshopJobs}>Workshop Jobs</TabsTrigger>
+            <TabsTrigger value="stock-levels" onClick={fetchStockLevels}>Stock Levels</TabsTrigger>
             <TabsTrigger value="kanban">Kanban Board</TabsTrigger>
             <TabsTrigger value="calendar">Rejected</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="pending-approval" className="space-y-4">
+            <PendingFleetApprovalTab supabase={supabase} onRefresh={getJobs} />
+          </TabsContent>
+
+          {/* Workshop Jobs Tab — shows all workshop jobs linked to fleet jobs */}
+          <TabsContent value="workshop-jobs" className="space-y-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold">Workshop Jobs</h3>
+              <button onClick={fetchWorkshopJobs} className="text-sm text-blue-600 hover:underline flex items-center gap-1">
+                <RefreshCcw className="h-3 w-3" /> Refresh
+              </button>
+            </div>
+            {workshopJobsLoading ? (
+              <p className="text-center text-gray-500 py-8">Loading workshop jobs...</p>
+            ) : workshopJobs.length === 0 ? (
+              <div className="text-center py-12">
+                <Wrench className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">No workshop jobs linked to fleet jobs yet</p>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {workshopJobs.map((job) => {
+                  const totalCost = (job.total_labor_cost ?? 0) + (job.total_parts_cost ?? 0) + (job.total_sublet_cost ?? 0);
+                  const statusColor = (() => {
+                    switch (job.status?.toLowerCase()) {
+                      case "awaiting approval": return "bg-yellow-100 text-yellow-800";
+                      case "approved": return "bg-green-100 text-green-800";
+                      case "rejected": return "bg-red-100 text-red-800";
+                      case "part assigned": return "bg-purple-100 text-purple-800";
+                      case "part ordered": return "bg-orange-100 text-orange-800";
+                      case "completed": return "bg-green-100 text-green-800";
+                      case "awaiting fleet approval": return "bg-blue-100 text-blue-800";
+                      default: return "bg-gray-100 text-gray-800";
+                    }
+                  })();
+                  return (
+                    <Card key={job.id} className="border-l-4 border-l-orange-400">
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Wrench className="h-5 w-5 text-orange-500" />
+                            <CardTitle className="text-base">{job.jobId_workshop}</CardTitle>
+                            <Badge className={statusColor}>{job.status}</Badge>
+                            <Badge className={job.priority === 'emergency' ? 'bg-red-500 text-white' : job.priority === 'high' ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-800'}>
+                              {job.priority}
+                            </Badge>
+                          </div>
+                          <span className="text-sm text-gray-500">{new Date(job.created_at).toLocaleDateString()}</span>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                          <div><p className="text-gray-500">Vehicle</p><p className="font-medium">{job.registration_no || "N/A"}</p></div>
+                          <div><p className="text-gray-500">Type</p><p className="font-medium capitalize">{job.job_type}</p></div>
+                          <div><p className="text-gray-500">Driver</p><p className="font-medium">{job.client_name || "N/A"}</p></div>
+                          <div>
+                            <p className="text-gray-500">Total Cost</p>
+                            <p className="font-medium text-green-700">{totalCost > 0 ? `R ${totalCost.toFixed(2)}` : "Pending"}</p>
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-600">{job.description}</p>
+                        {totalCost > 0 && (
+                          <div className="grid grid-cols-3 gap-3 text-sm bg-blue-50 p-3 rounded">
+                            <div><p className="text-gray-500">Labour</p><p className="font-medium">R {(job.total_labor_cost ?? 0).toFixed(2)}</p></div>
+                            <div><p className="text-gray-500">Parts</p><p className="font-medium">R {(job.total_parts_cost ?? 0).toFixed(2)}</p></div>
+                            <div><p className="text-gray-500">Sublets</p><p className="font-medium">R {(job.total_sublet_cost ?? 0).toFixed(2)}</p></div>
+                          </div>
+                        )}
+                      </CardContent>
+                      <CardContent className="pt-0 flex justify-end gap-2 border-t">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => { setWorkshopJobWorkflow(job); setIsWorkflowOpen(true); }}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Workflow
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Stock Levels Tab — read-only view from workshop parts table */}
+          <TabsContent value="stock-levels" className="space-y-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold">Workshop Stock Levels</h3>
+              <button onClick={fetchStockLevels} className="text-sm text-blue-600 hover:underline flex items-center gap-1">
+                <RefreshCcw className="h-3 w-3" /> Refresh
+              </button>
+            </div>
+
+            {/* Summary cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Card><CardContent className="p-4 flex items-center justify-between">
+                <div><p className="text-sm text-gray-600">Total Items</p><p className="text-2xl font-bold">{stockParts.length}</p></div>
+                <Package className="h-8 w-8 text-blue-600" />
+              </CardContent></Card>
+              <Card><CardContent className="p-4 flex items-center justify-between">
+                <div><p className="text-sm text-gray-600">Low Stock</p><p className="text-2xl font-bold text-yellow-600">{stockParts.filter(p => parseInt(p.quantity || "0") <= (p.stock_threshold || 5) && parseInt(p.quantity || "0") > 0).length}</p></div>
+                <AlertTriangle className="h-8 w-8 text-yellow-600" />
+              </CardContent></Card>
+              <Card><CardContent className="p-4 flex items-center justify-between">
+                <div><p className="text-sm text-gray-600">Out of Stock</p><p className="text-2xl font-bold text-red-600">{stockParts.filter(p => parseInt(p.quantity || "0") === 0).length}</p></div>
+                <TrendingDown className="h-8 w-8 text-red-600" />
+              </CardContent></Card>
+              <Card><CardContent className="p-4 flex items-center justify-between">
+                <div><p className="text-sm text-gray-600">Total Value</p><p className="text-2xl font-bold text-green-600">R{stockParts.reduce((s, p) => s + parseInt(p.quantity || "0") * (p.price || 0), 0).toFixed(2)}</p></div>
+                <BarChart3 className="h-8 w-8 text-green-600" />
+              </CardContent></Card>
+            </div>
+
+            {/* Filters */}
+            <div className="flex gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input placeholder="Search parts..." value={stockSearch} onChange={(e) => setStockSearch(e.target.value)} className="pl-10" />
+              </div>
+              <Select value={stockFilter} onValueChange={setStockFilter}>
+                <SelectTrigger className="w-40"><SelectValue placeholder="Stock Status" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Stock</SelectItem>
+                  <SelectItem value="normal">In Stock</SelectItem>
+                  <SelectItem value="low">Low Stock</SelectItem>
+                  <SelectItem value="out">Out of Stock</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {stockLoading ? (
+              <p className="text-center text-gray-500 py-8">Loading stock levels...</p>
+            ) : (
+              <Card>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="border-b bg-gray-50">
+                          <th className="text-left p-3 text-sm font-medium">Item Code</th>
+                          <th className="text-left p-3 text-sm font-medium">Description</th>
+                          <th className="text-left p-3 text-sm font-medium">Category</th>
+                          <th className="text-center p-3 text-sm font-medium">Qty / Threshold</th>
+                          <th className="text-right p-3 text-sm font-medium">Unit Price</th>
+                          <th className="text-right p-3 text-sm font-medium">Total Value</th>
+                          <th className="text-center p-3 text-sm font-medium">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {stockParts
+                          .filter((part) => {
+                            const qty = parseInt(part.quantity || "0");
+                            const threshold = part.stock_threshold || 5;
+                            const matchSearch = (part.description || "").toLowerCase().includes(stockSearch.toLowerCase()) || (part.item_code || "").toLowerCase().includes(stockSearch.toLowerCase());
+                            const matchFilter = stockFilter === "all" || (stockFilter === "out" && qty === 0) || (stockFilter === "low" && qty > 0 && qty <= threshold) || (stockFilter === "normal" && qty > threshold);
+                            return matchSearch && matchFilter;
+                          })
+                          .map((part) => {
+                            const qty = parseInt(part.quantity || "0");
+                            const threshold = part.stock_threshold || 5;
+                            const status = getStockStatus(qty, threshold);
+                            return (
+                              <tr key={part.id} className="border-b hover:bg-gray-50">
+                                <td className="p-3 font-mono text-sm">{part.item_code || "N/A"}</td>
+                                <td className="p-3 text-sm">{part.description}</td>
+                                <td className="p-3"><Badge variant="outline" className="text-xs">{part.categories?.name || "N/A"}</Badge></td>
+                                <td className="p-3 text-center"><span className={`font-medium text-sm ${qty <= threshold ? "text-red-600" : ""}`}>{qty}/{threshold}</span></td>
+                                <td className="p-3 text-right text-sm">R{(part.price || 0).toFixed(2)}</td>
+                                <td className="p-3 text-right text-sm font-medium">R{(qty * (part.price || 0)).toFixed(2)}</td>
+                                <td className="p-3 text-center"><Badge className={status.color}>{status.label}</Badge></td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+                    {stockParts.filter(p => (p.description || "").toLowerCase().includes(stockSearch.toLowerCase())).length === 0 && (
+                      <div className="text-center py-8"><Package className="mx-auto h-10 w-10 text-gray-300 mb-2" /><p className="text-gray-500">No items found</p></div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
 
           <TabsContent value="list" className="space-y-4">
             <div className="grid gap-4">
@@ -823,18 +1059,22 @@ export default function FleetJobsPage() {
 
                         {/* using created field with number 1 or 0 whereby 0 is job appoved but when 1 rejected */}
 
-                        {(job.status === "inprogress" ||
-                          job.status === "Approved") && (
+                        {job.status === "Approved" && (
                           <div className="flex gap-2">
-                            {/* In your jobs list (e.g., where job.status === "Approved") */}
-                            {job.status === "Approved" && (
-                              <div className="flex gap-2">
-                                <AllocateSubcontractorDialog
-                                  jobId={job.id}
-                                  jobDescription={job.description}
-                                />
-                              </div>
-                            )}
+                            <AllocateSubcontractorDialog
+                              jobId={job.id}
+                              jobDescription={job.description}
+                            />
+                            <SendToWorkshopDialog
+                              jobId={job.id}
+                              jobDescription={job.description}
+                              vehicleReg={job.vehiclesc?.registration_number || ''}
+                              clientName={job.drivers ? `${job.drivers.first_name} ${job.drivers.surname}` : ''}
+                              location={job.location}
+                              jobType={job.service}
+                              priority={job.priority}
+                              onSuccess={getJobs}
+                            />
                           </div>
                         )}
 

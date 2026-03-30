@@ -19,12 +19,12 @@ export async function POST(request: NextRequest) {
 
     // Create profile directly (simplified approach)
     const { error: profileError } = await supabase
-      .from('profiles')
+      .from('users')
       .insert({
         full_name,
         email,
         role,
-        company_name: 'Klaver',
+        company_name: 'maysene',
         phone_number,
         department
       });
@@ -49,9 +49,9 @@ export async function GET(request: NextRequest) {
     }
 
     const { data: users, error } = await supabase
-      .from('profiles')
+      .from('users')
       .select('*')
-      .eq('company_name', 'Klaver')
+      .eq('company_name', 'maysene')
       .order('created_at', { ascending: false });
 
     if (error) {

@@ -14,6 +14,142 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_invoices: {
+        Row: {
+          account_number: string
+          billing_month: string | null
+          client_address: string | null
+          company_name: string | null
+          created_at: string
+          created_by: string | null
+          customer_vat_number: string | null
+          discount_amount: number
+          id: string
+          invoice_date: string
+          invoice_number: string
+          line_items: Json
+          notes: string | null
+          subtotal: number
+          total_amount: number
+          updated_at: string
+          vat_amount: number
+        }
+        Insert: {
+          account_number: string
+          billing_month?: string | null
+          client_address?: string | null
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_vat_number?: string | null
+          discount_amount?: number
+          id?: string
+          invoice_date?: string
+          invoice_number: string
+          line_items?: Json
+          notes?: string | null
+          subtotal?: number
+          total_amount?: number
+          updated_at?: string
+          vat_amount?: number
+        }
+        Update: {
+          account_number?: string
+          billing_month?: string | null
+          client_address?: string | null
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_vat_number?: string | null
+          discount_amount?: number
+          id?: string
+          invoice_date?: string
+          invoice_number?: string
+          line_items?: Json
+          notes?: string | null
+          subtotal?: number
+          total_amount?: number
+          updated_at?: string
+          vat_amount?: number
+        }
+        Relationships: []
+      }
+      assignements: {
+        Row: {
+          breakdown_id: number | null
+          created_at: string
+          driver_id: number | null
+          id: number
+          job_id: number | null
+          tech_id: number | null
+          updated_by: string | null
+          vehicle_id: number | null
+        }
+        Insert: {
+          breakdown_id?: number | null
+          created_at?: string
+          driver_id?: number | null
+          id?: never
+          job_id?: number | null
+          tech_id?: number | null
+          updated_by?: string | null
+          vehicle_id?: number | null
+        }
+        Update: {
+          breakdown_id?: number | null
+          created_at?: string
+          driver_id?: number | null
+          id?: never
+          job_id?: number | null
+          tech_id?: number | null
+          updated_by?: string | null
+          vehicle_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignements_breakdown_id_fkey"
+            columns: ["breakdown_id"]
+            isOneToOne: false
+            referencedRelation: "breakdowns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignements_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignements_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "job_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignements_tech_id_fkey"
+            columns: ["tech_id"]
+            isOneToOne: false
+            referencedRelation: "technicians"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignements_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignements_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehiclesc"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit: {
         Row: {
           actual_cpk: number | null
@@ -262,6 +398,77 @@ export type Database = {
           },
         ]
       }
+      bill_of_items: {
+        Row: {
+          category: string
+          description: string | null
+          discount: number | null
+          id: string
+          installation: number | null
+          is_main_item: boolean
+          notes: string | null
+          parent_id: string | null
+          price: number
+          pricing_model: string | null
+          product: string
+          quantity: number | null
+          rental: number | null
+          sort_order: number
+          source_sheet: string | null
+          source_workbook: string | null
+          subscription: number | null
+          type: string
+        }
+        Insert: {
+          category: string
+          description?: string | null
+          discount?: number | null
+          id?: string
+          installation?: number | null
+          is_main_item?: boolean
+          notes?: string | null
+          parent_id?: string | null
+          price: number
+          pricing_model?: string | null
+          product: string
+          quantity?: number | null
+          rental?: number | null
+          sort_order?: number
+          source_sheet?: string | null
+          source_workbook?: string | null
+          subscription?: number | null
+          type: string
+        }
+        Update: {
+          category?: string
+          description?: string | null
+          discount?: number | null
+          id?: string
+          installation?: number | null
+          is_main_item?: boolean
+          notes?: string | null
+          parent_id?: string | null
+          price?: number
+          pricing_model?: string | null
+          product?: string
+          quantity?: number | null
+          rental?: number | null
+          sort_order?: number
+          source_sheet?: string | null
+          source_workbook?: string | null
+          subscription?: number | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bill_of_items_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "bill_of_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       billing_log: {
         Row: {
           created_at: string | null
@@ -421,6 +628,600 @@ export type Database = {
         }
         Relationships: []
       }
+      breakdowns: {
+        Row: {
+          breakdown_location: string | null
+          breakdown_type: string | null
+          client_type: string | null
+          colour: string | null
+          coordinates: Json | null
+          coverage_type: string | null
+          created_at: string | null
+          created_by: string | null
+          driver_name: string | null
+          driver_phone: string | null
+          emergency_type: string | null
+          engine_number: string | null
+          external_client_id: string | null
+          fuel_type: string | null
+          id: number
+          image_urls: string | null
+          inspected: boolean | null
+          insurance_provider: string | null
+          issue_description: string | null
+          job_id: number | null
+          license_expiry_date: string | null
+          location: string | null
+          make: string | null
+          model: string | null
+          order_no: string | null
+          owner_email: string | null
+          owner_name: string | null
+          owner_phone: string | null
+          phone: string | null
+          policy_number: string | null
+          registration: string | null
+          registration_date: string | null
+          reported_at: string | null
+          service_history: Json | null
+          status: string | null
+          sub_model: string | null
+          tech_id: number | null
+          tow_capacity: number | null
+          tow_weight: number | null
+          transmission_type: string | null
+          updated_at: string | null
+          vin: string | null
+          workshop_id: string | null
+          year: number | null
+        }
+        Insert: {
+          breakdown_location?: string | null
+          breakdown_type?: string | null
+          client_type?: string | null
+          colour?: string | null
+          coordinates?: Json | null
+          coverage_type?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          driver_name?: string | null
+          driver_phone?: string | null
+          emergency_type?: string | null
+          engine_number?: string | null
+          external_client_id?: string | null
+          fuel_type?: string | null
+          id?: never
+          image_urls?: string | null
+          inspected?: boolean | null
+          insurance_provider?: string | null
+          issue_description?: string | null
+          job_id?: number | null
+          license_expiry_date?: string | null
+          location?: string | null
+          make?: string | null
+          model?: string | null
+          order_no?: string | null
+          owner_email?: string | null
+          owner_name?: string | null
+          owner_phone?: string | null
+          phone?: string | null
+          policy_number?: string | null
+          registration?: string | null
+          registration_date?: string | null
+          reported_at?: string | null
+          service_history?: Json | null
+          status?: string | null
+          sub_model?: string | null
+          tech_id?: number | null
+          tow_capacity?: number | null
+          tow_weight?: number | null
+          transmission_type?: string | null
+          updated_at?: string | null
+          vin?: string | null
+          workshop_id?: string | null
+          year?: number | null
+        }
+        Update: {
+          breakdown_location?: string | null
+          breakdown_type?: string | null
+          client_type?: string | null
+          colour?: string | null
+          coordinates?: Json | null
+          coverage_type?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          driver_name?: string | null
+          driver_phone?: string | null
+          emergency_type?: string | null
+          engine_number?: string | null
+          external_client_id?: string | null
+          fuel_type?: string | null
+          id?: never
+          image_urls?: string | null
+          inspected?: boolean | null
+          insurance_provider?: string | null
+          issue_description?: string | null
+          job_id?: number | null
+          license_expiry_date?: string | null
+          location?: string | null
+          make?: string | null
+          model?: string | null
+          order_no?: string | null
+          owner_email?: string | null
+          owner_name?: string | null
+          owner_phone?: string | null
+          phone?: string | null
+          policy_number?: string | null
+          registration?: string | null
+          registration_date?: string | null
+          reported_at?: string | null
+          service_history?: Json | null
+          status?: string | null
+          sub_model?: string | null
+          tech_id?: number | null
+          tow_capacity?: number | null
+          tow_weight?: number | null
+          transmission_type?: string | null
+          updated_at?: string | null
+          vin?: string | null
+          workshop_id?: string | null
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "breakdowns_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "job_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "breakdowns_tech_id_fkey"
+            columns: ["tech_id"]
+            isOneToOne: false
+            referencedRelation: "technicians"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "breakdowns_workshop_id_fkey"
+            columns: ["workshop_id"]
+            isOneToOne: false
+            referencedRelation: "workshop"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      capabilities: {
+        Row: {
+          ambulance: boolean | null
+          apmma: boolean | null
+          battery_charge: boolean | null
+          battery_tester: boolean | null
+          block_boring: boolean | null
+          block_pressure_test: boolean | null
+          body_modification: boolean | null
+          brakes: boolean | null
+          cash_in_transit: boolean | null
+          clutch_over_huals: boolean | null
+          clutch_overhuals: boolean | null
+          couch_builder: boolean | null
+          cra: boolean | null
+          crank_grinding: boolean | null
+          dekra: boolean | null
+          dent_vehicles: boolean | null
+          drive_line: boolean | null
+          driver_line_cv_joints: boolean | null
+          engine_block_resurfacing: boolean | null
+          engine_overhuals: boolean | null
+          era: boolean | null
+          gearbox_bench: boolean | null
+          hail_demage: boolean | null
+          light_retros: boolean | null
+          m_brakes: boolean | null
+          major_repairs: boolean | null
+          mibco: boolean | null
+          mig_welder: boolean | null
+          minor_repairs: boolean | null
+          miwa: boolean | null
+          msr: boolean | null
+          nsr: boolean | null
+          pipe_bender: boolean | null
+          propshaft_bench: boolean | null
+          raaf: boolean | null
+          radios_audio: boolean | null
+          rmi: boolean | null
+          saarsa: boolean | null
+          sambra: boolean | null
+          saqa: boolean | null
+          sata: boolean | null
+          service: boolean | null
+          standard_wash: boolean | null
+          starters: boolean | null
+          suspension: boolean | null
+          tig_welder: boolean | null
+          two_way_radio: boolean | null
+          valet: boolean | null
+          valve_grinding: boolean | null
+          vehicles_detailing: boolean | null
+          wheel_alignment: boolean | null
+          wheel_balancing: boolean | null
+          wiring_major: boolean | null
+          wiring_minor: boolean | null
+          workshop_id: string
+        }
+        Insert: {
+          ambulance?: boolean | null
+          apmma?: boolean | null
+          battery_charge?: boolean | null
+          battery_tester?: boolean | null
+          block_boring?: boolean | null
+          block_pressure_test?: boolean | null
+          body_modification?: boolean | null
+          brakes?: boolean | null
+          cash_in_transit?: boolean | null
+          clutch_over_huals?: boolean | null
+          clutch_overhuals?: boolean | null
+          couch_builder?: boolean | null
+          cra?: boolean | null
+          crank_grinding?: boolean | null
+          dekra?: boolean | null
+          dent_vehicles?: boolean | null
+          drive_line?: boolean | null
+          driver_line_cv_joints?: boolean | null
+          engine_block_resurfacing?: boolean | null
+          engine_overhuals?: boolean | null
+          era?: boolean | null
+          gearbox_bench?: boolean | null
+          hail_demage?: boolean | null
+          light_retros?: boolean | null
+          m_brakes?: boolean | null
+          major_repairs?: boolean | null
+          mibco?: boolean | null
+          mig_welder?: boolean | null
+          minor_repairs?: boolean | null
+          miwa?: boolean | null
+          msr?: boolean | null
+          nsr?: boolean | null
+          pipe_bender?: boolean | null
+          propshaft_bench?: boolean | null
+          raaf?: boolean | null
+          radios_audio?: boolean | null
+          rmi?: boolean | null
+          saarsa?: boolean | null
+          sambra?: boolean | null
+          saqa?: boolean | null
+          sata?: boolean | null
+          service?: boolean | null
+          standard_wash?: boolean | null
+          starters?: boolean | null
+          suspension?: boolean | null
+          tig_welder?: boolean | null
+          two_way_radio?: boolean | null
+          valet?: boolean | null
+          valve_grinding?: boolean | null
+          vehicles_detailing?: boolean | null
+          wheel_alignment?: boolean | null
+          wheel_balancing?: boolean | null
+          wiring_major?: boolean | null
+          wiring_minor?: boolean | null
+          workshop_id: string
+        }
+        Update: {
+          ambulance?: boolean | null
+          apmma?: boolean | null
+          battery_charge?: boolean | null
+          battery_tester?: boolean | null
+          block_boring?: boolean | null
+          block_pressure_test?: boolean | null
+          body_modification?: boolean | null
+          brakes?: boolean | null
+          cash_in_transit?: boolean | null
+          clutch_over_huals?: boolean | null
+          clutch_overhuals?: boolean | null
+          couch_builder?: boolean | null
+          cra?: boolean | null
+          crank_grinding?: boolean | null
+          dekra?: boolean | null
+          dent_vehicles?: boolean | null
+          drive_line?: boolean | null
+          driver_line_cv_joints?: boolean | null
+          engine_block_resurfacing?: boolean | null
+          engine_overhuals?: boolean | null
+          era?: boolean | null
+          gearbox_bench?: boolean | null
+          hail_demage?: boolean | null
+          light_retros?: boolean | null
+          m_brakes?: boolean | null
+          major_repairs?: boolean | null
+          mibco?: boolean | null
+          mig_welder?: boolean | null
+          minor_repairs?: boolean | null
+          miwa?: boolean | null
+          msr?: boolean | null
+          nsr?: boolean | null
+          pipe_bender?: boolean | null
+          propshaft_bench?: boolean | null
+          raaf?: boolean | null
+          radios_audio?: boolean | null
+          rmi?: boolean | null
+          saarsa?: boolean | null
+          sambra?: boolean | null
+          saqa?: boolean | null
+          sata?: boolean | null
+          service?: boolean | null
+          standard_wash?: boolean | null
+          starters?: boolean | null
+          suspension?: boolean | null
+          tig_welder?: boolean | null
+          two_way_radio?: boolean | null
+          valet?: boolean | null
+          valve_grinding?: boolean | null
+          vehicles_detailing?: boolean | null
+          wheel_alignment?: boolean | null
+          wheel_balancing?: boolean | null
+          wiring_major?: boolean | null
+          wiring_minor?: boolean | null
+          workshop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "capabilities_workshop_id_fkey"
+            columns: ["workshop_id"]
+            isOneToOne: true
+            referencedRelation: "workshop"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categories: {
+        Row: {
+          id: number
+          name: string
+        }
+        Insert: {
+          id?: never
+          name: string
+        }
+        Update: {
+          id?: never
+          name?: string
+        }
+        Relationships: []
+      }
+      client: {
+        Row: {
+          accountmanager: string | null
+          address: string | null
+          availability: boolean | null
+          average_job_value: number | null
+          capacity: Json | null
+          certifications: string[] | null
+          city: string | null
+          client_type: string | null
+          clienttype: string | null
+          company_name: string | null
+          completed_jobs: number | null
+          contact_person: string | null
+          contract_status: string | null
+          contract_type: string | null
+          credit_limit: number | null
+          email: string | null
+          emergency_phone: string | null
+          equipment_types: string[] | null
+          hourly_rate: number | null
+          id: number
+          last_job_date: string | null
+          payment_terms: string | null
+          phone: string | null
+          postal_code: string | null
+          preferred_services: string[] | null
+          province: string | null
+          rates: Json | null
+          rating: number | null
+          registration_date: string | null
+          response_time: number | null
+          service_areas: string[] | null
+          specialties: string[] | null
+          status: string | null
+          total_jobs: number | null
+          total_revenue: number | null
+          vehicle_types: string[] | null
+        }
+        Insert: {
+          accountmanager?: string | null
+          address?: string | null
+          availability?: boolean | null
+          average_job_value?: number | null
+          capacity?: Json | null
+          certifications?: string[] | null
+          city?: string | null
+          client_type?: string | null
+          clienttype?: string | null
+          company_name?: string | null
+          completed_jobs?: number | null
+          contact_person?: string | null
+          contract_status?: string | null
+          contract_type?: string | null
+          credit_limit?: number | null
+          email?: string | null
+          emergency_phone?: string | null
+          equipment_types?: string[] | null
+          hourly_rate?: number | null
+          id?: never
+          last_job_date?: string | null
+          payment_terms?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          preferred_services?: string[] | null
+          province?: string | null
+          rates?: Json | null
+          rating?: number | null
+          registration_date?: string | null
+          response_time?: number | null
+          service_areas?: string[] | null
+          specialties?: string[] | null
+          status?: string | null
+          total_jobs?: number | null
+          total_revenue?: number | null
+          vehicle_types?: string[] | null
+        }
+        Update: {
+          accountmanager?: string | null
+          address?: string | null
+          availability?: boolean | null
+          average_job_value?: number | null
+          capacity?: Json | null
+          certifications?: string[] | null
+          city?: string | null
+          client_type?: string | null
+          clienttype?: string | null
+          company_name?: string | null
+          completed_jobs?: number | null
+          contact_person?: string | null
+          contract_status?: string | null
+          contract_type?: string | null
+          credit_limit?: number | null
+          email?: string | null
+          emergency_phone?: string | null
+          equipment_types?: string[] | null
+          hourly_rate?: number | null
+          id?: never
+          last_job_date?: string | null
+          payment_terms?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          preferred_services?: string[] | null
+          province?: string | null
+          rates?: Json | null
+          rating?: number | null
+          registration_date?: string | null
+          response_time?: number | null
+          service_areas?: string[] | null
+          specialties?: string[] | null
+          status?: string | null
+          total_jobs?: number | null
+          total_revenue?: number | null
+          vehicle_types?: string[] | null
+        }
+        Relationships: []
+      }
+      client_inventory_categories: {
+        Row: {
+          category_code: string
+          client_code: string
+          company: string | null
+          cost_code: string
+          created_at: string
+          date_adjusted: string | null
+          id: number
+          total_count: number | null
+        }
+        Insert: {
+          category_code: string
+          client_code: string
+          company?: string | null
+          cost_code: string
+          created_at?: string
+          date_adjusted?: string | null
+          id?: number
+          total_count?: number | null
+        }
+        Update: {
+          category_code?: string
+          client_code?: string
+          company?: string | null
+          cost_code?: string
+          created_at?: string
+          date_adjusted?: string | null
+          id?: number
+          total_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_inventory_categories_category_fkey"
+            columns: ["category_code"]
+            isOneToOne: false
+            referencedRelation: "inventory_categories"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      client_inventory_items: {
+        Row: {
+          assigned_date: string | null
+          assigned_to_technician: string | null
+          category_code: string
+          client_code: string
+          company: string | null
+          container: string | null
+          cost_code: string
+          created_at: string
+          date_adjusted: string | null
+          direction: string | null
+          id: number
+          job_card_id: string | null
+          notes: string | null
+          serial_number: string
+          status: string | null
+        }
+        Insert: {
+          assigned_date?: string | null
+          assigned_to_technician?: string | null
+          category_code: string
+          client_code: string
+          company?: string | null
+          container?: string | null
+          cost_code: string
+          created_at?: string
+          date_adjusted?: string | null
+          direction?: string | null
+          id?: number
+          job_card_id?: string | null
+          notes?: string | null
+          serial_number: string
+          status?: string | null
+        }
+        Update: {
+          assigned_date?: string | null
+          assigned_to_technician?: string | null
+          category_code?: string
+          client_code?: string
+          company?: string | null
+          container?: string | null
+          cost_code?: string
+          created_at?: string
+          date_adjusted?: string | null
+          direction?: string | null
+          id?: number
+          job_card_id?: string | null
+          notes?: string | null
+          serial_number?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_inventory_items_category_fkey"
+            columns: ["category_code"]
+            isOneToOne: false
+            referencedRelation: "inventory_categories"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "client_inventory_items_client_category_fkey"
+            columns: ["client_code", "cost_code", "category_code"]
+            isOneToOne: false
+            referencedRelation: "client_inventory_categories"
+            referencedColumns: ["client_code", "cost_code", "category_code"]
+          },
+          {
+            foreignKeyName: "client_inventory_items_job_card_fkey"
+            columns: ["job_card_id"]
+            isOneToOne: false
+            referencedRelation: "job_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_quotes: {
         Row: {
           access_requirements: string | null
@@ -428,6 +1229,7 @@ export type Database = {
           actual_cost: number | null
           actual_duration_hours: number | null
           after_photos: Json | null
+          annuity_end_date: string | null
           assigned_technician_id: string | null
           before_photos: Json | null
           completion_date: string | null
@@ -456,9 +1258,11 @@ export type Database = {
           job_location: string | null
           job_number: string
           job_status: string | null
+          job_sub_type: string | null
           job_type: string
           latitude: number | null
           longitude: number | null
+          move_to_role: string | null
           new_account_number: string | null
           odormeter: string | null
           parts_required: Json | null
@@ -507,6 +1311,7 @@ export type Database = {
           actual_cost?: number | null
           actual_duration_hours?: number | null
           after_photos?: Json | null
+          annuity_end_date?: string | null
           assigned_technician_id?: string | null
           before_photos?: Json | null
           completion_date?: string | null
@@ -535,9 +1340,11 @@ export type Database = {
           job_location?: string | null
           job_number: string
           job_status?: string | null
+          job_sub_type?: string | null
           job_type: string
           latitude?: number | null
           longitude?: number | null
+          move_to_role?: string | null
           new_account_number?: string | null
           odormeter?: string | null
           parts_required?: Json | null
@@ -586,6 +1393,7 @@ export type Database = {
           actual_cost?: number | null
           actual_duration_hours?: number | null
           after_photos?: Json | null
+          annuity_end_date?: string | null
           assigned_technician_id?: string | null
           before_photos?: Json | null
           completion_date?: string | null
@@ -614,9 +1422,11 @@ export type Database = {
           job_location?: string | null
           job_number?: string
           job_status?: string | null
+          job_sub_type?: string | null
           job_type?: string
           latitude?: number | null
           longitude?: number | null
+          move_to_role?: string | null
           new_account_number?: string | null
           odormeter?: string | null
           parts_required?: Json | null
@@ -708,6 +1518,7 @@ export type Database = {
           ck_number: string | null
           client_id: string | null
           color: string | null
+          commodity: string | null
           contact_email: string | null
           contact_person: string | null
           contact_phone: string | null
@@ -725,6 +1536,7 @@ export type Database = {
           fax_number: string | null
           id: number
           industry: string | null
+          IsLoading: boolean | null
           name: string
           name2: string | null
           notes: string | null
@@ -754,6 +1566,7 @@ export type Database = {
           ck_number?: string | null
           client_id?: string | null
           color?: string | null
+          commodity?: string | null
           contact_email?: string | null
           contact_person?: string | null
           contact_phone?: string | null
@@ -771,6 +1584,7 @@ export type Database = {
           fax_number?: string | null
           id?: number
           industry?: string | null
+          IsLoading?: boolean | null
           name: string
           name2?: string | null
           notes?: string | null
@@ -800,6 +1614,7 @@ export type Database = {
           ck_number?: string | null
           client_id?: string | null
           color?: string | null
+          commodity?: string | null
           contact_email?: string | null
           contact_person?: string | null
           contact_phone?: string | null
@@ -817,6 +1632,7 @@ export type Database = {
           fax_number?: string | null
           id?: number
           industry?: string | null
+          IsLoading?: boolean | null
           name?: string
           name2?: string | null
           notes?: string | null
@@ -906,25 +1722,76 @@ export type Database = {
       }
       cost_centers: {
         Row: {
+          client_info_match_score: number | null
+          client_info_match_source: string | null
+          client_info_matched_at: string | null
           company: string | null
+          contact_name: string | null
           cost_code: string | null
           created_at: string
+          email: string | null
           id: string
+          legal_name: string | null
+          physical_address_1: string | null
+          physical_address_2: string | null
+          physical_address_3: string | null
+          physical_area: string | null
+          physical_code: string | null
+          postal_address_1: string | null
+          postal_address_2: string | null
+          postal_address_3: string | null
+          registration_number: string | null
+          source_entity_id: string | null
           validated: boolean | null
+          vat_number: string | null
         }
         Insert: {
+          client_info_match_score?: number | null
+          client_info_match_source?: string | null
+          client_info_matched_at?: string | null
           company?: string | null
+          contact_name?: string | null
           cost_code?: string | null
           created_at?: string
+          email?: string | null
           id?: string
+          legal_name?: string | null
+          physical_address_1?: string | null
+          physical_address_2?: string | null
+          physical_address_3?: string | null
+          physical_area?: string | null
+          physical_code?: string | null
+          postal_address_1?: string | null
+          postal_address_2?: string | null
+          postal_address_3?: string | null
+          registration_number?: string | null
+          source_entity_id?: string | null
           validated?: boolean | null
+          vat_number?: string | null
         }
         Update: {
+          client_info_match_score?: number | null
+          client_info_match_source?: string | null
+          client_info_matched_at?: string | null
           company?: string | null
+          contact_name?: string | null
           cost_code?: string | null
           created_at?: string
+          email?: string | null
           id?: string
+          legal_name?: string | null
+          physical_address_1?: string | null
+          physical_address_2?: string | null
+          physical_address_3?: string | null
+          physical_area?: string | null
+          physical_code?: string | null
+          postal_address_1?: string | null
+          postal_address_2?: string | null
+          postal_address_3?: string | null
+          registration_number?: string | null
+          source_entity_id?: string | null
           validated?: boolean | null
+          vat_number?: string | null
         }
         Relationships: []
       }
@@ -1489,6 +2356,24 @@ export type Database = {
         }
         Relationships: []
       }
+      document_sequences: {
+        Row: {
+          name: string
+          next_value: number
+          updated_at: string
+        }
+        Insert: {
+          name: string
+          next_value: number
+          updated_at?: string
+        }
+        Update: {
+          name?: string
+          next_value?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       driver_vehicle_premiums: {
         Row: {
           adjusted_performance_rating: number
@@ -1660,6 +2545,105 @@ export type Database = {
           user_id?: string | null
           vehicle_restriction_code?: string | null
           work_permit_upload?: string | null
+        }
+        Relationships: []
+      }
+      drivers_klaver: {
+        Row: {
+          cell_number: string | null
+          created_at: string | null
+          created_by: string | null
+          driver_restriction_code: string | null
+          email_address: string | null
+          first_name: string
+          front_of_driver_pic: string | null
+          id: number
+          id_or_passport_document: string | null
+          id_or_passport_number: string
+          license_code: string | null
+          license_expiry_date: string | null
+          license_number: string | null
+          pdp_expiry_date: string | null
+          professional_driving_permit: boolean | null
+          rear_of_driver_pic: string | null
+          sa_issued: boolean | null
+          surname: string
+          user_id: string | null
+          vehicle_restriction_code: string | null
+          work_permit_upload: string | null
+        }
+        Insert: {
+          cell_number?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          driver_restriction_code?: string | null
+          email_address?: string | null
+          first_name: string
+          front_of_driver_pic?: string | null
+          id?: never
+          id_or_passport_document?: string | null
+          id_or_passport_number: string
+          license_code?: string | null
+          license_expiry_date?: string | null
+          license_number?: string | null
+          pdp_expiry_date?: string | null
+          professional_driving_permit?: boolean | null
+          rear_of_driver_pic?: string | null
+          sa_issued?: boolean | null
+          surname: string
+          user_id?: string | null
+          vehicle_restriction_code?: string | null
+          work_permit_upload?: string | null
+        }
+        Update: {
+          cell_number?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          driver_restriction_code?: string | null
+          email_address?: string | null
+          first_name?: string
+          front_of_driver_pic?: string | null
+          id?: never
+          id_or_passport_document?: string | null
+          id_or_passport_number?: string
+          license_code?: string | null
+          license_expiry_date?: string | null
+          license_number?: string | null
+          pdp_expiry_date?: string | null
+          professional_driving_permit?: boolean | null
+          rear_of_driver_pic?: string | null
+          sa_issued?: boolean | null
+          surname?: string
+          user_id?: string | null
+          vehicle_restriction_code?: string | null
+          work_permit_upload?: string | null
+        }
+        Relationships: []
+      }
+      drivers_maysene: {
+        Row: {
+          cell_number: string | null
+          created_at: string | null
+          email_address: string | null
+          first_name: string | null
+          id: number
+          surname: string | null
+        }
+        Insert: {
+          cell_number?: string | null
+          created_at?: string | null
+          email_address?: string | null
+          first_name?: string | null
+          id?: never
+          surname?: string | null
+        }
+        Update: {
+          cell_number?: string | null
+          created_at?: string | null
+          email_address?: string | null
+          first_name?: string | null
+          id?: never
+          surname?: string | null
         }
         Relationships: []
       }
@@ -2698,6 +3682,41 @@ export type Database = {
           },
         ]
       }
+      inventory_logs: {
+        Row: {
+          change_type: string | null
+          id: number
+          job_id: number | null
+          part_id: number | null
+          quantity_change: number | null
+          timestamp: string | null
+        }
+        Insert: {
+          change_type?: string | null
+          id?: never
+          job_id?: number | null
+          part_id?: number | null
+          quantity_change?: number | null
+          timestamp?: string | null
+        }
+        Update: {
+          change_type?: string | null
+          id?: never
+          job_id?: number | null
+          part_id?: number | null
+          quantity_change?: number | null
+          timestamp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_logs_part_id_fkey"
+            columns: ["part_id"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_items: {
         Row: {
           created_at: string
@@ -2730,6 +3749,95 @@ export type Database = {
           vat_amount?: number
         }
         Relationships: []
+      }
+      invoices: {
+        Row: {
+          account_number: string | null
+          client_address: string | null
+          client_email: string | null
+          client_name: string | null
+          client_phone: string | null
+          created_at: string
+          created_by: string | null
+          discount_amount: number
+          due_date: string | null
+          id: string
+          invoice_date: string
+          invoice_number: string
+          job_card_id: string
+          job_number: string | null
+          line_items: Json
+          notes: string | null
+          payment_terms: string | null
+          pdf_url: string | null
+          quotation_number: string | null
+          status: string
+          subtotal: number
+          total_amount: number
+          updated_at: string
+          vat_amount: number
+        }
+        Insert: {
+          account_number?: string | null
+          client_address?: string | null
+          client_email?: string | null
+          client_name?: string | null
+          client_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          discount_amount?: number
+          due_date?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number: string
+          job_card_id: string
+          job_number?: string | null
+          line_items?: Json
+          notes?: string | null
+          payment_terms?: string | null
+          pdf_url?: string | null
+          quotation_number?: string | null
+          status?: string
+          subtotal?: number
+          total_amount?: number
+          updated_at?: string
+          vat_amount?: number
+        }
+        Update: {
+          account_number?: string | null
+          client_address?: string | null
+          client_email?: string | null
+          client_name?: string | null
+          client_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          discount_amount?: number
+          due_date?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number?: string
+          job_card_id?: string
+          job_number?: string | null
+          line_items?: Json
+          notes?: string | null
+          payment_terms?: string | null
+          pdf_url?: string | null
+          quotation_number?: string | null
+          status?: string
+          subtotal?: number
+          total_amount?: number
+          updated_at?: string
+          vat_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_job_card_id_fkey"
+            columns: ["job_card_id"]
+            isOneToOne: true
+            referencedRelation: "job_cards"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       job_allocation: {
         Row: {
@@ -2911,6 +4019,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "job_assignments_breakdowns_id_fkey"
+            columns: ["breakdowns_id"]
+            isOneToOne: false
+            referencedRelation: "breakdowns"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "job_assignments_driver_id_fkey"
             columns: ["driver_id"]
             isOneToOne: false
@@ -2933,6 +4048,159 @@ export type Database = {
           },
         ]
       }
+      job_card: {
+        Row: {
+          client_name: string | null
+          contact: string | null
+          date: string | null
+          description: string | null
+          horse_fleet_no: string | null
+          horse_reg_no: string | null
+          id: number
+          job_assignment_id: number | null
+          job_type: string | null
+          location: string | null
+          mechanic: string | null
+          notes: string | null
+          odo_reading: number | null
+          technician: string | null
+          time: string | null
+          trailer_fleet_no: string | null
+          trailer_reg_no: string | null
+          updated_at: string | null
+          updated_by: string
+          vehicle_make: string | null
+        }
+        Insert: {
+          client_name?: string | null
+          contact?: string | null
+          date?: string | null
+          description?: string | null
+          horse_fleet_no?: string | null
+          horse_reg_no?: string | null
+          id?: never
+          job_assignment_id?: number | null
+          job_type?: string | null
+          location?: string | null
+          mechanic?: string | null
+          notes?: string | null
+          odo_reading?: number | null
+          technician?: string | null
+          time?: string | null
+          trailer_fleet_no?: string | null
+          trailer_reg_no?: string | null
+          updated_at?: string | null
+          updated_by: string
+          vehicle_make?: string | null
+        }
+        Update: {
+          client_name?: string | null
+          contact?: string | null
+          date?: string | null
+          description?: string | null
+          horse_fleet_no?: string | null
+          horse_reg_no?: string | null
+          id?: never
+          job_assignment_id?: number | null
+          job_type?: string | null
+          location?: string | null
+          mechanic?: string | null
+          notes?: string | null
+          odo_reading?: number | null
+          technician?: string | null
+          time?: string | null
+          trailer_fleet_no?: string | null
+          trailer_reg_no?: string | null
+          updated_at?: string | null
+          updated_by?: string
+          vehicle_make?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_card_job_assignment_id_fkey"
+            columns: ["job_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "job_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_card_approvals: {
+        Row: {
+          approved_at: string | null
+          approver_type: string | null
+          created_at: string | null
+          id: number
+          job_card_id: string | null
+          notes: string | null
+          status: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approver_type?: string | null
+          created_at?: string | null
+          id?: never
+          job_card_id?: string | null
+          notes?: string | null
+          status?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approver_type?: string | null
+          created_at?: string | null
+          id?: never
+          job_card_id?: string | null
+          notes?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_card_approvals_job_card_id_fkey"
+            columns: ["job_card_id"]
+            isOneToOne: false
+            referencedRelation: "job_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_card_workflow_history: {
+        Row: {
+          action_at: string | null
+          action_by: string | null
+          from_status: string | null
+          id: number
+          job_card_id: number | null
+          notes: string | null
+          to_status: string
+        }
+        Insert: {
+          action_at?: string | null
+          action_by?: string | null
+          from_status?: string | null
+          id?: never
+          job_card_id?: number | null
+          notes?: string | null
+          to_status: string
+        }
+        Update: {
+          action_at?: string | null
+          action_by?: string | null
+          from_status?: string | null
+          id?: never
+          job_card_id?: number | null
+          notes?: string | null
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_card_workflow_history_job_card_id_fkey"
+            columns: ["job_card_id"]
+            isOneToOne: false
+            referencedRelation: "workshop_job"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_cards: {
         Row: {
           access_requirements: string | null
@@ -2940,8 +4208,10 @@ export type Database = {
           actual_cost: number | null
           actual_duration_hours: number | null
           after_photos: Json | null
+          annuity_end_date: string | null
           assigned_technician_id: string | null
           before_photos: Json | null
+          billing_statuses: Json
           completion_date: string | null
           completion_notes: string | null
           contact_person: string | null
@@ -2971,6 +4241,7 @@ export type Database = {
           job_type: string
           latitude: number | null
           longitude: number | null
+          move_to: string | null
           new_account_number: string | null
           odormeter: string | null
           parts_required: Json | null
@@ -3020,8 +4291,10 @@ export type Database = {
           actual_cost?: number | null
           actual_duration_hours?: number | null
           after_photos?: Json | null
+          annuity_end_date?: string | null
           assigned_technician_id?: string | null
           before_photos?: Json | null
+          billing_statuses?: Json
           completion_date?: string | null
           completion_notes?: string | null
           contact_person?: string | null
@@ -3051,6 +4324,7 @@ export type Database = {
           job_type: string
           latitude?: number | null
           longitude?: number | null
+          move_to?: string | null
           new_account_number?: string | null
           odormeter?: string | null
           parts_required?: Json | null
@@ -3100,8 +4374,10 @@ export type Database = {
           actual_cost?: number | null
           actual_duration_hours?: number | null
           after_photos?: Json | null
+          annuity_end_date?: string | null
           assigned_technician_id?: string | null
           before_photos?: Json | null
+          billing_statuses?: Json
           completion_date?: string | null
           completion_notes?: string | null
           contact_person?: string | null
@@ -3131,6 +4407,7 @@ export type Database = {
           job_type?: string
           latitude?: number | null
           longitude?: number | null
+          move_to?: string | null
           new_account_number?: string | null
           odormeter?: string | null
           parts_required?: Json | null
@@ -3547,6 +4824,51 @@ export type Database = {
         }
         Relationships: []
       }
+      maintenance_records: {
+        Row: {
+          completed_date: string | null
+          created_at: string
+          id: number
+          notes: string | null
+          schedule_date: string | null
+          vehicle_id: number | null
+          workshop_id: string | null
+        }
+        Insert: {
+          completed_date?: string | null
+          created_at?: string
+          id?: never
+          notes?: string | null
+          schedule_date?: string | null
+          vehicle_id?: number | null
+          workshop_id?: string | null
+        }
+        Update: {
+          completed_date?: string | null
+          created_at?: string
+          id?: never
+          notes?: string | null
+          schedule_date?: string | null
+          vehicle_id?: number | null
+          workshop_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_records_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehiclesc"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_records_workshop_id_fkey"
+            columns: ["workshop_id"]
+            isOneToOne: false
+            referencedRelation: "workshop"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       monthly_fleet_stats: {
         Row: {
           average_performance_rating: number
@@ -3666,6 +4988,126 @@ export type Database = {
           vehicle_id?: string
         }
         Relationships: []
+      }
+      once_offparts: {
+        Row: {
+          category_id: number | null
+          description: string | null
+          id: number
+          is_external_workshop: boolean | null
+          item_code: string | null
+          location: string | null
+          price: number | null
+          quantity: number | null
+          supplier: string | null
+          total: number | null
+          vehicle_brand_id: number | null
+        }
+        Insert: {
+          category_id?: number | null
+          description?: string | null
+          id?: number
+          is_external_workshop?: boolean | null
+          item_code?: string | null
+          location?: string | null
+          price?: number | null
+          quantity?: number | null
+          supplier?: string | null
+          total?: number | null
+          vehicle_brand_id?: number | null
+        }
+        Update: {
+          category_id?: number | null
+          description?: string | null
+          id?: number
+          is_external_workshop?: boolean | null
+          item_code?: string | null
+          location?: string | null
+          price?: number | null
+          quantity?: number | null
+          supplier?: string | null
+          total?: number | null
+          vehicle_brand_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "once_offparts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "once_offparts_vehicle_brand_id_fkey"
+            columns: ["vehicle_brand_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_brands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parts: {
+        Row: {
+          category_id: number | null
+          description: string | null
+          id: number
+          is_stock_item: boolean | null
+          item_code: string | null
+          location: string | null
+          once: boolean | null
+          price: number | null
+          quantity: number | null
+          stock_threshold: number | null
+          supplier: string | null
+          total: number | null
+          vehicle_brand_id: number | null
+        }
+        Insert: {
+          category_id?: number | null
+          description?: string | null
+          id?: never
+          is_stock_item?: boolean | null
+          item_code?: string | null
+          location?: string | null
+          once?: boolean | null
+          price?: number | null
+          quantity?: number | null
+          stock_threshold?: number | null
+          supplier?: string | null
+          total?: number | null
+          vehicle_brand_id?: number | null
+        }
+        Update: {
+          category_id?: number | null
+          description?: string | null
+          id?: never
+          is_stock_item?: boolean | null
+          item_code?: string | null
+          location?: string | null
+          once?: boolean | null
+          price?: number | null
+          quantity?: number | null
+          stock_threshold?: number | null
+          supplier?: string | null
+          total?: number | null
+          vehicle_brand_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parts_vehicle_brand_id_fkey"
+            columns: ["vehicle_brand_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_brands"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payments: {
         Row: {
@@ -3817,6 +5259,203 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          can_approve_jobs: boolean | null
+          can_close_jobs: boolean | null
+          can_reject_jobs: boolean | null
+          company: number | null
+          company_name: string | null
+          created_at: string | null
+          department: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          permissions: Json | null
+          phone_number: string | null
+          role: string | null
+          workshop_id: string | null
+        }
+        Insert: {
+          can_approve_jobs?: boolean | null
+          can_close_jobs?: boolean | null
+          can_reject_jobs?: boolean | null
+          company?: number | null
+          company_name?: string | null
+          created_at?: string | null
+          department?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          permissions?: Json | null
+          phone_number?: string | null
+          role?: string | null
+          workshop_id?: string | null
+        }
+        Update: {
+          can_approve_jobs?: boolean | null
+          can_close_jobs?: boolean | null
+          can_reject_jobs?: boolean | null
+          company?: number | null
+          company_name?: string | null
+          created_at?: string | null
+          department?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          permissions?: Json | null
+          phone_number?: string | null
+          role?: string | null
+          workshop_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_company_fkey"
+            columns: ["company"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_workshop_id_fkey"
+            columns: ["workshop_id"]
+            isOneToOne: false
+            referencedRelation: "workshop"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotations_klaver: {
+        Row: {
+          additional_notes: string | null
+          breakdown_id: string | null
+          cost_center_id: string | null
+          created_at: string | null
+          created_by: string | null
+          createdat: string | null
+          description: string | null
+          drivername: string | null
+          estimate_amount: number | null
+          estimated_cost: number | null
+          estimated_time: string | null
+          id: string
+          issue: string | null
+          job_id: number | null
+          job_type: string | null
+          jobcard_id: number | null
+          laborcost: number | null
+          labourcost: number | null
+          markupPrice: number | null
+          orderno: string | null
+          paid: boolean | null
+          parts_needed: string[] | null
+          partscost: number | null
+          priority: string | null
+          reason: string | null
+          status: string | null
+          tech_id: number | null
+          totalcost: number | null
+          type: string | null
+          typeJob: string | null
+          vehiclereg: string | null
+        }
+        Insert: {
+          additional_notes?: string | null
+          breakdown_id?: string | null
+          cost_center_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          createdat?: string | null
+          description?: string | null
+          drivername?: string | null
+          estimate_amount?: number | null
+          estimated_cost?: number | null
+          estimated_time?: string | null
+          id?: string
+          issue?: string | null
+          job_id?: number | null
+          job_type?: string | null
+          jobcard_id?: number | null
+          laborcost?: number | null
+          labourcost?: number | null
+          markupPrice?: number | null
+          orderno?: string | null
+          paid?: boolean | null
+          parts_needed?: string[] | null
+          partscost?: number | null
+          priority?: string | null
+          reason?: string | null
+          status?: string | null
+          tech_id?: number | null
+          totalcost?: number | null
+          type?: string | null
+          typeJob?: string | null
+          vehiclereg?: string | null
+        }
+        Update: {
+          additional_notes?: string | null
+          breakdown_id?: string | null
+          cost_center_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          createdat?: string | null
+          description?: string | null
+          drivername?: string | null
+          estimate_amount?: number | null
+          estimated_cost?: number | null
+          estimated_time?: string | null
+          id?: string
+          issue?: string | null
+          job_id?: number | null
+          job_type?: string | null
+          jobcard_id?: number | null
+          laborcost?: number | null
+          labourcost?: number | null
+          markupPrice?: number | null
+          orderno?: string | null
+          paid?: boolean | null
+          parts_needed?: string[] | null
+          partscost?: number | null
+          priority?: string | null
+          reason?: string | null
+          status?: string | null
+          tech_id?: number | null
+          totalcost?: number | null
+          type?: string | null
+          typeJob?: string | null
+          vehiclereg?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotations_klaver_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotations_klaver_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "job_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotations_klaver_jobcard_id_fkey"
+            columns: ["jobcard_id"]
+            isOneToOne: false
+            referencedRelation: "job_card"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotations_klaver_tech_id_fkey"
+            columns: ["tech_id"]
+            isOneToOne: false
+            referencedRelation: "technicians"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quote_products: {
         Row: {
           cash_discount: number
@@ -3890,6 +5529,53 @@ export type Database = {
             columns: ["quote_id"]
             isOneToOne: false
             referencedRelation: "cust_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rejected_jobs: {
+        Row: {
+          can_reopen: boolean | null
+          id: string
+          job_data: Json
+          new_job_card_id: number | null
+          original_job_card_id: number
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_reason: string | null
+          reopened_at: string | null
+          reopened_by: string | null
+        }
+        Insert: {
+          can_reopen?: boolean | null
+          id?: string
+          job_data: Json
+          new_job_card_id?: number | null
+          original_job_card_id: number
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          reopened_at?: string | null
+          reopened_by?: string | null
+        }
+        Update: {
+          can_reopen?: boolean | null
+          id?: string
+          job_data?: Json
+          new_job_card_id?: number | null
+          original_job_card_id?: number
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          reopened_at?: string | null
+          reopened_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rejected_jobs_new_job_card_id_fkey"
+            columns: ["new_job_card_id"]
+            isOneToOne: false
+            referencedRelation: "workshop_job"
             referencedColumns: ["id"]
           },
         ]
@@ -4144,34 +5830,64 @@ export type Database = {
           code: string | null
           cost_excl_vat_zar: string | null
           created_at: string | null
+          current_roe: number | null
           description: string | null
+          forex_base_price: number | null
+          gl_group: string | null
           id: number
+          is_tangible: boolean | null
+          override_tax_type: string | null
+          preferred_supplier: string | null
+          purchasing_currency: string | null
+          requires_serial_number: boolean | null
           stock_type: string | null
           supplier: string | null
+          supplier_product_code: string | null
           total_value: string | null
           USD: string | null
+          valuation_method: string | null
         }
         Insert: {
           code?: string | null
           cost_excl_vat_zar?: string | null
           created_at?: string | null
+          current_roe?: number | null
           description?: string | null
+          forex_base_price?: number | null
+          gl_group?: string | null
           id?: never
+          is_tangible?: boolean | null
+          override_tax_type?: string | null
+          preferred_supplier?: string | null
+          purchasing_currency?: string | null
+          requires_serial_number?: boolean | null
           stock_type?: string | null
           supplier?: string | null
+          supplier_product_code?: string | null
           total_value?: string | null
           USD?: string | null
+          valuation_method?: string | null
         }
         Update: {
           code?: string | null
           cost_excl_vat_zar?: string | null
           created_at?: string | null
+          current_roe?: number | null
           description?: string | null
+          forex_base_price?: number | null
+          gl_group?: string | null
           id?: never
+          is_tangible?: boolean | null
+          override_tax_type?: string | null
+          preferred_supplier?: string | null
+          purchasing_currency?: string | null
+          requires_serial_number?: boolean | null
           stock_type?: string | null
           supplier?: string | null
+          supplier_product_code?: string | null
           total_value?: string | null
           USD?: string | null
+          valuation_method?: string | null
         }
         Relationships: []
       }
@@ -4304,6 +6020,36 @@ export type Database = {
         }
         Relationships: []
       }
+      suppliers: {
+        Row: {
+          address: string | null
+          contact_person: string | null
+          created_at: string | null
+          email: string | null
+          id: number
+          name: string
+          phone: string | null
+        }
+        Insert: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: never
+          name: string
+          phone?: string | null
+        }
+        Update: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: never
+          name?: string
+          phone?: string | null
+        }
+        Relationships: []
+      }
       systems: {
         Row: {
           created_at: string
@@ -4390,6 +6136,42 @@ export type Database = {
           },
         ]
       }
+      technician_vassign: {
+        Row: {
+          created_at: string
+          id: number
+          tech_id: number | null
+          vehicle_id: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          tech_id?: number | null
+          vehicle_id?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          tech_id?: number | null
+          vehicle_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technician_vassign_tech_id_fkey"
+            columns: ["tech_id"]
+            isOneToOne: false
+            referencedRelation: "technicians"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "technician_vassign_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehiclesc"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       technicians: {
         Row: {
           admin: boolean | null
@@ -4416,6 +6198,164 @@ export type Database = {
           name?: string | null
         }
         Relationships: []
+      }
+      technicians_klaver: {
+        Row: {
+          availability: string | null
+          certifications: string[]
+          coordinates: Json
+          created_at: string | null
+          created_by: string | null
+          email: string
+          equipment_level: string
+          id: number
+          isActive: boolean | null
+          join_date: string
+          location: string
+          name: string
+          phone: string
+          rating: number | null
+          skill_levels: Json
+          specialties: string[]
+          status: boolean | null
+          type: string | null
+          vehicle_type: string
+          workshop_id: string | null
+        }
+        Insert: {
+          availability?: string | null
+          certifications?: string[]
+          coordinates?: Json
+          created_at?: string | null
+          created_by?: string | null
+          email: string
+          equipment_level: string
+          id?: never
+          isActive?: boolean | null
+          join_date: string
+          location: string
+          name: string
+          phone: string
+          rating?: number | null
+          skill_levels?: Json
+          specialties?: string[]
+          status?: boolean | null
+          type?: string | null
+          vehicle_type: string
+          workshop_id?: string | null
+        }
+        Update: {
+          availability?: string | null
+          certifications?: string[]
+          coordinates?: Json
+          created_at?: string | null
+          created_by?: string | null
+          email?: string
+          equipment_level?: string
+          id?: never
+          isActive?: boolean | null
+          join_date?: string
+          location?: string
+          name?: string
+          phone?: string
+          rating?: number | null
+          skill_levels?: Json
+          specialties?: string[]
+          status?: boolean | null
+          type?: string | null
+          vehicle_type?: string
+          workshop_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technicians_klaver_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "technicians_klaver_workshop_id_fkey"
+            columns: ["workshop_id"]
+            isOneToOne: false
+            referencedRelation: "workshop"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      technicians_maysene: {
+        Row: {
+          availability: Database["public"]["Enums"]["availability"] | null
+          certifications: string[]
+          coordinates: Json
+          created_by: string | null
+          email: string
+          equipment_level: string
+          id: number
+          isActive: boolean | null
+          join_date: string
+          location: string
+          name: string
+          phone: string
+          rating: number | null
+          skill_levels: Json
+          specialties: string[]
+          status: boolean | null
+          type: string | null
+          vehicle_type: string
+          workshop_id: string | null
+        }
+        Insert: {
+          availability?: Database["public"]["Enums"]["availability"] | null
+          certifications: string[]
+          coordinates: Json
+          created_by?: string | null
+          email: string
+          equipment_level: string
+          id?: number
+          isActive?: boolean | null
+          join_date: string
+          location: string
+          name: string
+          phone: string
+          rating?: number | null
+          skill_levels: Json
+          specialties: string[]
+          status?: boolean | null
+          type?: string | null
+          vehicle_type: string
+          workshop_id?: string | null
+        }
+        Update: {
+          availability?: Database["public"]["Enums"]["availability"] | null
+          certifications?: string[]
+          coordinates?: Json
+          created_by?: string | null
+          email?: string
+          equipment_level?: string
+          id?: number
+          isActive?: boolean | null
+          join_date?: string
+          location?: string
+          name?: string
+          phone?: string
+          rating?: number | null
+          skill_levels?: Json
+          specialties?: string[]
+          status?: boolean | null
+          type?: string | null
+          vehicle_type?: string
+          workshop_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technicians_maysene_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       trailer: {
         Row: {
@@ -4976,8 +6916,10 @@ export type Database = {
           permissions: Json | null
           phone: string | null
           role: string | null
+          second_level_admin: boolean | null
           site_id: string | null
           tech_admin: boolean | null
+          workshop_id: number | null
         }
         Insert: {
           company?: string | null
@@ -4990,8 +6932,10 @@ export type Database = {
           permissions?: Json | null
           phone?: string | null
           role?: string | null
+          second_level_admin?: boolean | null
           site_id?: string | null
           tech_admin?: boolean | null
+          workshop_id?: number | null
         }
         Update: {
           company?: string | null
@@ -5004,8 +6948,28 @@ export type Database = {
           permissions?: Json | null
           phone?: string | null
           role?: string | null
+          second_level_admin?: boolean | null
           site_id?: string | null
           tech_admin?: boolean | null
+          workshop_id?: number | null
+        }
+        Relationships: []
+      }
+      vehicle_brands: {
+        Row: {
+          created_at: string | null
+          id: number
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: never
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: never
+          name?: string
         }
         Relationships: []
       }
@@ -5872,6 +7836,8 @@ export type Database = {
           account_number: string | null
           adas_02_road_facing: string | null
           adas_02_road_facing_rental: string | null
+          additional_data: string | null
+          advatrans_software_development: string | null
           after_hours: string | null
           beame_1: string | null
           beame_1_rental: string | null
@@ -5905,11 +7871,14 @@ export type Database = {
           data_number: string | null
           dms01_driver_facing: string | null
           dms01_driver_facing_rental: string | null
+          driver_app: string | null
           dual_probe_rental: string | null
           dual_probe_sub: string | null
           early_warning: string | null
           early_warning_rental: string | null
           engine: string | null
+          epilite_software_development: string | null
+          eps_software_development: string | null
           flat_panic: string | null
           flat_panic_rental: string | null
           fleet_number: string | null
@@ -5930,14 +7899,23 @@ export type Database = {
           keypad: string | null
           keypad_rental: string | null
           keypad_waterproof: string | null
+          klaver_software_development: string | null
           main_fm_harness: string | null
           main_fm_harness_rental: string | null
           maintenance: string | null
           make: string | null
+          maysene_software_development: string | null
           mic: string | null
           mic_rental: string | null
           model: string | null
+          mtx_corpconnect_data_number: string | null
+          mtx_corpconnect_sim_number: string | null
+          mtx_mc202x: string | null
+          mtx_mc202x_rental: string | null
+          mtx_mc202x_sub: string | null
+          mtx_sim_id: string | null
           new_account_number: string | null
+          once_off_fees: Json
           pfk_10m: string | null
           pfk_10m_rental: string | null
           pfk_15m: string | null
@@ -5959,7 +7937,9 @@ export type Database = {
           pfk_main_unit_sub: string | null
           pfk_road_facing: string | null
           pfk_road_facing_rental: string | null
+          rapid_freight_software_development: string | null
           reg: string | null
+          remco_freight_software_development: string | null
           roaming: string | null
           roller_door_switches: string | null
           roller_door_switches_rental: string | null
@@ -6010,6 +7990,10 @@ export type Database = {
           skylink_voice_kit_rental: string | null
           skylink_voice_kit_serial_number: string | null
           skylink_voice_kit_sub: string | null
+          skyspy: string | null
+          skyspy_rental: string | null
+          skyspy_sub: string | null
+          software: string | null
           speaker: string | null
           speaker_rental: string | null
           tag: string | null
@@ -6025,8 +8009,13 @@ export type Database = {
           total_sub: number | null
           tpiece: string | null
           tpiece_rental: string | null
+          tt_express_software_development: string | null
+          tt_fmcg_software_development: string | null
+          tt_linehaul_software_development: string | null
           unique_id: string | null
+          vehicle_validated: boolean
           vin: string | null
+          vt_logistics_software_development: string | null
           vw100ip_driver_facing_ip: string | null
           vw100ip_driver_facing_rental: string | null
           vw300_dakkie_dome_1: string | null
@@ -6047,6 +8036,7 @@ export type Database = {
           vw502_dual_lens_camera_rental: string | null
           vw502f_road_facing_camera: string | null
           vw502f_road_facing_camera_rental: string | null
+          waterford_software_development: string | null
           year: string | null
         }
         Insert: {
@@ -6081,6 +8071,8 @@ export type Database = {
           account_number?: string | null
           adas_02_road_facing?: string | null
           adas_02_road_facing_rental?: string | null
+          additional_data?: string | null
+          advatrans_software_development?: string | null
           after_hours?: string | null
           beame_1?: string | null
           beame_1_rental?: string | null
@@ -6114,11 +8106,14 @@ export type Database = {
           data_number?: string | null
           dms01_driver_facing?: string | null
           dms01_driver_facing_rental?: string | null
+          driver_app?: string | null
           dual_probe_rental?: string | null
           dual_probe_sub?: string | null
           early_warning?: string | null
           early_warning_rental?: string | null
           engine?: string | null
+          epilite_software_development?: string | null
+          eps_software_development?: string | null
           flat_panic?: string | null
           flat_panic_rental?: string | null
           fleet_number?: string | null
@@ -6139,14 +8134,23 @@ export type Database = {
           keypad?: string | null
           keypad_rental?: string | null
           keypad_waterproof?: string | null
+          klaver_software_development?: string | null
           main_fm_harness?: string | null
           main_fm_harness_rental?: string | null
           maintenance?: string | null
           make?: string | null
+          maysene_software_development?: string | null
           mic?: string | null
           mic_rental?: string | null
           model?: string | null
+          mtx_corpconnect_data_number?: string | null
+          mtx_corpconnect_sim_number?: string | null
+          mtx_mc202x?: string | null
+          mtx_mc202x_rental?: string | null
+          mtx_mc202x_sub?: string | null
+          mtx_sim_id?: string | null
           new_account_number?: string | null
+          once_off_fees?: Json
           pfk_10m?: string | null
           pfk_10m_rental?: string | null
           pfk_15m?: string | null
@@ -6168,7 +8172,9 @@ export type Database = {
           pfk_main_unit_sub?: string | null
           pfk_road_facing?: string | null
           pfk_road_facing_rental?: string | null
+          rapid_freight_software_development?: string | null
           reg?: string | null
+          remco_freight_software_development?: string | null
           roaming?: string | null
           roller_door_switches?: string | null
           roller_door_switches_rental?: string | null
@@ -6219,6 +8225,10 @@ export type Database = {
           skylink_voice_kit_rental?: string | null
           skylink_voice_kit_serial_number?: string | null
           skylink_voice_kit_sub?: string | null
+          skyspy?: string | null
+          skyspy_rental?: string | null
+          skyspy_sub?: string | null
+          software?: string | null
           speaker?: string | null
           speaker_rental?: string | null
           tag?: string | null
@@ -6234,8 +8244,13 @@ export type Database = {
           total_sub?: number | null
           tpiece?: string | null
           tpiece_rental?: string | null
+          tt_express_software_development?: string | null
+          tt_fmcg_software_development?: string | null
+          tt_linehaul_software_development?: string | null
           unique_id?: string | null
+          vehicle_validated?: boolean
           vin?: string | null
+          vt_logistics_software_development?: string | null
           vw100ip_driver_facing_ip?: string | null
           vw100ip_driver_facing_rental?: string | null
           vw300_dakkie_dome_1?: string | null
@@ -6256,6 +8271,7 @@ export type Database = {
           vw502_dual_lens_camera_rental?: string | null
           vw502f_road_facing_camera?: string | null
           vw502f_road_facing_camera_rental?: string | null
+          waterford_software_development?: string | null
           year?: string | null
         }
         Update: {
@@ -6290,6 +8306,8 @@ export type Database = {
           account_number?: string | null
           adas_02_road_facing?: string | null
           adas_02_road_facing_rental?: string | null
+          additional_data?: string | null
+          advatrans_software_development?: string | null
           after_hours?: string | null
           beame_1?: string | null
           beame_1_rental?: string | null
@@ -6323,11 +8341,14 @@ export type Database = {
           data_number?: string | null
           dms01_driver_facing?: string | null
           dms01_driver_facing_rental?: string | null
+          driver_app?: string | null
           dual_probe_rental?: string | null
           dual_probe_sub?: string | null
           early_warning?: string | null
           early_warning_rental?: string | null
           engine?: string | null
+          epilite_software_development?: string | null
+          eps_software_development?: string | null
           flat_panic?: string | null
           flat_panic_rental?: string | null
           fleet_number?: string | null
@@ -6348,14 +8369,23 @@ export type Database = {
           keypad?: string | null
           keypad_rental?: string | null
           keypad_waterproof?: string | null
+          klaver_software_development?: string | null
           main_fm_harness?: string | null
           main_fm_harness_rental?: string | null
           maintenance?: string | null
           make?: string | null
+          maysene_software_development?: string | null
           mic?: string | null
           mic_rental?: string | null
           model?: string | null
+          mtx_corpconnect_data_number?: string | null
+          mtx_corpconnect_sim_number?: string | null
+          mtx_mc202x?: string | null
+          mtx_mc202x_rental?: string | null
+          mtx_mc202x_sub?: string | null
+          mtx_sim_id?: string | null
           new_account_number?: string | null
+          once_off_fees?: Json
           pfk_10m?: string | null
           pfk_10m_rental?: string | null
           pfk_15m?: string | null
@@ -6377,7 +8407,9 @@ export type Database = {
           pfk_main_unit_sub?: string | null
           pfk_road_facing?: string | null
           pfk_road_facing_rental?: string | null
+          rapid_freight_software_development?: string | null
           reg?: string | null
+          remco_freight_software_development?: string | null
           roaming?: string | null
           roller_door_switches?: string | null
           roller_door_switches_rental?: string | null
@@ -6428,6 +8460,10 @@ export type Database = {
           skylink_voice_kit_rental?: string | null
           skylink_voice_kit_serial_number?: string | null
           skylink_voice_kit_sub?: string | null
+          skyspy?: string | null
+          skyspy_rental?: string | null
+          skyspy_sub?: string | null
+          software?: string | null
           speaker?: string | null
           speaker_rental?: string | null
           tag?: string | null
@@ -6443,8 +8479,13 @@ export type Database = {
           total_sub?: number | null
           tpiece?: string | null
           tpiece_rental?: string | null
+          tt_express_software_development?: string | null
+          tt_fmcg_software_development?: string | null
+          tt_linehaul_software_development?: string | null
           unique_id?: string | null
+          vehicle_validated?: boolean
           vin?: string | null
+          vt_logistics_software_development?: string | null
           vw100ip_driver_facing_ip?: string | null
           vw100ip_driver_facing_rental?: string | null
           vw300_dakkie_dome_1?: string | null
@@ -6465,6 +8506,7 @@ export type Database = {
           vw502_dual_lens_camera_rental?: string | null
           vw502f_road_facing_camera?: string | null
           vw502f_road_facing_camera_rental?: string | null
+          waterford_software_development?: string | null
           year?: string | null
         }
         Relationships: []
@@ -6502,6 +8544,8 @@ export type Database = {
           account_number: string | null
           adas_02_road_facing: string | null
           adas_02_road_facing_rental: string | null
+          additional_data: string | null
+          advatrans_software_development: string | null
           after_hours: string | null
           beame_1: string | null
           beame_1_rental: string | null
@@ -6535,11 +8579,14 @@ export type Database = {
           data_number: string | null
           dms01_driver_facing: string | null
           dms01_driver_facing_rental: string | null
+          driver_app: string | null
           dual_probe_rental: string | null
           dual_probe_sub: string | null
           early_warning: string | null
           early_warning_rental: string | null
           engine: string | null
+          epilite_software_development: string | null
+          eps_software_development: string | null
           flat_panic: string | null
           flat_panic_rental: string | null
           fleet_number: string | null
@@ -6560,13 +8607,21 @@ export type Database = {
           keypad: string | null
           keypad_rental: string | null
           keypad_waterproof: string | null
+          klaver_software_development: string | null
           main_fm_harness: string | null
           main_fm_harness_rental: string | null
           maintenance: string | null
           make: string | null
+          maysene_software_development: string | null
           mic: string | null
           mic_rental: string | null
           model: string | null
+          mtx_corpconnect_data_number: string | null
+          mtx_corpconnect_sim_number: string | null
+          mtx_mc202x: string | null
+          mtx_mc202x_rental: string | null
+          mtx_mc202x_sub: string | null
+          mtx_sim_id: string | null
           new_account_number: string | null
           pfk_10m: string | null
           pfk_10m_rental: string | null
@@ -6589,7 +8644,9 @@ export type Database = {
           pfk_main_unit_sub: string | null
           pfk_road_facing: string | null
           pfk_road_facing_rental: string | null
+          rapid_freight_software_development: string | null
           reg: string | null
+          remco_freight_software_development: string | null
           roaming: string | null
           roller_door_switches: string | null
           roller_door_switches_rental: string | null
@@ -6640,6 +8697,10 @@ export type Database = {
           skylink_voice_kit_rental: string | null
           skylink_voice_kit_serial_number: string | null
           skylink_voice_kit_sub: string | null
+          skyspy: string | null
+          skyspy_rental: string | null
+          skyspy_sub: string | null
+          software: string | null
           speaker: string | null
           speaker_rental: string | null
           tag: string | null
@@ -6655,8 +8716,13 @@ export type Database = {
           total_sub: number | null
           tpiece: string | null
           tpiece_rental: string | null
+          tt_express_software_development: string | null
+          tt_fmcg_software_development: string | null
+          tt_linehaul_software_development: string | null
           unique_id: string | null
+          vehicle_validated: boolean
           vin: string | null
+          vt_logistics_software_development: string | null
           vw100ip_driver_facing_ip: string | null
           vw100ip_driver_facing_rental: string | null
           vw300_dakkie_dome_1: string | null
@@ -6677,6 +8743,7 @@ export type Database = {
           vw502_dual_lens_camera_rental: string | null
           vw502f_road_facing_camera: string | null
           vw502f_road_facing_camera_rental: string | null
+          waterford_software_development: string | null
           year: string | null
         }
         Insert: {
@@ -6711,6 +8778,8 @@ export type Database = {
           account_number?: string | null
           adas_02_road_facing?: string | null
           adas_02_road_facing_rental?: string | null
+          additional_data?: string | null
+          advatrans_software_development?: string | null
           after_hours?: string | null
           beame_1?: string | null
           beame_1_rental?: string | null
@@ -6744,11 +8813,14 @@ export type Database = {
           data_number?: string | null
           dms01_driver_facing?: string | null
           dms01_driver_facing_rental?: string | null
+          driver_app?: string | null
           dual_probe_rental?: string | null
           dual_probe_sub?: string | null
           early_warning?: string | null
           early_warning_rental?: string | null
           engine?: string | null
+          epilite_software_development?: string | null
+          eps_software_development?: string | null
           flat_panic?: string | null
           flat_panic_rental?: string | null
           fleet_number?: string | null
@@ -6769,13 +8841,21 @@ export type Database = {
           keypad?: string | null
           keypad_rental?: string | null
           keypad_waterproof?: string | null
+          klaver_software_development?: string | null
           main_fm_harness?: string | null
           main_fm_harness_rental?: string | null
           maintenance?: string | null
           make?: string | null
+          maysene_software_development?: string | null
           mic?: string | null
           mic_rental?: string | null
           model?: string | null
+          mtx_corpconnect_data_number?: string | null
+          mtx_corpconnect_sim_number?: string | null
+          mtx_mc202x?: string | null
+          mtx_mc202x_rental?: string | null
+          mtx_mc202x_sub?: string | null
+          mtx_sim_id?: string | null
           new_account_number?: string | null
           pfk_10m?: string | null
           pfk_10m_rental?: string | null
@@ -6798,7 +8878,9 @@ export type Database = {
           pfk_main_unit_sub?: string | null
           pfk_road_facing?: string | null
           pfk_road_facing_rental?: string | null
+          rapid_freight_software_development?: string | null
           reg?: string | null
+          remco_freight_software_development?: string | null
           roaming?: string | null
           roller_door_switches?: string | null
           roller_door_switches_rental?: string | null
@@ -6849,6 +8931,10 @@ export type Database = {
           skylink_voice_kit_rental?: string | null
           skylink_voice_kit_serial_number?: string | null
           skylink_voice_kit_sub?: string | null
+          skyspy?: string | null
+          skyspy_rental?: string | null
+          skyspy_sub?: string | null
+          software?: string | null
           speaker?: string | null
           speaker_rental?: string | null
           tag?: string | null
@@ -6864,8 +8950,13 @@ export type Database = {
           total_sub?: number | null
           tpiece?: string | null
           tpiece_rental?: string | null
+          tt_express_software_development?: string | null
+          tt_fmcg_software_development?: string | null
+          tt_linehaul_software_development?: string | null
           unique_id?: string | null
+          vehicle_validated?: boolean
           vin?: string | null
+          vt_logistics_software_development?: string | null
           vw100ip_driver_facing_ip?: string | null
           vw100ip_driver_facing_rental?: string | null
           vw300_dakkie_dome_1?: string | null
@@ -6886,6 +8977,7 @@ export type Database = {
           vw502_dual_lens_camera_rental?: string | null
           vw502f_road_facing_camera?: string | null
           vw502f_road_facing_camera_rental?: string | null
+          waterford_software_development?: string | null
           year?: string | null
         }
         Update: {
@@ -6920,6 +9012,8 @@ export type Database = {
           account_number?: string | null
           adas_02_road_facing?: string | null
           adas_02_road_facing_rental?: string | null
+          additional_data?: string | null
+          advatrans_software_development?: string | null
           after_hours?: string | null
           beame_1?: string | null
           beame_1_rental?: string | null
@@ -6953,11 +9047,14 @@ export type Database = {
           data_number?: string | null
           dms01_driver_facing?: string | null
           dms01_driver_facing_rental?: string | null
+          driver_app?: string | null
           dual_probe_rental?: string | null
           dual_probe_sub?: string | null
           early_warning?: string | null
           early_warning_rental?: string | null
           engine?: string | null
+          epilite_software_development?: string | null
+          eps_software_development?: string | null
           flat_panic?: string | null
           flat_panic_rental?: string | null
           fleet_number?: string | null
@@ -6978,13 +9075,21 @@ export type Database = {
           keypad?: string | null
           keypad_rental?: string | null
           keypad_waterproof?: string | null
+          klaver_software_development?: string | null
           main_fm_harness?: string | null
           main_fm_harness_rental?: string | null
           maintenance?: string | null
           make?: string | null
+          maysene_software_development?: string | null
           mic?: string | null
           mic_rental?: string | null
           model?: string | null
+          mtx_corpconnect_data_number?: string | null
+          mtx_corpconnect_sim_number?: string | null
+          mtx_mc202x?: string | null
+          mtx_mc202x_rental?: string | null
+          mtx_mc202x_sub?: string | null
+          mtx_sim_id?: string | null
           new_account_number?: string | null
           pfk_10m?: string | null
           pfk_10m_rental?: string | null
@@ -7007,7 +9112,9 @@ export type Database = {
           pfk_main_unit_sub?: string | null
           pfk_road_facing?: string | null
           pfk_road_facing_rental?: string | null
+          rapid_freight_software_development?: string | null
           reg?: string | null
+          remco_freight_software_development?: string | null
           roaming?: string | null
           roller_door_switches?: string | null
           roller_door_switches_rental?: string | null
@@ -7058,6 +9165,10 @@ export type Database = {
           skylink_voice_kit_rental?: string | null
           skylink_voice_kit_serial_number?: string | null
           skylink_voice_kit_sub?: string | null
+          skyspy?: string | null
+          skyspy_rental?: string | null
+          skyspy_sub?: string | null
+          software?: string | null
           speaker?: string | null
           speaker_rental?: string | null
           tag?: string | null
@@ -7073,8 +9184,13 @@ export type Database = {
           total_sub?: number | null
           tpiece?: string | null
           tpiece_rental?: string | null
+          tt_express_software_development?: string | null
+          tt_fmcg_software_development?: string | null
+          tt_linehaul_software_development?: string | null
           unique_id?: string | null
+          vehicle_validated?: boolean
           vin?: string | null
+          vt_logistics_software_development?: string | null
           vw100ip_driver_facing_ip?: string | null
           vw100ip_driver_facing_rental?: string | null
           vw300_dakkie_dome_1?: string | null
@@ -7095,636 +9211,7 @@ export type Database = {
           vw502_dual_lens_camera_rental?: string | null
           vw502f_road_facing_camera?: string | null
           vw502f_road_facing_camera_rental?: string | null
-          year?: string | null
-        }
-        Relationships: []
-      }
-      vehicles_duplicate_duplicate: {
-        Row: {
-          _10m_cable_for_camera_4pin: string | null
-          _10m_cable_for_camera_4pin_rental: string | null
-          _1m_extension_cable: string | null
-          _1m_extension_cable_rental: string | null
-          _3m_extension_cable: string | null
-          _3m_extension_cable_rental: string | null
-          _4ch_mdvr: string | null
-          _4ch_mdvr_rental: string | null
-          _4ch_mdvr_sub: string | null
-          _5ch_mdvr: string | null
-          _5ch_mdvr_rental: string | null
-          _5ch_mdvr_sub: string | null
-          _5m_cable_6pin: string | null
-          _5m_cable_6pin_rental: string | null
-          _5m_cable_for_camera_4pin: string | null
-          _5m_cable_for_camera_4pin_rental: string | null
-          _7m_harness_for_probe: string | null
-          _7m_harness_for_probe_rental: string | null
-          _8ch_mdvr: string | null
-          _8ch_mdvr_rental: string | null
-          _8ch_mdvr_sub: string | null
-          a2_dash_cam: string | null
-          a2_dash_cam_rental: string | null
-          a2_dash_cam_sub: string | null
-          a2_mec_5: string | null
-          a2_mec_5_rental: string | null
-          a3_dash_cam_ai: string | null
-          a3_dash_cam_ai_rental: string | null
-          account_number: string | null
-          adas_02_road_facing: string | null
-          adas_02_road_facing_rental: string | null
-          after_hours: string | null
-          beame_1: string | null
-          beame_1_rental: string | null
-          beame_1_sub: string | null
-          beame_2: string | null
-          beame_2_rental: string | null
-          beame_2_sub: string | null
-          beame_3: string | null
-          beame_3_rental: string | null
-          beame_3_sub: string | null
-          beame_4: string | null
-          beame_4_rental: string | null
-          beame_4_sub: string | null
-          beame_5: string | null
-          beame_5_rental: string | null
-          beame_5_sub: string | null
-          branch: string | null
-          breathaloc: string | null
-          breathaloc_rental: string | null
-          buzzer: string | null
-          buzzer_rental: string | null
-          cia: string | null
-          cia_rental: string | null
-          colour: string | null
-          company: string | null
-          consultancy: string | null
-          controlroom: string | null
-          corpconnect_data_no: string | null
-          corpconnect_sim_no: string | null
-          created_at: string
-          data_number: string | null
-          dms01_driver_facing: string | null
-          dms01_driver_facing_rental: string | null
-          dual_probe_rental: string | null
-          dual_probe_sub: string | null
-          early_warning: string | null
-          early_warning_rental: string | null
-          engine: string | null
-          flat_panic: string | null
-          flat_panic_rental: string | null
-          fleet_number: string | null
-          fm_unit: string | null
-          fm_unit_rental: string | null
-          fm_unit_sub: string | null
-          fuel_probe_1: string | null
-          fuel_probe_2: string | null
-          gps: string | null
-          gps_rental: string | null
-          gsm: string | null
-          gsm_rental: string | null
-          id: number
-          idata: string | null
-          idata_rental: string | null
-          industrial_panic: string | null
-          industrial_panic_rental: string | null
-          keypad: string | null
-          keypad_rental: string | null
-          keypad_waterproof: string | null
-          main_fm_harness: string | null
-          main_fm_harness_rental: string | null
-          maintenance: string | null
-          make: string | null
-          mic: string | null
-          mic_rental: string | null
-          model: string | null
-          new_account_number: string | null
-          pfk_10m: string | null
-          pfk_10m_rental: string | null
-          pfk_15m: string | null
-          pfk_15m_rental: string | null
-          pfk_20m: string | null
-          pfk_20m_rental: string | null
-          pfk_5m: string | null
-          pfk_5m_rental: string | null
-          pfk_corpconnect_data_number: string | null
-          pfk_corpconnect_sim_number: string | null
-          pfk_dome_1: string | null
-          pfk_dome_1_rental: string | null
-          pfk_dome_2: string | null
-          pfk_dome_2_rental: string | null
-          pfk_driver_facing: string | null
-          pfk_driver_facing_rental: string | null
-          pfk_main_unit: string | null
-          pfk_main_unit_rental: string | null
-          pfk_main_unit_sub: string | null
-          pfk_road_facing: string | null
-          pfk_road_facing_rental: string | null
-          reg: string | null
-          roaming: string | null
-          roller_door_switches: string | null
-          roller_door_switches_rental: string | null
-          sd_card_1tb: string | null
-          sd_card_1tb_rental: string | null
-          sd_card_250gb: string | null
-          sd_card_250gb_rental: string | null
-          sd_card_256gb: string | null
-          sd_card_256gb_rental: string | null
-          sd_card_2tb: string | null
-          sd_card_2tb_rental: string | null
-          sd_card_480gb: string | null
-          sd_card_480gb_rental: string | null
-          sd_card_512gb: string | null
-          sd_card_512gb_rental: string | null
-          sim_card_number: string | null
-          sim_id: string | null
-          single_probe_rental: string | null
-          single_probe_sub: string | null
-          sky_ican: string | null
-          sky_ican_rental: string | null
-          sky_idata: string | null
-          sky_idata_rental: string | null
-          sky_on_batt_ign_rental: string | null
-          sky_on_batt_ign_unit_ip: string | null
-          sky_on_batt_ign_unit_serial_number: string | null
-          sky_on_batt_sub: string | null
-          sky_safety: string | null
-          sky_scout_12v_ip: string | null
-          sky_scout_12v_rental: string | null
-          sky_scout_12v_serial_number: string | null
-          sky_scout_12v_sub: string | null
-          sky_scout_24v_ip: string | null
-          sky_scout_24v_rental: string | null
-          sky_scout_24v_serial_number: string | null
-          sky_scout_24v_sub: string | null
-          skylink_data_number: string | null
-          skylink_pro_ip: string | null
-          skylink_pro_rental: string | null
-          skylink_pro_serial_number: string | null
-          skylink_pro_sub: string | null
-          skylink_sim_card_no: string | null
-          skylink_trailer_sub: string | null
-          skylink_trailer_unit_ip: string | null
-          skylink_trailer_unit_rental: string | null
-          skylink_trailer_unit_serial_number: string | null
-          skylink_voice_kit_ip: string | null
-          skylink_voice_kit_rental: string | null
-          skylink_voice_kit_serial_number: string | null
-          skylink_voice_kit_sub: string | null
-          speaker: string | null
-          speaker_rental: string | null
-          tag: string | null
-          tag_: string | null
-          tag_reader: string | null
-          tag_reader_: string | null
-          tag_reader_rental: string | null
-          tag_reader_rental_: string | null
-          tag_rental: string | null
-          tag_rental_: string | null
-          total_rental: number | null
-          total_rental_sub: number | null
-          total_sub: number | null
-          tpiece: string | null
-          tpiece_rental: string | null
-          unique_id: string | null
-          vin: string | null
-          vw100ip_driver_facing_ip: string | null
-          vw100ip_driver_facing_rental: string | null
-          vw300_dakkie_dome_1: string | null
-          vw300_dakkie_dome_1_rental: string | null
-          vw300_dakkie_dome_2: string | null
-          vw300_dakkie_dome_2_rental: string | null
-          vw303_driver_facing_camera: string | null
-          vw303_driver_facing_camera_rental: string | null
-          vw306_dvr_road_facing_for_4ch_8ch: string | null
-          vw306_dvr_road_facing_for_4ch_8ch_rental: string | null
-          vw306m_a2_dash_cam: string | null
-          vw306m_a2_dash_cam_rental: string | null
-          vw400_dome_1: string | null
-          vw400_dome_1_rental: string | null
-          vw400_dome_2: string | null
-          vw400_dome_2_rental: string | null
-          vw502_dual_lens_camera: string | null
-          vw502_dual_lens_camera_rental: string | null
-          vw502f_road_facing_camera: string | null
-          vw502f_road_facing_camera_rental: string | null
-          year: string | null
-        }
-        Insert: {
-          _10m_cable_for_camera_4pin?: string | null
-          _10m_cable_for_camera_4pin_rental?: string | null
-          _1m_extension_cable?: string | null
-          _1m_extension_cable_rental?: string | null
-          _3m_extension_cable?: string | null
-          _3m_extension_cable_rental?: string | null
-          _4ch_mdvr?: string | null
-          _4ch_mdvr_rental?: string | null
-          _4ch_mdvr_sub?: string | null
-          _5ch_mdvr?: string | null
-          _5ch_mdvr_rental?: string | null
-          _5ch_mdvr_sub?: string | null
-          _5m_cable_6pin?: string | null
-          _5m_cable_6pin_rental?: string | null
-          _5m_cable_for_camera_4pin?: string | null
-          _5m_cable_for_camera_4pin_rental?: string | null
-          _7m_harness_for_probe?: string | null
-          _7m_harness_for_probe_rental?: string | null
-          _8ch_mdvr?: string | null
-          _8ch_mdvr_rental?: string | null
-          _8ch_mdvr_sub?: string | null
-          a2_dash_cam?: string | null
-          a2_dash_cam_rental?: string | null
-          a2_dash_cam_sub?: string | null
-          a2_mec_5?: string | null
-          a2_mec_5_rental?: string | null
-          a3_dash_cam_ai?: string | null
-          a3_dash_cam_ai_rental?: string | null
-          account_number?: string | null
-          adas_02_road_facing?: string | null
-          adas_02_road_facing_rental?: string | null
-          after_hours?: string | null
-          beame_1?: string | null
-          beame_1_rental?: string | null
-          beame_1_sub?: string | null
-          beame_2?: string | null
-          beame_2_rental?: string | null
-          beame_2_sub?: string | null
-          beame_3?: string | null
-          beame_3_rental?: string | null
-          beame_3_sub?: string | null
-          beame_4?: string | null
-          beame_4_rental?: string | null
-          beame_4_sub?: string | null
-          beame_5?: string | null
-          beame_5_rental?: string | null
-          beame_5_sub?: string | null
-          branch?: string | null
-          breathaloc?: string | null
-          breathaloc_rental?: string | null
-          buzzer?: string | null
-          buzzer_rental?: string | null
-          cia?: string | null
-          cia_rental?: string | null
-          colour?: string | null
-          company?: string | null
-          consultancy?: string | null
-          controlroom?: string | null
-          corpconnect_data_no?: string | null
-          corpconnect_sim_no?: string | null
-          created_at?: string
-          data_number?: string | null
-          dms01_driver_facing?: string | null
-          dms01_driver_facing_rental?: string | null
-          dual_probe_rental?: string | null
-          dual_probe_sub?: string | null
-          early_warning?: string | null
-          early_warning_rental?: string | null
-          engine?: string | null
-          flat_panic?: string | null
-          flat_panic_rental?: string | null
-          fleet_number?: string | null
-          fm_unit?: string | null
-          fm_unit_rental?: string | null
-          fm_unit_sub?: string | null
-          fuel_probe_1?: string | null
-          fuel_probe_2?: string | null
-          gps?: string | null
-          gps_rental?: string | null
-          gsm?: string | null
-          gsm_rental?: string | null
-          id?: number
-          idata?: string | null
-          idata_rental?: string | null
-          industrial_panic?: string | null
-          industrial_panic_rental?: string | null
-          keypad?: string | null
-          keypad_rental?: string | null
-          keypad_waterproof?: string | null
-          main_fm_harness?: string | null
-          main_fm_harness_rental?: string | null
-          maintenance?: string | null
-          make?: string | null
-          mic?: string | null
-          mic_rental?: string | null
-          model?: string | null
-          new_account_number?: string | null
-          pfk_10m?: string | null
-          pfk_10m_rental?: string | null
-          pfk_15m?: string | null
-          pfk_15m_rental?: string | null
-          pfk_20m?: string | null
-          pfk_20m_rental?: string | null
-          pfk_5m?: string | null
-          pfk_5m_rental?: string | null
-          pfk_corpconnect_data_number?: string | null
-          pfk_corpconnect_sim_number?: string | null
-          pfk_dome_1?: string | null
-          pfk_dome_1_rental?: string | null
-          pfk_dome_2?: string | null
-          pfk_dome_2_rental?: string | null
-          pfk_driver_facing?: string | null
-          pfk_driver_facing_rental?: string | null
-          pfk_main_unit?: string | null
-          pfk_main_unit_rental?: string | null
-          pfk_main_unit_sub?: string | null
-          pfk_road_facing?: string | null
-          pfk_road_facing_rental?: string | null
-          reg?: string | null
-          roaming?: string | null
-          roller_door_switches?: string | null
-          roller_door_switches_rental?: string | null
-          sd_card_1tb?: string | null
-          sd_card_1tb_rental?: string | null
-          sd_card_250gb?: string | null
-          sd_card_250gb_rental?: string | null
-          sd_card_256gb?: string | null
-          sd_card_256gb_rental?: string | null
-          sd_card_2tb?: string | null
-          sd_card_2tb_rental?: string | null
-          sd_card_480gb?: string | null
-          sd_card_480gb_rental?: string | null
-          sd_card_512gb?: string | null
-          sd_card_512gb_rental?: string | null
-          sim_card_number?: string | null
-          sim_id?: string | null
-          single_probe_rental?: string | null
-          single_probe_sub?: string | null
-          sky_ican?: string | null
-          sky_ican_rental?: string | null
-          sky_idata?: string | null
-          sky_idata_rental?: string | null
-          sky_on_batt_ign_rental?: string | null
-          sky_on_batt_ign_unit_ip?: string | null
-          sky_on_batt_ign_unit_serial_number?: string | null
-          sky_on_batt_sub?: string | null
-          sky_safety?: string | null
-          sky_scout_12v_ip?: string | null
-          sky_scout_12v_rental?: string | null
-          sky_scout_12v_serial_number?: string | null
-          sky_scout_12v_sub?: string | null
-          sky_scout_24v_ip?: string | null
-          sky_scout_24v_rental?: string | null
-          sky_scout_24v_serial_number?: string | null
-          sky_scout_24v_sub?: string | null
-          skylink_data_number?: string | null
-          skylink_pro_ip?: string | null
-          skylink_pro_rental?: string | null
-          skylink_pro_serial_number?: string | null
-          skylink_pro_sub?: string | null
-          skylink_sim_card_no?: string | null
-          skylink_trailer_sub?: string | null
-          skylink_trailer_unit_ip?: string | null
-          skylink_trailer_unit_rental?: string | null
-          skylink_trailer_unit_serial_number?: string | null
-          skylink_voice_kit_ip?: string | null
-          skylink_voice_kit_rental?: string | null
-          skylink_voice_kit_serial_number?: string | null
-          skylink_voice_kit_sub?: string | null
-          speaker?: string | null
-          speaker_rental?: string | null
-          tag?: string | null
-          tag_?: string | null
-          tag_reader?: string | null
-          tag_reader_?: string | null
-          tag_reader_rental?: string | null
-          tag_reader_rental_?: string | null
-          tag_rental?: string | null
-          tag_rental_?: string | null
-          total_rental?: number | null
-          total_rental_sub?: number | null
-          total_sub?: number | null
-          tpiece?: string | null
-          tpiece_rental?: string | null
-          unique_id?: string | null
-          vin?: string | null
-          vw100ip_driver_facing_ip?: string | null
-          vw100ip_driver_facing_rental?: string | null
-          vw300_dakkie_dome_1?: string | null
-          vw300_dakkie_dome_1_rental?: string | null
-          vw300_dakkie_dome_2?: string | null
-          vw300_dakkie_dome_2_rental?: string | null
-          vw303_driver_facing_camera?: string | null
-          vw303_driver_facing_camera_rental?: string | null
-          vw306_dvr_road_facing_for_4ch_8ch?: string | null
-          vw306_dvr_road_facing_for_4ch_8ch_rental?: string | null
-          vw306m_a2_dash_cam?: string | null
-          vw306m_a2_dash_cam_rental?: string | null
-          vw400_dome_1?: string | null
-          vw400_dome_1_rental?: string | null
-          vw400_dome_2?: string | null
-          vw400_dome_2_rental?: string | null
-          vw502_dual_lens_camera?: string | null
-          vw502_dual_lens_camera_rental?: string | null
-          vw502f_road_facing_camera?: string | null
-          vw502f_road_facing_camera_rental?: string | null
-          year?: string | null
-        }
-        Update: {
-          _10m_cable_for_camera_4pin?: string | null
-          _10m_cable_for_camera_4pin_rental?: string | null
-          _1m_extension_cable?: string | null
-          _1m_extension_cable_rental?: string | null
-          _3m_extension_cable?: string | null
-          _3m_extension_cable_rental?: string | null
-          _4ch_mdvr?: string | null
-          _4ch_mdvr_rental?: string | null
-          _4ch_mdvr_sub?: string | null
-          _5ch_mdvr?: string | null
-          _5ch_mdvr_rental?: string | null
-          _5ch_mdvr_sub?: string | null
-          _5m_cable_6pin?: string | null
-          _5m_cable_6pin_rental?: string | null
-          _5m_cable_for_camera_4pin?: string | null
-          _5m_cable_for_camera_4pin_rental?: string | null
-          _7m_harness_for_probe?: string | null
-          _7m_harness_for_probe_rental?: string | null
-          _8ch_mdvr?: string | null
-          _8ch_mdvr_rental?: string | null
-          _8ch_mdvr_sub?: string | null
-          a2_dash_cam?: string | null
-          a2_dash_cam_rental?: string | null
-          a2_dash_cam_sub?: string | null
-          a2_mec_5?: string | null
-          a2_mec_5_rental?: string | null
-          a3_dash_cam_ai?: string | null
-          a3_dash_cam_ai_rental?: string | null
-          account_number?: string | null
-          adas_02_road_facing?: string | null
-          adas_02_road_facing_rental?: string | null
-          after_hours?: string | null
-          beame_1?: string | null
-          beame_1_rental?: string | null
-          beame_1_sub?: string | null
-          beame_2?: string | null
-          beame_2_rental?: string | null
-          beame_2_sub?: string | null
-          beame_3?: string | null
-          beame_3_rental?: string | null
-          beame_3_sub?: string | null
-          beame_4?: string | null
-          beame_4_rental?: string | null
-          beame_4_sub?: string | null
-          beame_5?: string | null
-          beame_5_rental?: string | null
-          beame_5_sub?: string | null
-          branch?: string | null
-          breathaloc?: string | null
-          breathaloc_rental?: string | null
-          buzzer?: string | null
-          buzzer_rental?: string | null
-          cia?: string | null
-          cia_rental?: string | null
-          colour?: string | null
-          company?: string | null
-          consultancy?: string | null
-          controlroom?: string | null
-          corpconnect_data_no?: string | null
-          corpconnect_sim_no?: string | null
-          created_at?: string
-          data_number?: string | null
-          dms01_driver_facing?: string | null
-          dms01_driver_facing_rental?: string | null
-          dual_probe_rental?: string | null
-          dual_probe_sub?: string | null
-          early_warning?: string | null
-          early_warning_rental?: string | null
-          engine?: string | null
-          flat_panic?: string | null
-          flat_panic_rental?: string | null
-          fleet_number?: string | null
-          fm_unit?: string | null
-          fm_unit_rental?: string | null
-          fm_unit_sub?: string | null
-          fuel_probe_1?: string | null
-          fuel_probe_2?: string | null
-          gps?: string | null
-          gps_rental?: string | null
-          gsm?: string | null
-          gsm_rental?: string | null
-          id?: number
-          idata?: string | null
-          idata_rental?: string | null
-          industrial_panic?: string | null
-          industrial_panic_rental?: string | null
-          keypad?: string | null
-          keypad_rental?: string | null
-          keypad_waterproof?: string | null
-          main_fm_harness?: string | null
-          main_fm_harness_rental?: string | null
-          maintenance?: string | null
-          make?: string | null
-          mic?: string | null
-          mic_rental?: string | null
-          model?: string | null
-          new_account_number?: string | null
-          pfk_10m?: string | null
-          pfk_10m_rental?: string | null
-          pfk_15m?: string | null
-          pfk_15m_rental?: string | null
-          pfk_20m?: string | null
-          pfk_20m_rental?: string | null
-          pfk_5m?: string | null
-          pfk_5m_rental?: string | null
-          pfk_corpconnect_data_number?: string | null
-          pfk_corpconnect_sim_number?: string | null
-          pfk_dome_1?: string | null
-          pfk_dome_1_rental?: string | null
-          pfk_dome_2?: string | null
-          pfk_dome_2_rental?: string | null
-          pfk_driver_facing?: string | null
-          pfk_driver_facing_rental?: string | null
-          pfk_main_unit?: string | null
-          pfk_main_unit_rental?: string | null
-          pfk_main_unit_sub?: string | null
-          pfk_road_facing?: string | null
-          pfk_road_facing_rental?: string | null
-          reg?: string | null
-          roaming?: string | null
-          roller_door_switches?: string | null
-          roller_door_switches_rental?: string | null
-          sd_card_1tb?: string | null
-          sd_card_1tb_rental?: string | null
-          sd_card_250gb?: string | null
-          sd_card_250gb_rental?: string | null
-          sd_card_256gb?: string | null
-          sd_card_256gb_rental?: string | null
-          sd_card_2tb?: string | null
-          sd_card_2tb_rental?: string | null
-          sd_card_480gb?: string | null
-          sd_card_480gb_rental?: string | null
-          sd_card_512gb?: string | null
-          sd_card_512gb_rental?: string | null
-          sim_card_number?: string | null
-          sim_id?: string | null
-          single_probe_rental?: string | null
-          single_probe_sub?: string | null
-          sky_ican?: string | null
-          sky_ican_rental?: string | null
-          sky_idata?: string | null
-          sky_idata_rental?: string | null
-          sky_on_batt_ign_rental?: string | null
-          sky_on_batt_ign_unit_ip?: string | null
-          sky_on_batt_ign_unit_serial_number?: string | null
-          sky_on_batt_sub?: string | null
-          sky_safety?: string | null
-          sky_scout_12v_ip?: string | null
-          sky_scout_12v_rental?: string | null
-          sky_scout_12v_serial_number?: string | null
-          sky_scout_12v_sub?: string | null
-          sky_scout_24v_ip?: string | null
-          sky_scout_24v_rental?: string | null
-          sky_scout_24v_serial_number?: string | null
-          sky_scout_24v_sub?: string | null
-          skylink_data_number?: string | null
-          skylink_pro_ip?: string | null
-          skylink_pro_rental?: string | null
-          skylink_pro_serial_number?: string | null
-          skylink_pro_sub?: string | null
-          skylink_sim_card_no?: string | null
-          skylink_trailer_sub?: string | null
-          skylink_trailer_unit_ip?: string | null
-          skylink_trailer_unit_rental?: string | null
-          skylink_trailer_unit_serial_number?: string | null
-          skylink_voice_kit_ip?: string | null
-          skylink_voice_kit_rental?: string | null
-          skylink_voice_kit_serial_number?: string | null
-          skylink_voice_kit_sub?: string | null
-          speaker?: string | null
-          speaker_rental?: string | null
-          tag?: string | null
-          tag_?: string | null
-          tag_reader?: string | null
-          tag_reader_?: string | null
-          tag_reader_rental?: string | null
-          tag_reader_rental_?: string | null
-          tag_rental?: string | null
-          tag_rental_?: string | null
-          total_rental?: number | null
-          total_rental_sub?: number | null
-          total_sub?: number | null
-          tpiece?: string | null
-          tpiece_rental?: string | null
-          unique_id?: string | null
-          vin?: string | null
-          vw100ip_driver_facing_ip?: string | null
-          vw100ip_driver_facing_rental?: string | null
-          vw300_dakkie_dome_1?: string | null
-          vw300_dakkie_dome_1_rental?: string | null
-          vw300_dakkie_dome_2?: string | null
-          vw300_dakkie_dome_2_rental?: string | null
-          vw303_driver_facing_camera?: string | null
-          vw303_driver_facing_camera_rental?: string | null
-          vw306_dvr_road_facing_for_4ch_8ch?: string | null
-          vw306_dvr_road_facing_for_4ch_8ch_rental?: string | null
-          vw306m_a2_dash_cam?: string | null
-          vw306m_a2_dash_cam_rental?: string | null
-          vw400_dome_1?: string | null
-          vw400_dome_1_rental?: string | null
-          vw400_dome_2?: string | null
-          vw400_dome_2_rental?: string | null
-          vw502_dual_lens_camera?: string | null
-          vw502_dual_lens_camera_rental?: string | null
-          vw502f_road_facing_camera?: string | null
-          vw502f_road_facing_camera_rental?: string | null
+          waterford_software_development?: string | null
           year?: string | null
         }
         Relationships: []
@@ -8911,6 +10398,601 @@ export type Database = {
           },
         ]
       }
+      workshop: {
+        Row: {
+          account_no: number | null
+          after_hours_number: string | null
+          bank_letter: string | null
+          bank_name: string | null
+          bbbee_expire_date: string | null
+          bbbee_level: string | null
+          city: string | null
+          company_id: number | null
+          company_registration_doc: string | null
+          created_at: string | null
+          fleet_manager: string | null
+          fleet_rate: number | null
+          franchise: string | null
+          hdi_perc: string | null
+          id: string
+          insurance_company_name: string | null
+          insurance_policy_number: number | null
+          labour_rate: number | null
+          number_of_working_days: number | null
+          postal_code: number | null
+          province: string | null
+          street: string | null
+          town: string | null
+          trading_name: string | null
+          type: string | null
+          validated: string | null
+          vat_cert_expiry_date: string | null
+          vat_certificate: string | null
+          vat_number: number | null
+          vehicles_type: string[] | null
+          work_name: string
+          workshop_type: string[] | null
+        }
+        Insert: {
+          account_no?: number | null
+          after_hours_number?: string | null
+          bank_letter?: string | null
+          bank_name?: string | null
+          bbbee_expire_date?: string | null
+          bbbee_level?: string | null
+          city?: string | null
+          company_id?: number | null
+          company_registration_doc?: string | null
+          created_at?: string | null
+          fleet_manager?: string | null
+          fleet_rate?: number | null
+          franchise?: string | null
+          hdi_perc?: string | null
+          id?: string
+          insurance_company_name?: string | null
+          insurance_policy_number?: number | null
+          labour_rate?: number | null
+          number_of_working_days?: number | null
+          postal_code?: number | null
+          province?: string | null
+          street?: string | null
+          town?: string | null
+          trading_name?: string | null
+          type?: string | null
+          validated?: string | null
+          vat_cert_expiry_date?: string | null
+          vat_certificate?: string | null
+          vat_number?: number | null
+          vehicles_type?: string[] | null
+          work_name: string
+          workshop_type?: string[] | null
+        }
+        Update: {
+          account_no?: number | null
+          after_hours_number?: string | null
+          bank_letter?: string | null
+          bank_name?: string | null
+          bbbee_expire_date?: string | null
+          bbbee_level?: string | null
+          city?: string | null
+          company_id?: number | null
+          company_registration_doc?: string | null
+          created_at?: string | null
+          fleet_manager?: string | null
+          fleet_rate?: number | null
+          franchise?: string | null
+          hdi_perc?: string | null
+          id?: string
+          insurance_company_name?: string | null
+          insurance_policy_number?: number | null
+          labour_rate?: number | null
+          number_of_working_days?: number | null
+          postal_code?: number | null
+          province?: string | null
+          street?: string | null
+          town?: string | null
+          trading_name?: string | null
+          type?: string | null
+          validated?: string | null
+          vat_cert_expiry_date?: string | null
+          vat_certificate?: string | null
+          vat_number?: number | null
+          vehicles_type?: string[] | null
+          work_name?: string
+          workshop_type?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workshop_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workshop_fleet_manager_fkey"
+            columns: ["fleet_manager"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workshop_assign: {
+        Row: {
+          created_at: string
+          id: number
+          job_id: number | null
+          workshop_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          job_id?: number | null
+          workshop_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          job_id?: number | null
+          workshop_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workshop_assign_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "workshop_job"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workshop_assign_workshop_id_fkey"
+            columns: ["workshop_id"]
+            isOneToOne: false
+            referencedRelation: "workshop"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workshop_assignments: {
+        Row: {
+          created_at: string | null
+          id: number
+          job_id: number | null
+          tech_id: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: never
+          job_id?: number | null
+          tech_id?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: never
+          job_id?: number | null
+          tech_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workshop_assignments_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "workshop_job"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workshop_breakdown: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: number
+          reported_by: number | null
+          status: string | null
+          vehicle_id: number | null
+          workshop_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: never
+          reported_by?: number | null
+          status?: string | null
+          vehicle_id?: number | null
+          workshop_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: never
+          reported_by?: number | null
+          status?: string | null
+          vehicle_id?: number | null
+          workshop_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workshop_breakdown_workshop_id_fkey"
+            columns: ["workshop_id"]
+            isOneToOne: false
+            referencedRelation: "workshop"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workshop_documents: {
+        Row: {
+          document_type: string
+          document_url: string
+          id: string
+          picture: string | null
+          uploaded_at: string | null
+          verified: boolean | null
+          workshop_id: string | null
+        }
+        Insert: {
+          document_type: string
+          document_url: string
+          id?: string
+          picture?: string | null
+          uploaded_at?: string | null
+          verified?: boolean | null
+          workshop_id?: string | null
+        }
+        Update: {
+          document_type?: string
+          document_url?: string
+          id?: string
+          picture?: string | null
+          uploaded_at?: string | null
+          verified?: boolean | null
+          workshop_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workshop_documents_workshop_id_fkey"
+            columns: ["workshop_id"]
+            isOneToOne: false
+            referencedRelation: "workshop"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workshop_job: {
+        Row: {
+          accepted: boolean | null
+          actual_cost: number | null
+          actual_duration_hours: number | null
+          after_photos: Json | null
+          approval_history: Json | null
+          approval_status: string | null
+          approved: boolean | null
+          approved_by: string | null
+          approved_by_name: string | null
+          assigned_technician_id: string | null
+          before_photos: Json | null
+          client_name: string | null
+          client_phone: string | null
+          completed_at: string | null
+          completion_date: string | null
+          completion_notes: string | null
+          created_at: string
+          customer_feedback: string | null
+          customer_satisfaction_rating: number | null
+          customer_signature_obtained: boolean | null
+          description: string | null
+          documents: Json | null
+          driver_id: number | null
+          due_date: string | null
+          edit_count: number | null
+          edited_after_approval: boolean | null
+          end_time: string | null
+          equipment_used: Json | null
+          estimated_cost: number | null
+          estimated_duration_hours: number | null
+          fleet_job_id: number | null
+          grand_total: number | null
+          hours: string | null
+          id: number
+          job_status: string | null
+          job_type: string | null
+          jobid_workshop: string | null
+          labor_cost: number | null
+          labour_hours: number | null
+          last_edited_by: string | null
+          last_edited_by_name: string | null
+          last_edited_date: string | null
+          location: string | null
+          notes: string | null
+          odo_reading: string | null
+          original_approval_date: string | null
+          parts_required: Json | null
+          priority: string | null
+          products_required: Json | null
+          quality_check_passed: boolean | null
+          registration_no: string | null
+          requires_reapproval: boolean | null
+          safety_checklist_completed: boolean | null
+          source: string | null
+          start_time: string | null
+          status: string | null
+          sublet: number | null
+          technician: boolean | null
+          technician_id: string | null
+          technician_name: string | null
+          technician_phone: string | null
+          test: boolean | null
+          total_labor_cost: number | null
+          total_parts_cost: number | null
+          total_sublet_cost: number | null
+          type_of_work: string | null
+          updated_at: string | null
+          work_notes: string | null
+          workflow_status: string | null
+        }
+        Insert: {
+          accepted?: boolean | null
+          actual_cost?: number | null
+          actual_duration_hours?: number | null
+          after_photos?: Json | null
+          approval_history?: Json | null
+          approval_status?: string | null
+          approved?: boolean | null
+          approved_by?: string | null
+          approved_by_name?: string | null
+          assigned_technician_id?: string | null
+          before_photos?: Json | null
+          client_name?: string | null
+          client_phone?: string | null
+          completed_at?: string | null
+          completion_date?: string | null
+          completion_notes?: string | null
+          created_at?: string
+          customer_feedback?: string | null
+          customer_satisfaction_rating?: number | null
+          customer_signature_obtained?: boolean | null
+          description?: string | null
+          documents?: Json | null
+          driver_id?: number | null
+          due_date?: string | null
+          edit_count?: number | null
+          edited_after_approval?: boolean | null
+          end_time?: string | null
+          equipment_used?: Json | null
+          estimated_cost?: number | null
+          estimated_duration_hours?: number | null
+          fleet_job_id?: number | null
+          grand_total?: number | null
+          hours?: string | null
+          id?: never
+          job_status?: string | null
+          job_type?: string | null
+          jobid_workshop?: string | null
+          labor_cost?: number | null
+          labour_hours?: number | null
+          last_edited_by?: string | null
+          last_edited_by_name?: string | null
+          last_edited_date?: string | null
+          location?: string | null
+          notes?: string | null
+          odo_reading?: string | null
+          original_approval_date?: string | null
+          parts_required?: Json | null
+          priority?: string | null
+          products_required?: Json | null
+          quality_check_passed?: boolean | null
+          registration_no?: string | null
+          requires_reapproval?: boolean | null
+          safety_checklist_completed?: boolean | null
+          source?: string | null
+          start_time?: string | null
+          status?: string | null
+          sublet?: number | null
+          technician?: boolean | null
+          technician_id?: string | null
+          technician_name?: string | null
+          technician_phone?: string | null
+          test?: boolean | null
+          total_labor_cost?: number | null
+          total_parts_cost?: number | null
+          total_sublet_cost?: number | null
+          type_of_work?: string | null
+          updated_at?: string | null
+          work_notes?: string | null
+          workflow_status?: string | null
+        }
+        Update: {
+          accepted?: boolean | null
+          actual_cost?: number | null
+          actual_duration_hours?: number | null
+          after_photos?: Json | null
+          approval_history?: Json | null
+          approval_status?: string | null
+          approved?: boolean | null
+          approved_by?: string | null
+          approved_by_name?: string | null
+          assigned_technician_id?: string | null
+          before_photos?: Json | null
+          client_name?: string | null
+          client_phone?: string | null
+          completed_at?: string | null
+          completion_date?: string | null
+          completion_notes?: string | null
+          created_at?: string
+          customer_feedback?: string | null
+          customer_satisfaction_rating?: number | null
+          customer_signature_obtained?: boolean | null
+          description?: string | null
+          documents?: Json | null
+          driver_id?: number | null
+          due_date?: string | null
+          edit_count?: number | null
+          edited_after_approval?: boolean | null
+          end_time?: string | null
+          equipment_used?: Json | null
+          estimated_cost?: number | null
+          estimated_duration_hours?: number | null
+          fleet_job_id?: number | null
+          grand_total?: number | null
+          hours?: string | null
+          id?: never
+          job_status?: string | null
+          job_type?: string | null
+          jobid_workshop?: string | null
+          labor_cost?: number | null
+          labour_hours?: number | null
+          last_edited_by?: string | null
+          last_edited_by_name?: string | null
+          last_edited_date?: string | null
+          location?: string | null
+          notes?: string | null
+          odo_reading?: string | null
+          original_approval_date?: string | null
+          parts_required?: Json | null
+          priority?: string | null
+          products_required?: Json | null
+          quality_check_passed?: boolean | null
+          registration_no?: string | null
+          requires_reapproval?: boolean | null
+          safety_checklist_completed?: boolean | null
+          source?: string | null
+          start_time?: string | null
+          status?: string | null
+          sublet?: number | null
+          technician?: boolean | null
+          technician_id?: string | null
+          technician_name?: string | null
+          technician_phone?: string | null
+          test?: boolean | null
+          total_labor_cost?: number | null
+          total_parts_cost?: number | null
+          total_sublet_cost?: number | null
+          type_of_work?: string | null
+          updated_at?: string | null
+          work_notes?: string | null
+          workflow_status?: string | null
+        }
+        Relationships: []
+      }
+      workshop_job_status_history: {
+        Row: {
+          change_reason: string | null
+          changed_by: string | null
+          changed_by_name: string | null
+          changed_by_role: string | null
+          created_at: string
+          from_status: string | null
+          id: number
+          job_id: number
+          metadata: Json | null
+          notes: string | null
+          to_status: string
+        }
+        Insert: {
+          change_reason?: string | null
+          changed_by?: string | null
+          changed_by_name?: string | null
+          changed_by_role?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: never
+          job_id: number
+          metadata?: Json | null
+          notes?: string | null
+          to_status: string
+        }
+        Update: {
+          change_reason?: string | null
+          changed_by?: string | null
+          changed_by_name?: string | null
+          changed_by_role?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: never
+          job_id?: number
+          metadata?: Json | null
+          notes?: string | null
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workshop_job_status_history_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "workshop_job"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workshop_jobpart: {
+        Row: {
+          consumables: Json | null
+          created_at: string
+          given_parts: Json | null
+          id: number
+          job_id: number | null
+          job_parts: Json | null
+        }
+        Insert: {
+          consumables?: Json | null
+          created_at?: string
+          given_parts?: Json | null
+          id?: number
+          job_id?: number | null
+          job_parts?: Json | null
+        }
+        Update: {
+          consumables?: Json | null
+          created_at?: string
+          given_parts?: Json | null
+          id?: number
+          job_id?: number | null
+          job_parts?: Json | null
+        }
+        Relationships: []
+      }
+      workshop_tools: {
+        Row: {
+          category: string
+          document_url: string | null
+          has_tool: boolean | null
+          id: string
+          picture: string | null
+          tool_name: string
+          verified: boolean | null
+          workshop_id: string | null
+        }
+        Insert: {
+          category: string
+          document_url?: string | null
+          has_tool?: boolean | null
+          id?: string
+          picture?: string | null
+          tool_name: string
+          verified?: boolean | null
+          workshop_id?: string | null
+        }
+        Update: {
+          category?: string
+          document_url?: string | null
+          has_tool?: boolean | null
+          id?: string
+          picture?: string | null
+          tool_name?: string
+          verified?: boolean | null
+          workshop_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workshop_tools_workshop_id_fkey"
+            columns: ["workshop_id"]
+            isOneToOne: false
+            referencedRelation: "workshop"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       comprehensive_monthly_summary: {
@@ -9008,6 +11090,10 @@ export type Database = {
       }
     }
     Functions: {
+      allocate_document_number: {
+        Args: { prefix?: string; sequence_name: string }
+        Returns: string
+      }
       assign_technician_simple: {
         Args: {
           p_job_date: string
@@ -9146,6 +11232,14 @@ export type Database = {
           total_amount: number
         }[]
       }
+      recalc_client_inventory_total: {
+        Args: {
+          p_category_code: string
+          p_client_code: string
+          p_cost_code: string
+        }
+        Returns: undefined
+      }
       reset_loan_vehicles: { Args: never; Returns: undefined }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
@@ -9157,7 +11251,16 @@ export type Database = {
       update_payments_on_22nd: { Args: never; Returns: undefined }
     }
     Enums: {
-      [_ in never]: never
+      availability: "available" | "busy" | "off-duty" | "emergency"
+      roles:
+        | "driver"
+        | "technician"
+        | "call centre"
+        | "cost centre"
+        | "fleet manager"
+        | "customer"
+        | "admin"
+      status: "Done" | "Onprogress"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -9284,6 +11387,18 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      availability: ["available", "busy", "off-duty", "emergency"],
+      roles: [
+        "driver",
+        "technician",
+        "call centre",
+        "cost centre",
+        "fleet manager",
+        "customer",
+        "admin",
+      ],
+      status: ["Done", "Onprogress"],
+    },
   },
 } as const

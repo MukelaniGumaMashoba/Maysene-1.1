@@ -223,3 +223,48 @@ Lethabo Power Station (Ash)
 PPC Slurry (Cement)
 PPC Hercules (Cement)
 PPC Dwaalboom (Cement)
+
+
+
+
+
+Fleet Manager workflow:
+
+Driver submits job → appears as Breakdown Request
+
+Fleet Manager clicks Approve → status becomes Approved
+
+On Approved jobs, two options appear:
+
+Allocate Subcontractor — assign an external subcontractor
+
+Send to Workshop — creates a workshop_job with Awaiting Approval + source: 'fleet'
+
+Workshop side (unchanged, fully intact):
+
+Job enters at Awaiting Approval → technician assigned → parts assigned → Approve/Reject workflow → Approved → "Send for Fleet Approval" → Fleet Manager sees it in "Pending Fleet Approval" tab
+
+The "Send to Admin" button is gone. No more Pending Admin Review intermediate step — jobs go straight into the workshop's normal approval flow.
+
+
+login admin : Email: sacaper597@duoley.com
+Password: GNQRKbwz
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
