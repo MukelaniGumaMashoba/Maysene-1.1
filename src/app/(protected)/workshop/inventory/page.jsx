@@ -238,7 +238,7 @@ export default function InventoryPage() {
   const fetchStockLevels = async () => {
     try {
       const { data, error } = await supabase
-        .mstock
+        .from('parts')
         .select('*')
         .order('id', { ascending: false });
       if (error) {
@@ -491,7 +491,7 @@ export default function InventoryPage() {
       if (jobIds.length > 0) {
         const { data: jobsData, error: jobsError } = await supabase
           .from("workshop_job")
-          .select("id, jobId_workshop, registration_no")
+          .select("*")
           .in("id", jobIds);
 
         console.log("Fetched jobs for logs:", jobsData);
@@ -1294,7 +1294,7 @@ export default function InventoryPage() {
                         <Button variant="outline" size="sm" onClick={() => handleViewLogs(row.id)}>
                           <History className="w-4 h-4" />
                         </Button>
-                        {isLowStock && (
+                        {(isLowStock || isOutOfStock) && (
                           <Button size="sm" className="bg-orange-600 hover:bg-orange-700" onClick={() => {
                             setOrderForm({
                               supplier_id: '',

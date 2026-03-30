@@ -119,14 +119,13 @@ export default function TechniciansPage() {
   // Add job search state for filtering jobs in the assign dialog
   const [jobSearchTerm, setJobSearchTerm] = useState("")
 
-  const supabase = createClient()
+  const supabase = createClient()  as any;
 
   const refreshData = async () => {
     // Fetch technicians
     const { data: techniciansData, error: techError } = await supabase
       .from('technicians')
       .select('*')
-      .neq('isActive', false)
     if (techError) {
       console.error('Error fetching technicians:', techError)
       setTechnicians([])
@@ -182,7 +181,7 @@ export default function TechniciansPage() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'job_assignments' },
-        (payload) => {
+        (payload: any) => {
           console.log('Change received!', payload)
         }
       )

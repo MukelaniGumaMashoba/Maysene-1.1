@@ -27,7 +27,7 @@ import {
 import StockEntryModal from "@/components/inventory/StockEntryModal";
 
 export default function StockLevelsPage() {
-  const supabase = createClient();
+  const supabase = createClient() as any;
   const [parts, setParts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,7 +36,7 @@ export default function StockLevelsPage() {
   const [stockFilter, setStockFilter] = useState("all");
   const [vehicleBrands, setVehicleBrands] = useState<any[]>([]);
   const [isStockEntryOpen, setIsStockEntryOpen] = useState(false);
-  const [userRole, setUserRole] = useState("");
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -51,7 +51,7 @@ export default function StockLevelsPage() {
         .select('role')
         .eq('id', user.id)
         .single();
-      if (profile) setUserRole(profile?.role || "");
+      if (profile) setUserRole((profile as any)?.role || "");
     }
   };
 

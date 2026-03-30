@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(request: NextRequest) {
   try {
+    const resendApiKey = process.env.RESEND_API_KEY;
+    const resend = resendApiKey ? new Resend(resendApiKey) : null;
     const { parts } = await request.json();
 
     if (!parts || parts.length === 0) {
@@ -73,12 +73,16 @@ export async function POST(request: NextRequest) {
       </div>
     `;
 
-    await resend.emails.send({
-      from: 'Maintenance System <admin@skyfleet.online>',
-      to: ['mukelani@solflo.co.za', 'stores@mayseneplant.co.za'],
-      subject: `🚨 Low Stock Alert - ${parts.length} Items Need Attention`,
-      html: emailHtml,
-    });
+    if (resend) {
+      await resend.emails.send({
+        from: 'Maintenance System <admin@skyfleet.online>',
+        to: ['mukelani@solflo.co.za', 'stores@mayseneplant.co.za'],
+        subject: `🚨 Low Stock Alert - ${parts.length} Items Need Attention`,
+        html: emailHtml,
+      });
+    } else {
+      console.warn('RESEND_API_KEY is not set; skipping low stock alert email send.');
+    }
 
     return NextResponse.json({ 
       message: 'Low stock alert sent successfully',

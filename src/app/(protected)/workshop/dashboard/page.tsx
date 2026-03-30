@@ -103,11 +103,11 @@ export default function Dashboard() {
   // Role-based navigation links (used in layout/navigation)
   const roleNavigation = {
     "fleet manager": [
-      { name: "Dashboard", href: "/dashboard", Icon: <ChartBar /> },
-      { name: "Jobs", href: "/jobsFleet", Icon: <Briefcase /> },
+      { name: "Dashboard", href: "/workshop/dashboard", Icon: <ChartBar /> },
+      { name: "Jobs", href: "/workshop/jobsFleet", Icon: <Briefcase /> },
       { name: "Drivers", href: "/drivers", Icon: <Users /> },
       { name: "Vehicles", href: "/vehicles", Icon: <Car /> },
-      { name: "Quote Management", href: "/quotation", Icon: <Building2 /> },
+      { name: "Quote Management", href: "/workshop/quotation", Icon: <Building2 /> },
       { name: "System Settings", href: "/settings", Icon: <Settings /> },
       {
         name: "User Management",
@@ -116,36 +116,36 @@ export default function Dashboard() {
       },
     ],
     "call centre": [
-      { name: "Dashboard", href: "/dashboard", Icon: <ChartBar /> },
-      { name: "Jobs", href: "/jobs", Icon: <Briefcase /> },
-      { name: "Call Center", href: "/callcenter", Icon: <Phone /> },
+      { name: "Dashboard", href: "/workshop/dashboard", Icon: <ChartBar /> },
+      { name: "Jobs", href: "/workshop/jobs", Icon: <Briefcase /> },
+      { name: "Call Center", href: "/workshop/callcenter", Icon: <Phone /> },
       {
         name: "Technicians Assignment",
-        href: "/callcenter/technician",
+        href: "/workshop/callcenter/technician",
         Icon: <Wrench />,
       },
       {
         name: "Technician Vehicles",
-        href: "/callcenter/breakdowns",
+        href: "/workshop/callcenter/breakdowns",
         Icon: <Truck />,
       },
-      { name: "Workshops", href: "/callcenter/clients", Icon: <Users /> },
-      { name: "Quote Management", href: "/ccenter", Icon: <Building2 /> },
+      { name: "Workshops", href: "/workshop/callcenter/clients", Icon: <Users /> },
+      { name: "Quote Management", href: "/workshop/ccenter", Icon: <Building2 /> },
       { name: "System Settings", href: "/settings", Icon: <Settings /> },
     ],
     customer: [
-      { name: "Dashboard", href: "/dashboard", Icon: <ChartBar /> },
+      { name: "Dashboard", href: "/workshop/dashboard", Icon: <ChartBar /> },
       {
         name: "Technicians Assignment",
-        href: "/extechnicians",
+        href: "/workshop/extechnicians",
         Icon: <Users />,
       },
-      { name: "Workshop Vehicles", href: "/exvehicles", Icon: <Car /> },
-      { name: "Quote Management", href: "/workshopQuote", Icon: <Building2 /> },
+      { name: "Workshop Vehicles", href: "/workshop/exvehicles", Icon: <Car /> },
+      { name: "Quote Management", href: "/workshop/workshopQuote", Icon: <Building2 /> },
       { name: "System Settings", href: "/settings", Icon: <Settings /> },
     ],
     "cost centre": [
-      { name: "Dashboard", href: "/dashboard", Icon: <ChartBar /> },
+      { name: "Dashboard", href: "/workshop/dashboard", Icon: <ChartBar /> },
       { name: "Cost", href: "/ccenter", Icon: <Building2 /> },
       {
         name: "Quote Management",
@@ -189,7 +189,7 @@ export default function Dashboard() {
         title: "Job Card",
         description: "See active and pending job cards",
         icon: AlertTriangle,
-        action: "/jobs",
+        action: "/workshop/jobs",
         color: "bg-red-50 text-red-600 hover:bg-red-100",
       },
       {
@@ -217,7 +217,7 @@ export default function Dashboard() {
         title: "Technicians",
         description: "View and manage all the technicians",
         icon: User2,
-        action: "/callcenter/technician",
+        action: "/workshop/callcenter/technician",
         color: "bg-blue-50 text-blue-600 hover:bg-blue-100",
       },
       {
@@ -273,7 +273,7 @@ export default function Dashboard() {
             title: "Workshop Breakdown Vehicles",
             description: "View all vehicle breakdown",
             icon: Phone,
-            action: "/exvehicles",
+            action: "/workshop/exvehicles",
             color: "bg-orange-50 text-orange-600 hover:bg-orange-100",
           },
           {

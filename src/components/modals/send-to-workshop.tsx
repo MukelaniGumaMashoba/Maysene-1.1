@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Wrench } from 'lucide-react';
 import { toast } from 'sonner';
 
-const supabase = createClient();
+const supabase = createClient() as any;
 
 interface Props {
   jobId: number;
@@ -46,7 +46,7 @@ export function SendToWorkshopDialog({ jobId, jobDescription, vehicleReg, client
       const { error: workshopError } = await supabase
         .from('workshop_job')
         .insert({
-          jobId_workshop,
+          // id: undefined,
           registration_no: vehicleReg || '',
           job_type: jobType || 'repair',
           description: jobDescription,

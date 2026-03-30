@@ -40,6 +40,7 @@ const roleNavigation = {
     { name: "Load Plan", href: "/load-plan", Icon: <Route /> },
     { name: "Statistics", href: "/statistics", Icon: <StepForward /> },
     { name: "Jobs", href: "/jobsFleet", Icon: <Briefcase /> },
+    { name: "Workshop Jobs", href: "/workshop/jobWorkShop", Icon: <Wrench /> },
     {
       name: "Inspections",
       href: "/fleetManager/inspections",
@@ -55,7 +56,6 @@ const roleNavigation = {
     { name: "Vehicles", href: "/vehicles", Icon: <Car /> },
     { name: "Clients", href: "/fleetManager/clients", Icon: <Building2 /> },
     { name: "Financials", href: "/audit", Icon: <Settings2Icon /> },
-    { name: "Workshop Jobs", href: "/workshop/jobWorkShop", Icon: <Wrench /> },
     {
       name: "Stock Levels",
       href: "/workshop/inventory/stock-levels",
@@ -69,7 +69,7 @@ const roleNavigation = {
     { name: "Dashboard", href: "/workshop/dashboard", Icon: <ChartBar /> },
     { name: "Jobs", href: "/workshop/jobs", Icon: <Briefcase /> },
     { name: "Workshop", href: "/workshop/callcenter", Icon: <Store /> },
-    { name: "Drivers", href: "/workshop/drivers", Icon: <Users /> },
+    { name: "Drivers", href: "/drivers", Icon: <Users /> },
     { name: "Vehicles", href: "/workshop/vehicles", Icon: <Car /> },
     {
       name: "Technicians Assignment",
@@ -77,7 +77,12 @@ const roleNavigation = {
       Icon: <Wrench />,
     },
     { name: "Suppliers", href: "/workshop/admin/suppliers", Icon: <Building2 /> },
-    { name: "Sublets", href: "/workshop/admin/sublets", Icon: <ArrowRightLeft /> },
+    {
+      name: "Subcontractors",
+      href: "/fleetManager/subcontractors",
+      Icon: <Construction />,
+    },
+    // { name: "Sublets", href: "/workshop/admin/sublets", Icon: <ArrowRightLeft /> },
     { name: "Inventory", href: "/workshop/inventory", Icon: <Package /> },
     {
       name: "Stock Levels",

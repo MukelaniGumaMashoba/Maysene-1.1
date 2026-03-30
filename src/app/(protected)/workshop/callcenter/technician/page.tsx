@@ -157,7 +157,7 @@ export default function TechniciansPage() {
   // Add job search state for filtering jobs in the assign dialog
   const [jobSearchTerm, setJobSearchTerm] = useState("");
 
-  const supabase = createClient();
+  const supabase = createClient() as any;
 
   const refreshData = async () => {
     // Fetch technicians
@@ -258,7 +258,7 @@ export default function TechniciansPage() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "workshop_assignments" },
-        (payload) => {
+        (payload: any) => {
           console.log("Change received!", payload);
           // refetch on change
           refreshData();
@@ -540,7 +540,7 @@ export default function TechniciansPage() {
         location: editForm.location,
         coordinates: editForm.coordinates,
         specialties: editForm.specialties,
-        skillLevels: editForm.skillLevels,
+        skill_levels: editForm.skillLevels,
         rating: editForm.rating,
         joinDate: editForm.joinDate,
         certifications: editForm.certifications,
@@ -552,7 +552,7 @@ export default function TechniciansPage() {
       };
       const { error } = await supabase
         .from("technicians_maysene")
-        .update(payload)
+        .update(payload as any)
         .eq("id", editForm.id);
       if (error) {
         console.error("Error updating technician:", error);

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -24,6 +24,9 @@ import { Star, Edit, Trash2, Plus } from 'lucide-react'
 import { SubcontractorForm } from '@/components/forms/subcontractor-form'
 import { deleteSubcontractor } from '@/lib/action/subcontractors'
 import { toast } from 'sonner'
+import { AllocateSubcontractorDialog } from '../modals/subcontractors'
+import { createClient } from '@/lib/supabase/client'
+import SubcontractorJobAllocationBoard from '../workshop/AllocateJobToSubcontractor'
 
 interface Subcontractor {
   id: string
@@ -44,6 +47,22 @@ export function SubcontractorsTable({ subcontractors }: SubcontractorsTableProps
   const [searchTerm, setSearchTerm] = useState('')
   const [editingSubcontractor, setEditingSubcontractor] = useState<Subcontractor | null>(null)
   const [showAddDialog, setShowAddDialog] = useState(false)
+  const [job, setJob] = useState<any[]>([])
+  const supabase = createClient();
+
+
+  const fetchJobs = async () => {
+    const { data, error } = await supabase.from('workshop_job').select('*')
+    if (error) {
+      toast.error('Failed to fetch jobs')
+    } else {
+      setJob(data as unknown as [])
+    }
+  }
+
+useEffect(() => {
+  fetchJobs()
+}, [])
 
   const filteredSubcontractors = subcontractors.filter(sub =>
     sub.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

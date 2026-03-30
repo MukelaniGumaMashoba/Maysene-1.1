@@ -115,7 +115,7 @@ export default function WorkshopJobDetailPage() {
   const [technician, setTechnician] = useState<Technician | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const supabase = createClient();
+  const supabase = createClient() as any;
 
   // Labour state
   const [labourHours, setLabourHours] = useState<number>(0);
@@ -194,7 +194,7 @@ export default function WorkshopJobDetailPage() {
         .select("*")
         .eq("job_id", jobData.id);
       if (!consumError && consumablesData) {
-        const consumablesList = consumablesData?.flatMap((item) => item.consumables || []) || [];
+        const consumablesList = consumablesData?.flatMap((item: any) => (item as any).consumables || []) || [];
         setConsumables(consumablesList);
       }
 
@@ -327,7 +327,7 @@ export default function WorkshopJobDetailPage() {
           </Link>
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-bold text-black">
-              Klava Plant Hire - Job Details
+              Maysene - Job Details
             </h1>
             {/* <Button
               variant="outline"

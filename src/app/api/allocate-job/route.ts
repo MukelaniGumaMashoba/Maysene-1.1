@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(request: NextRequest) {
   try {
+    const resendApiKey = process.env.RESEND_API_KEY;
+    const resend = resendApiKey ? new Resend(resendApiKey) : null;
+
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -136,13 +137,15 @@ export async function POST(request: NextRequest) {
       </div>
     `;
 
-    if (sublet.email) {
+    if (sublet.email && resend) {
       await resend.emails.send({
         from: 'Maintenance Workshop <admin@skyfleet.online>',
         to: [sublet.email, "mukelani@solflo.co.za", "stores@klaverplant.co.za"],
         subject: `New Job Allocation - ${jobCard.job_number}`,
         html: emailHtml,
       });
+    } else if (!resend) {
+      console.warn('RESEND_API_KEY is not set; skipping allocation email send.');
     }
 
     return NextResponse.json({

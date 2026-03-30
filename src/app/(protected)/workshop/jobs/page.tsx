@@ -135,7 +135,7 @@ export default function JobsPage() {
   );
   const [activeTab, setActiveTab] = useState("all");
 
-  const supabase = createClient();
+  const supabase = createClient() as any;
 
   useEffect(() => {
     fetchJobs();
@@ -284,22 +284,22 @@ export default function JobsPage() {
 
       const { data: newJob, error: jobError } = await supabase
         .from("workshop_job")
-        .insert({
+        .insert([{
           registration_no: createJobForm.registration_number,
           job_type: createJobForm.job_type,
           description: createJobForm.description,
-          jobId_workshop: job_id,
-          notes: createJobForm.notes,
-          location: createJobForm.location,
-          client_name: createJobForm.client_name,
-          client_phone: createJobForm.client_phone,
+          jobid_workshop: job_id,
+          notes: createJobForm.notes || null,
+          location: createJobForm.location || null,
+          client_name: createJobForm.client_name || null,
+          client_phone: createJobForm.client_phone || null,
           status: "Awaiting Approval",
-          estimated_cost: createJobForm.estimated_cost || 0,
+          estimated_cost: createJobForm.estimated_cost ?? 0,
           priority: createJobForm.priority || "medium",
-          due_date: createJobForm.due_date || "",
-          odo_reading: createJobForm.odo_reading || "" || 0,
-          hours: createJobForm.hours || "" || 0,
-        })
+          due_date: createJobForm.due_date || null,
+          odo_reading: (createJobForm.odo_reading as any)?.toString?.() || null,
+          hours: (createJobForm.hours as any)?.toString?.() || null,
+        }] as any)
         .select()
         .single();
 
@@ -341,10 +341,10 @@ export default function JobsPage() {
       return;
     }
 
-    const { error } = await supabase.from("workshop_jobpart").insert({
-      job_parts: parts,
+    const { error } = await supabase.from("workshop_jobpart").insert([{
+      job_parts: parts as any,
       job_id: selectedJobId,
-    });
+    }] as any);
 
     // Determine the new status based on the current job status
     const job = jobs.find((j) => j.id === selectedJobId);
@@ -361,7 +361,7 @@ export default function JobsPage() {
       .update({
         status: newStatus,
         approved: approvedStatus,
-      })
+      } as any)
       .eq("id", selectedJobId);
 
     if (error) {

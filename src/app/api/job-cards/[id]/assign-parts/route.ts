@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-export async function PUT(request: NextRequest, { params }) {
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const supabase = await createClient();
     
@@ -34,7 +34,7 @@ export async function PUT(request: NextRequest, { params }) {
     const stockErrors = [];
     for (const part of parts) {
       const { data: stockItem, error: stockError } = await supabase
-        .mstock
+        .from('parts')
         .select('quantity')
         .eq('id', part.stock_id)
         .single();
@@ -60,8 +60,8 @@ export async function PUT(request: NextRequest, { params }) {
     // Update stock quantities and calculate new values
     for (const part of parts) {
       const { data: currentStock, error: stockError } = await supabase
-        .mstock
-        .select('quantity, cost_excl_vat_zar, total_value')
+        .from('parts')
+        .select('*')
         .eq('id', part.stock_id)
         .single();
 
@@ -76,7 +76,7 @@ export async function PUT(request: NextRequest, { params }) {
       const newTotalValue = (newQuantity * costPerUnit).toFixed(2);
       
       const { error: updateError } = await supabase
-        .mstock
+        .from('parts')
         .update({ 
           quantity: newQuantity.toString(),
           total_value: newTotalValue
@@ -132,7 +132,7 @@ export async function PUT(request: NextRequest, { params }) {
       assigned_by: user.id,
       
       // Parts information
-      assigned_parts: parts.map(part => ({
+      assigned_parts: parts.map((part: any) => ({
         description: part.description,
         quantity: part.quantity,
         code: part.code,
@@ -142,10 +142,10 @@ export async function PUT(request: NextRequest, { params }) {
         stock_id: part.stock_id
       })),
       total_parts: parts.length,
-      total_cost: parts.reduce((sum, part) => sum + (part.total_cost || 0), 0),
+      total_cost: parts.reduce((sum: number, part: any) => sum + (part.total_cost || 0), 0),
       
       // Additional job details
-      special_instructions: jobCard.special_instructions,
+      special_instructions: jobCard.special_instructions as string,
       access_requirements: jobCard.access_requirements,
       site_contact_person: jobCard.site_contact_person,
       site_contact_phone: jobCard.site_contact_phone,

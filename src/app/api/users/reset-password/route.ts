@@ -4,11 +4,6 @@ import { createClient as createAdminClient } from '@supabase/supabase-js';
 import notificationapi from 'notificationapi-node-server-sdk';
 import { decrypt } from '@/lib/crypto';
 
-notificationapi.init(
-  process.env.NOTIFICATIONAPI_CLIENT_ID!,
-  process.env.NOTIFICATIONAPI_CLIENT_SECRET!
-);
-
 function generatePassword() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
   return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
@@ -16,6 +11,14 @@ function generatePassword() {
 
 export async function POST(request: NextRequest) {
   try {
+    const notificationClientId = process.env.NOTIFICATIONAPI_CLIENT_ID;
+    const notificationClientSecret = process.env.NOTIFICATIONAPI_CLIENT_SECRET;
+    const notificationsEnabled = !!(notificationClientId && notificationClientSecret);
+
+    if (notificationsEnabled) {
+      notificationapi.init(notificationClientId as string, notificationClientSecret as string);
+    }
+
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
@@ -134,23 +137,27 @@ export async function POST(request: NextRequest) {
 
     const smsMessage = `Maysene Login - Email: ${userData.email}, Password: ${password}`;
 
-    await notificationapi.send({
-      notificationId: 'user_credentials',
-      user: {
-        id: userId,
-        email: userData.email,
-        number: phoneNumber || undefined
-      },
-      email: {
-        subject: 'Your Maysene Account Credentials',
-        html: emailHtml,
-        senderName: 'Maysene',
-        senderEmail: process.env.EMAIL_FROM!
-      },
-      sms: phoneNumber ? {
-        message: smsMessage
-      } : undefined
-    });
+    if (notificationsEnabled) {
+      await notificationapi.send({
+        notificationId: 'user_credentials',
+        user: {
+          id: userId,
+          email: userData.email,
+          number: phoneNumber || undefined
+        },
+        email: {
+          subject: 'Your Maysene Account Credentials',
+          html: emailHtml,
+          senderName: 'Maysene',
+          senderEmail: process.env.EMAIL_FROM!
+        },
+        sms: phoneNumber ? {
+          message: smsMessage
+        } : undefined
+      });
+    } else {
+      console.warn('NotificationAPI credentials are not set; skipping credential notification send.');
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

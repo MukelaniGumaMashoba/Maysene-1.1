@@ -34,16 +34,14 @@ interface Part {
 
 interface NonStockPart {
   id: number
-  job_card_id: string
-  part_name: string
-  part_number: string
-  description: string
-  quantity: number
-  unit_cost: number
-  total_cost: number
-  supplier: string
-  is_external_workshop: boolean
-  created_at: string
+  item_code: string | null
+  description: string | null
+  quantity: number | null
+  price: number | null
+  total: number | null
+  supplier: string | null
+  is_external_workshop: boolean | null
+  location: string | null
 }
 
 interface PartsFormData {
@@ -58,14 +56,13 @@ interface PartsFormData {
 }
 
 interface NonStockFormData {
-  job_card_id: string
-  part_name: string
-  part_number: string
+  item_code: string
   description: string
   quantity: number
-  unit_cost: number
+  price: number
   supplier: string
   is_external_workshop: boolean
+  location: string
 }
 
 export default function PartsManagement() {
@@ -89,17 +86,16 @@ export default function PartsManagement() {
   })
 
   const [nonStockForm, setNonStockForm] = useState<NonStockFormData>({
-    job_card_id: "",
-    part_name: "",
-    part_number: "",
+    item_code: "",
     description: "",
     quantity: 1,
-    unit_cost: 0,
+    price: 0,
     supplier: "",
-    is_external_workshop: false
+    is_external_workshop: false,
+    location: ""
   })
 
-  const supabase = createClient()
+  const supabase = createClient() as any
 
   useEffect(() => {
     fetchParts()
@@ -108,43 +104,62 @@ export default function PartsManagement() {
   }, [])
 
   const fetchParts = async () => {
+    console.log('[PartsManagement] Fetching stock parts...')
     const { data, error } = await supabase
       .from('parts')
       .select('*')
       .order('description')
 
-    if (!error && data) {
+    if (error) {
+      console.error('[PartsManagement] Fetch parts failed:', error)
+      toast.error('Failed to load parts')
+      return
+    }
+    if (data) {
+      console.log('[PartsManagement] Parts loaded:', data.length)
       setParts(data as any)
     }
   }
 
   const fetchNonStockParts = async () => {
+    console.log('[PartsManagement] Fetching once-off parts...')
     const { data, error } = await supabase
-      .from('parts')
-      .select(`
-        *      `)
-      .eq('is_stock_item', false)
+      .from('once_offparts')
+      .select(`*`)
       .order('description', { ascending: false })
 
-    if (!error && data) {
+    if (error) {
+      console.error('[PartsManagement] Fetch non-stock parts failed:', error)
+      toast.error('Failed to load once-off parts')
+      return
+    }
+    if (data) {
+      console.log('[PartsManagement] Non-stock parts loaded:', data.length)
       setNonStockParts(data as any)
     }
   }
 
   const fetchJobCards = async () => {
+    console.log('[PartsManagement] Fetching eligible job cards...')
     const { data, error } = await supabase
       .from('workshop_job')
       .select('id, jobId_workshop, registration_no, status')
       .in('status', ['Awaiting Approval', 'Approved - Ready for Parts Assignment', 'Part Assigned', 'Part Ordered'])
       .order('jobId_workshop')
 
-    if (!error && data) {
+    if (error) {
+      console.error('[PartsManagement] Fetch job cards failed:', error)
+      toast.error('Failed to load job cards')
+      return
+    }
+    if (data) {
+      console.log('[PartsManagement] Job cards loaded:', data.length)
       // Map workshop_job data to match expected format
       setJobCards(data.map(job => ({
         id: job.id,
         job_number: job.jobId_workshop,
-        vehicle_registration: job.registration_no,
-        status: job.status
+        status: job.status,
+        vehicle_registration: job.registration_no
       })))
     }
   }
@@ -153,13 +168,18 @@ export default function PartsManagement() {
     e.preventDefault()
 
     try {
+      console.log('[PartsManagement] Adding part...', { item_code: partsForm.item_code })
       const { error } = await supabase
         .from('parts')
         .insert([partsForm])
 
-      if (error) throw error
+      if (error) {
+        console.error('[PartsManagement] Add part failed:', error)
+        throw error
+      }
 
       toast.success("Part added successfully")
+      console.log('[PartsManagement] Part added successfully')
       setPartsForm({
         item_code: "",
         description: "",
@@ -184,14 +204,19 @@ export default function PartsManagement() {
     if (!editingPart) return
 
     try {
+      console.log('[PartsManagement] Updating part...', { id: editingPart.id })
       const { error } = await supabase
         .from('parts')
         .update(partsForm)
         .eq('id', editingPart.id)
 
-      if (error) throw error
+      if (error) {
+        console.error('[PartsManagement] Update part failed:', error)
+        throw error
+      }
 
       toast.success("Part updated successfully")
+      console.log('[PartsManagement] Part updated successfully')
       setEditingPart(null)
       setShowAddPart(false)
       fetchParts()
@@ -206,22 +231,36 @@ export default function PartsManagement() {
     e.preventDefault()
 
     try {
+      console.log('[PartsManagement] Adding once-off part...', { item_code: nonStockForm.item_code })
+      const payload = {
+        item_code: nonStockForm.item_code,
+        description: nonStockForm.description,
+        price: nonStockForm.price,
+        quantity: nonStockForm.quantity,
+        supplier: nonStockForm.supplier,
+        is_external_workshop: nonStockForm.is_external_workshop,
+        location: nonStockForm.location,
+        total: Number((nonStockForm.quantity * nonStockForm.price).toFixed(2))
+      }
       const { error } = await supabase
-        .from('parts')
-        .insert([nonStockForm])
+        .from('once_offparts')
+        .insert([payload] as any)
 
-      if (error) throw error
+      if (error) {
+        console.error('[PartsManagement] Add once-off part failed:', error)
+        throw error
+      }
 
       toast.success("Once-off part added successfully")
+      console.log('[PartsManagement] Once-off part added successfully')
       setNonStockForm({
-        job_card_id: "",
-        part_name: "",
-        part_number: "",
         description: "",
         quantity: 1,
-        unit_cost: 0,
+        price: 0,
+        item_code: "",
         supplier: "",
-        is_external_workshop: false
+        is_external_workshop: false,
+        location: ""
       })
       setShowAddNonStock(false)
       fetchNonStockParts()
@@ -236,14 +275,19 @@ export default function PartsManagement() {
     if (!confirm("Are you sure you want to delete this part?")) return
 
     try {
+      console.log('[PartsManagement] Deleting part...', { id: partId })
       const { error } = await supabase
         .from('parts')
         .delete()
         .eq('id', partId)
 
-      if (error) throw error
+      if (error) {
+        console.error('[PartsManagement] Delete part failed:', error)
+        throw error
+      }
 
       toast.success("Part deleted successfully")
+      console.log('[PartsManagement] Part deleted successfully')
       fetchParts()
 
     } catch (error) {
@@ -256,14 +300,19 @@ export default function PartsManagement() {
     if (!confirm("Are you sure you want to delete this once-off part?")) return
 
     try {
+      console.log('[PartsManagement] Deleting once-off part...', { id: partId })
       const { error } = await supabase
         .from('once_offparts')
         .delete()
         .eq('id', partId)
 
-      if (error) throw error
+      if (error) {
+        console.error('[PartsManagement] Delete once-off part failed:', error)
+        throw error
+      }
 
       toast.success("Once-off part deleted successfully")
+      console.log('[PartsManagement] Once-off part deleted successfully')
       fetchNonStockParts()
 
     } catch (error) {
@@ -438,7 +487,7 @@ export default function PartsManagement() {
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-4 mb-2">
-                        <h3 className="font-semibold">{part.part_name}</h3>
+                        <h3 className="font-semibold">{part.description}</h3>
                         <Badge variant={part.is_external_workshop ? "secondary" : "default"}>
                           {part.is_external_workshop ? "External Workshop" : "One-off Purchase"}
                         </Badge>
@@ -446,19 +495,16 @@ export default function PartsManagement() {
 
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div>
-                          <p><strong>Part Number:</strong> {part.part_number}</p>
-                          <p><strong>Job Card:</strong> {part.description || part.part_number}</p>
+                          <p><strong>Item Code:</strong> {part.item_code}</p>
+                          <p><strong>Location:</strong> {part.location}</p>
                         </div>
                         <div>
                           <p><strong>Quantity:</strong> {part.quantity}</p>
-                          <p><strong>Unit Cost:</strong> R{part.unit_cost}</p>
+                          <p><strong>Unit Cost:</strong> R{part.price}</p>
                         </div>
                         <div>
-                          <p><strong>Total Cost:</strong> R{part.total_cost}</p>
+                          <p><strong>Total Cost:</strong> R{part.total}</p>
                           <p><strong>Supplier:</strong> {part.supplier}</p>
-                        </div>
-                        <div>
-                          <p><strong>Added:</strong> {new Date(part.created_at).toLocaleDateString()}</p>
                         </div>
                       </div>
 
@@ -607,55 +653,48 @@ export default function PartsManagement() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleAddNonStockPart} className="space-y-4">
-                <div>
-                  <Label htmlFor="job_card_id">Job Card *</Label>
-                  <Select
-                    value={nonStockForm.job_card_id}
-                    onValueChange={(value) => setNonStockForm({ ...nonStockForm, job_card_id: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select job card" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {jobCards.map((job) => (
-                        <SelectItem key={job.id} value={job.id}>
-                          {job.job_number} - {job.vehicle_registration}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="part_name">Part Name *</Label>
+                    <Label htmlFor="item_code">Item Code *</Label>
                     <Input
-                      id="part_name"
-                      value={nonStockForm.part_name}
-                      onChange={(e) => setNonStockForm({ ...nonStockForm, part_name: e.target.value })}
+                      id="item_code"
+                      value={nonStockForm.item_code}
+                      onChange={(e) => setNonStockForm({ ...nonStockForm, item_code: e.target.value })}
                       required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="part_number">Part Number</Label>
+                    <Label htmlFor="supplier">Supplier</Label>
                     <Input
-                      id="part_number"
-                      value={nonStockForm.part_number}
-                      onChange={(e) => setNonStockForm({ ...nonStockForm, part_number: e.target.value })}
+                      id="supplier"
+                      value={nonStockForm.supplier}
+                      onChange={(e) => setNonStockForm({ ...nonStockForm, supplier: e.target.value })}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description">Description *</Label>
                   <Textarea
                     id="description"
                     value={nonStockForm.description}
                     onChange={(e) => setNonStockForm({ ...nonStockForm, description: e.target.value })}
+                    required
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="price">Unit Cost (R) *</Label>
+                    <Input
+                      id="price"
+                      type="number"
+                      step="0.01"
+                      value={nonStockForm.price}
+                      onChange={(e) => setNonStockForm({ ...nonStockForm, price: parseFloat(e.target.value) || 0 })}
+                      required
+                    />
+                  </div>
                   <div>
                     <Label htmlFor="quantity">Quantity *</Label>
                     <Input
@@ -667,41 +706,31 @@ export default function PartsManagement() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="unit_cost">Unit Cost (R) *</Label>
-                    <Input
-                      id="unit_cost"
-                      type="number"
-                      step="0.01"
-                      value={nonStockForm.unit_cost}
-                      onChange={(e) => setNonStockForm({ ...nonStockForm, unit_cost: parseFloat(e.target.value) || 0 })}
-                      required
-                    />
-                  </div>
-                  <div>
                     <Label>Total Cost</Label>
                     <Input
-                      value={`R${(nonStockForm.quantity * nonStockForm.unit_cost).toFixed(2)}`}
+                      value={`R${(nonStockForm.quantity * nonStockForm.price).toFixed(2)}`}
                       disabled
                     />
                   </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="supplier">Supplier</Label>
-                  <Input
-                    id="supplier"
-                    value={nonStockForm.supplier}
-                    onChange={(e) => setNonStockForm({ ...nonStockForm, supplier: e.target.value })}
-                  />
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="is_external_workshop"
-                    checked={nonStockForm.is_external_workshop}
-                    onCheckedChange={(checked) => setNonStockForm({ ...nonStockForm, is_external_workshop: !!checked })}
-                  />
-                  <Label htmlFor="is_external_workshop">Used by external workshop</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="location">Location</Label>
+                    <Input
+                      id="location"
+                      value={nonStockForm.location}
+                      onChange={(e) => setNonStockForm({ ...nonStockForm, location: e.target.value })}
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="is_external_workshop"
+                      checked={nonStockForm.is_external_workshop}
+                      onCheckedChange={(checked) => setNonStockForm({ ...nonStockForm, is_external_workshop: !!checked })}
+                    />
+                    <Label htmlFor="is_external_workshop">Used by external workshop</Label>
+                  </div>
                 </div>
 
                 <div className="flex justify-end space-x-2 pt-4">

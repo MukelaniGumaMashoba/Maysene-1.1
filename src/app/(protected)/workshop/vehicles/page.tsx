@@ -139,7 +139,7 @@ export default function Vehicles() {
   const [isAddingVehicle, setIsAddingVehicle] = useState(false);
   const [selectedVehicleReg, setSelectedVehicleReg] = useState("");
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = createClient() as any;
   const [search, setSearch] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -187,7 +187,7 @@ export default function Vehicles() {
           .single();
 
         if (data && !error) {
-          setWorkshopId(data.workshop_id);
+          setWorkshopId(data?.workshop_id);
         }
       };
 
@@ -375,7 +375,7 @@ export default function Vehicles() {
           table: "vehiclesc",
           // filter: `company_id=eq.${workshopId || 1}`, // Your company filter
         },
-        (payload) => {
+        (payload: any) => {
           console.log("New vehicle:", payload.new);
           // Optimistically add to state (no full refetch!)
           setVehicles((prev) => [payload.new as VehicleFormValues, ...prev]);
@@ -1136,7 +1136,7 @@ export default function Vehicles() {
       <Card className="bg-blue-50 border-blue-200">
         <CardContent className="p-4">
           <div className="flex items-center gap-2">
-            <Badge className="bg-blue-600 text-white">Klava Plant Hire</Badge>
+            <Badge className="bg-blue-600 text-white">Maysene</Badge>
             <span className="text-sm text-blue-800">
               Vehicle Fleet Management
             </span>

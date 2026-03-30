@@ -153,7 +153,7 @@ export default function FleetJobsPage() {
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [newStatus, setNewStatus] = useState("");
   const [updateNotes, setUpdateNotes] = useState("");
-  const supabase = createClient();
+  const supabase = createClient() as any;
   const [workshops, setWorkshops] = useState<any[]>([]);
   const [isWorkshopDialogOpen, setIsWorkshopDialogOpen] = useState(false);
   const [selectedJobForWorkshop, setSelectedJobForWorkshop] =
@@ -197,7 +197,7 @@ export default function FleetJobsPage() {
       console.error("Error fetching workshops:", error);
     } else {
       // Map the database response to match your schema
-      const mappedWorkshops = data.map((workshop) => ({
+      const mappedWorkshops = data.map((workshop: any) => ({
         id: workshop.id,
         work_name: workshop.work_name,
         trading_name: workshop.trading_name,
@@ -257,7 +257,7 @@ export default function FleetJobsPage() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "workshop_job" },
-        (payload) => {
+        (payload: any) => {
           console.log("Change received!", payload);
         }
       )
@@ -268,7 +268,7 @@ export default function FleetJobsPage() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "workshop_job" },
-        (payload) => {
+        (payload: any) => {
           console.log("Change received!", payload);
         }
       )
@@ -987,11 +987,11 @@ export default function FleetJobsPage() {
                         }
                       >
                         <CheckCircle className="h-4 w-4 mr-2" />
-                        {job.status?.includes("Awaiting Approval")
+                        {(job.status?.includes("Awaiting Approval") || job.status?.includes("Assigned"))
                           ? "Approve/Reject"
                           : "View Workflow"}
                       </Button>
-                      <Link href={`/jobWorkShop/${job.id}`}>
+                      <Link href={`/workshop/jobWorkShop/${job.id}`}>
                         <Button variant="outline" size="sm">
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
@@ -1029,7 +1029,7 @@ export default function FleetJobsPage() {
         </TabsContent>
         <TabsContent value="fleetJobs" className="space-y-6 p-6 bg-gray-50 min-h-screen">
           <FleetJobsForAdmin supabase={supabase} onJobUpdated={() => {
-            supabase.from("workshop_job").select("*").order("created_at", { ascending: false }).then(({ data }) => {
+            supabase.from("workshop_job").select("*").order("created_at", { ascending: false }).then(({ data }: { data: any }) => {
               if (data) setWorkshopsJob(data as unknown as WorkshopJob[]);
             });
           }} />
@@ -1093,7 +1093,7 @@ export default function FleetJobsPage() {
                       </p>
                     </CardContent>
                     <CardFooter className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-                      <Link href={`/jobWorkShop/${job.id}`}>
+                      <Link href={`/workshop/jobWorkShop/${job.id}`}>
                         <Button variant="outline" size="sm">
                           <Eye className="h-4 w-4 mr-2" />
                           View Details

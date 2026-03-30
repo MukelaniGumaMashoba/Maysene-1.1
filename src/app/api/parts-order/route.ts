@@ -44,8 +44,8 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (orderError) {
-      console.log(orderError.message)
-      return NextResponse.json({ error: orderError.message }, { status: 500 });
+      console.log((orderError as any).message || 'Unknown error')
+      return NextResponse.json({ error: (orderError as any).message || 'Unknown error' }, { status: 500 });
     }
 
     // Send email to supplier

@@ -261,7 +261,7 @@ export async function getStockReports() {
   const supabase = createClient()
 
   const { data: stock, error } = await supabase
-    .from('mstock')
+    .from('part_orders')
     .select('*')
     .order('id', { ascending: false })
 
@@ -277,7 +277,7 @@ export async function getStockOrderReports() {
   const supabase = createClient()
 
   const { data: orders, error } = await supabase
-    .from('mstock_orders')
+    .from('part_orders')
     .select('*')
     .order('created_at', { ascending: false })
 
@@ -303,7 +303,7 @@ export async function getPartsOrderReports() {
       return []
     }
 
-    const supplierIds = orders?.map(o => o.supplier_id).filter((id): id is number => id != null) ?? []
+    const supplierIds = orders?.map((o: any) => o.supplier_id).filter((id: any): id is number => id != null) ?? []
 
     const { data: suppliers, error: suppliersError } = await supabase
       .from('suppliers')
@@ -316,13 +316,13 @@ export async function getPartsOrderReports() {
       return orders || []
     }
 
-    const combinedOrders = orders?.map(order => {
-      const supplier = suppliers?.find(s => s.id === order.supplier_id)
+    const combinedOrders = orders?.map((order: any) => {
+      const supplier = suppliers?.find((s: any) => s.id === order.supplier_id)
       return {
-        ...order,
-        supplier_name: supplier ? supplier.name : 'Unknown Supplier',
-        supplier_contact: supplier ? supplier.contact_person : 'N/A',
-        supplier_phone: supplier ? supplier.phone : 'N/A'
+        ...(order as any),
+        supplier_name: supplier ? (supplier as any).name : 'Unknown Supplier',
+        supplier_contact: supplier ? (supplier as any).contact_person : 'N/A',
+        supplier_phone: supplier ? (supplier as any).phone : 'N/A'
       }
     })
 
@@ -473,9 +473,9 @@ export async function getPartAssignmentHistory(partId: number) {
 
   return {
     logs: logs || [],
-    jobParts: (jobParts || []).filter(jp => {
+    jobParts: (jobParts || []).filter((jp: any) => {
       // Filter job parts that contain this part ID in their JSON data
-      const jobPartsData = jp.job_parts
+      const jobPartsData = (jp as any).job_parts
       if (typeof jobPartsData === 'object' && jobPartsData !== null) {
         return JSON.stringify(jobPartsData).includes(partId.toString())
       }

@@ -124,7 +124,7 @@ export default function WorkshopJobDetailPage() {
   const [technician, setTechnician] = useState<Technician | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const supabase = createClient();
+  const supabase = createClient() as any;
 
   // Labour state
   const [labourHours, setLabourHours] = useState<number>(0);
@@ -174,7 +174,7 @@ export default function WorkshopJobDetailPage() {
       return;
     }
     const consumablesList =
-      data?.flatMap((item) => item.consumables || []) || [];
+      data?.flatMap((item: any) => item.consumables || []) || [];
     setConsumables(consumablesList);
   };
 
@@ -346,7 +346,7 @@ export default function WorkshopJobDetailPage() {
       );
       setJob((prev) => (prev ? { ...prev, status } : null));
       setUpdating(false);
-      setTimeout(() => router.push("/jobs"), 1500);
+      setTimeout(() => router.push("/workshop/jobs"), 1500);
       return { success: true, data };
     }
   };
@@ -559,7 +559,7 @@ export default function WorkshopJobDetailPage() {
       {/* Header */}
       <div className="bg-white shadow-sm border-b px-6 py-4">
         <div className="flex items-center justify-between">
-          <Link href="/jobs">
+          <Link href="/workshop/jobs">
             <Button variant="ghost" className="flex items-center gap-2">
               <ArrowLeft className="h-4 w-4" /> Back to Jobs
             </Button>

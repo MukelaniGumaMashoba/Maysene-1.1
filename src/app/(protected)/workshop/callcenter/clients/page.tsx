@@ -66,7 +66,6 @@ export default function ExternalClientsPage() {
     // @ts-ignore
     setClients((data || []).filter((c: any) => c.client_type === "external"))
 
-    // @ts-expect-error
     setSubcontractors((data || []).filter((c: any) => c.client_type === "subcontractor"))
 
     // @ts-ignore
@@ -92,7 +91,7 @@ export default function ExternalClientsPage() {
 
   // Assignment logic
   async function assignJobToSubcontractor(jobId: number, subcontractorId: number) {
-    const supabase = createClient();
+    const supabase = createClient() as any;
     const { error } = await supabase
       .from("job_assignments")
       .update({
@@ -101,7 +100,7 @@ export default function ExternalClientsPage() {
       })
       .eq("id", jobId)
     if (error) {
-      toast.error("Failed to assign job: " + error.message)
+      toast.error("Failed to assign job: " + (error as any).message)
     } else {
       toast.success("Job assigned to subcontractor!")
       fetchAvailableJobs()
@@ -159,7 +158,7 @@ export default function ExternalClientsPage() {
       client_type: 'external',
       vehicle_types: formData.get("vehicle_types") ? (formData.get("vehicle_types") as string).split(',').map(s => s.trim()).filter(Boolean) : [],
     };
-    const { data, error } = await addExternalClient(clientData);
+    const { data, error } = await addExternalClient(clientData as unknown as ExternalClient);
     if (error) {
       toast.error(`Failed to add client: ${error.message}`);
     } else {

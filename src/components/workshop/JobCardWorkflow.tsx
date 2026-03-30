@@ -19,18 +19,18 @@ import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 
 interface JobCard {
-  id: string
-  job_number: string
-  job_description: string
-  vehicle_registration: string
-  workflow_status: string
-  status: string
-  created_at: string
-  assigned_technician_id?: string
-  technician_name?: string
-  driver_id?: number
-  estimated_cost: number
-  priority: string
+  id: number
+  jobId_workshop: string | null
+  description: string | null
+  registration_no: string | null
+  workflow_status: string | null
+  status: string | null
+  created_at?: string | null
+  assigned_technician_id?: string | null
+  technician_name?: string | null
+  driver_id?: number | null
+  estimated_cost?: number | null
+  priority?: string | null
 }
 
 interface WorkflowAction {
@@ -49,7 +49,7 @@ export default function JobCardWorkflow() {
     can_reject_jobs: false,
     can_close_jobs: false
   })
-  const supabase = createClient()
+  const supabase = createClient() as any
 
   useEffect(() => {
     fetchUserProfile()
@@ -57,35 +57,52 @@ export default function JobCardWorkflow() {
   }, [])
 
   const fetchUserProfile = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
+    console.log('[JobCardWorkflow] Fetching user profile...')
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError) {
+      console.error('[JobCardWorkflow] getUser failed:', authError)
+      toast.error('Failed to resolve current user')
+      return
+    }
     if (user) {
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('users')
         .select('role, can_approve_jobs, can_reject_jobs, can_close_jobs')
         .eq('id', user.id)
         .single()
       
-      if (profile) {
-        setUserRole(profile.role || "")
+      if (profileError) {
+        console.error('[JobCardWorkflow] Fetch profile failed:', profileError)
+        toast.error('Failed to load user permissions')
+      } else if (profile) {
+        const profileData: any = profile as any
+        setUserRole(profileData.role || "")
         setUserPermissions({
-          can_approve_jobs: profile.can_approve_jobs || false,
-          can_reject_jobs: profile.can_reject_jobs || false,
-          can_close_jobs: profile.can_close_jobs || false
+          can_approve_jobs: profileData.can_approve_jobs || false,
+          can_reject_jobs: profileData.can_reject_jobs || false,
+          can_close_jobs: profileData.can_close_jobs || false
+        })
+        console.log('[JobCardWorkflow] Loaded profile with permissions:', {
+          can_approve_jobs: profileData.can_approve_jobs,
+          can_reject_jobs: profileData.can_reject_jobs,
+          can_close_jobs: profileData.can_close_jobs
         })
       }
     }
   }
 
   const fetchJobs = async () => {
+    console.log('[JobCardWorkflow] Fetching jobs...')
     const { data, error } = await supabase
       .from('workshop_job')
       .select(`
         id,
+        jobId_workshop,
         registration_no,
         description,
-        vehicle_id,
         approval_status,
         status,
+        workflow_status,
         estimated_cost,
         priority,
         due_date,
@@ -94,28 +111,39 @@ export default function JobCardWorkflow() {
       `)
       .order('created_at', { ascending: false })
 
-    if (!error && data) {
+    if (error) {
+      console.error('[JobCardWorkflow] Fetch jobs failed:', error)
+      toast.error('Failed to load jobs')
+      return
+    }
+    if (data) {
+      console.log('[JobCardWorkflow] Jobs loaded:', data.length)
       setJobs(data as any)
     }
   }
 
-  const logWorkflowHistory = async (jobCardId: string, fromStatus: string, toStatus: string, notes?: string) => {
-    await supabase
+  const logWorkflowHistory = async (jobCardId: number, fromStatus: string | null, toStatus: string, notes?: string) => {
+    console.log('[JobCardWorkflow] Logging workflow history:', { jobCardId, fromStatus, toStatus })
+    const { error } = await (supabase as any)
       .from('job_card_workflow_history')
-      .insert({
-        workshop_job_id: parseInt(jobCardId),
+      .insert([{
+        job_card_id: jobCardId,
         from_status: fromStatus,
         to_status: toStatus,
         notes: notes
-      })
+      }] as any)
+    if (error) {
+      console.error('[JobCardWorkflow] Failed to log workflow history:', error)
+    }
   }
 
   const handleWorkflowAction = async (job: JobCard, action: WorkflowAction) => {
     setIsProcessing(true)
+    console.log('[JobCardWorkflow] Handling workflow action:', { jobId: job.id, action })
     
     try {
-      let newStatus = job.workflow_status
-      let newJobStatus = job.status
+      let newStatus = job.workflow_status || 'pending_approval'
+      let newJobStatus = job.status || 'pending'
 
       switch (action.action) {
         case 'approve':
@@ -126,13 +154,19 @@ export default function JobCardWorkflow() {
           newStatus = 'rejected'
           newJobStatus = 'rejected'
           // Store in rejected_jobs table
-          await supabase
+          {
+            const { error } = await (supabase as any)
             .from('rejected_jobs')
-            .insert({
-              original_job_card_id: parseInt(job.id),
+            .insert([{
+              original_job_card_id: job.id,
               job_data: JSON.stringify(job) as any,
               rejection_reason: action.notes
-            })
+            }] as any)
+            if (error) {
+              console.error('[JobCardWorkflow] Failed inserting rejected job:', error)
+              throw error
+            }
+          }
           break
         case 'complete':
           newStatus = 'completed'
@@ -145,23 +179,25 @@ export default function JobCardWorkflow() {
       }
 
       // Update job card status
-      const { error: updateError } = await supabase
-        .from('job_cards')
+      const { error: updateError } = await (supabase as any)
+        .from('workshop_job')
         .update({
           workflow_status: newStatus,
           status: newJobStatus,
           updated_at: new Date().toISOString()
-        })
+        } as any)
         .eq('id', job.id)
 
       if (updateError) {
+        console.error('[JobCardWorkflow] Update job card failed:', updateError)
         throw updateError
       }
 
       // Log workflow history
-      await logWorkflowHistory(job.id, job.workflow_status, newStatus, action.notes)
+      await logWorkflowHistory(job.id, job.workflow_status || null, newStatus, action.notes)
 
-      toast.success(`Job ${job.job_number} ${action.action}d successfully`)
+      toast.success(`Job ${job.jobId_workshop || job.id} ${action.action}d successfully`)
+      console.log('[JobCardWorkflow] Action completed successfully:', { jobId: job.id, newStatus, newJobStatus })
       
       // Refresh jobs list
       fetchJobs()
@@ -169,7 +205,7 @@ export default function JobCardWorkflow() {
       setActionNotes("")
 
     } catch (error) {
-      console.error('Workflow action failed:', error)
+      console.error('[JobCardWorkflow] Workflow action failed:', error)
       toast.error(`Failed to ${action.action} job`)
     } finally {
       setIsProcessing(false)
@@ -183,7 +219,7 @@ export default function JobCardWorkflow() {
       printWindow.document.write(`
         <html>
           <head>
-            <title>Job Card - ${job.job_number}</title>
+            <title>Job Card - ${job.jobId_workshop || job.id}</title>
             <style>
               body { font-family: Arial, sans-serif; margin: 20px; }
               .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; }
@@ -196,20 +232,20 @@ export default function JobCardWorkflow() {
           <body>
             <div class="header">
               <h1>JOB CARD</h1>
-              <h2>${job.job_number}</h2>
+              <h2>${job.jobId_workshop || job.id}</h2>
             </div>
             
             <div class="section">
               <h3>Vehicle Information</h3>
-              <div class="field"><strong>Registration:</strong> ${job.vehicle_registration}</div>
-              <div class="field"><strong>Job Type:</strong> ${job.job_description}</div>
-              <div class="field"><strong>Priority:</strong> ${job.priority}</div>
+              <div class="field"><strong>Registration:</strong> ${job.registration_no || ''}</div>
+              <div class="field"><strong>Job Type:</strong> ${job.description || ''}</div>
+              <div class="field"><strong>Priority:</strong> ${job.priority || ''}</div>
             </div>
 
             <div class="section">
               <h3>Assignment</h3>
               <div class="field"><strong>Technician:</strong> ${job.technician_name || 'Not assigned'}</div>
-              <div class="field"><strong>Estimated Cost:</strong> R${job.estimated_cost}</div>
+              <div class="field"><strong>Estimated Cost:</strong> R${job.estimated_cost ?? 0}</div>
             </div>
 
             <div class="section">
@@ -290,13 +326,13 @@ export default function JobCardWorkflow() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div>
-                      <h3 className="font-semibold">{job.job_number}</h3>
-                      <p className="text-sm text-gray-600">{job.vehicle_registration}</p>
-                      <p className="text-sm text-gray-500">{job.job_description}</p>
+                      <h3 className="font-semibold">{job.jobId_workshop || job.id}</h3>
+                      <p className="text-sm text-gray-600">{job.registration_no}</p>
+                      <p className="text-sm text-gray-500">{job.description}</p>
                     </div>
-                    <Badge className={`${getStatusColor(job.workflow_status)} flex items-center space-x-1`}>
-                      {getStatusIcon(job.workflow_status)}
-                      <span>{job.workflow_status.replace('_', ' ').toUpperCase()}</span>
+                    <Badge className={`${getStatusColor(job.workflow_status || 'pending_approval')} flex items-center space-x-1`}>
+                      {getStatusIcon(job.workflow_status || 'pending_approval')}
+                      <span>{(job.workflow_status || 'pending_approval').replace('_', ' ').toUpperCase()}</span>
                     </Badge>
                   </div>
                   
@@ -361,7 +397,7 @@ export default function JobCardWorkflow() {
           <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold mb-4">Reject Job Card</h3>
             <p className="text-sm text-gray-600 mb-4">
-              Job: {selectedJob.job_number} - {selectedJob.vehicle_registration}
+              Job: {selectedJob.jobId_workshop || selectedJob.id} - {selectedJob.registration_no || ''}
             </p>
             
             <div className="space-y-4">
