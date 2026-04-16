@@ -139,7 +139,16 @@ export default function LoadPlanPage() {
       address?: unknown;
       coordinates?: unknown;
       name?: unknown;
+      place_name?: unknown;
     };
+
+    // Prefer the most specific information available
+    if (
+      typeof locationValue.place_name === "string" &&
+      locationValue.place_name.trim()
+    ) {
+      return locationValue.place_name;
+    }
 
     if (
       typeof locationValue.address === "string" &&

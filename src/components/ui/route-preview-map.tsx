@@ -315,7 +315,11 @@ export function RoutePreviewMap({ origin, destination, routeData, stopPoints = [
   const geocodeLocation = async (location: string) => {
     try {
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(location)}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&country=za&limit=1`
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+          location,
+        )}.json?access_token=${
+          process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+        }&country=za&limit=1&proximity=28.0473,-26.2041`
       );
       const data = await response.json();
       
