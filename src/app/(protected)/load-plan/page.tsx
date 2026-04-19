@@ -78,13 +78,66 @@ import { ClientDropdown } from "@/components/ui/client-dropdown";
 import { ClientLoadingDropdown } from "@/components/ui/client-loading-dropdown";
 import { ClientLoadingLocationModal } from "@/components/ui/client-loading-location-modal";
 import { set } from "date-fns";
+import { any, unknown } from "zod";
 
 export default function LoadPlanPage() {
   console.log("LoadPlanPage component rendering");
   const supabase = createClient();
   console.log("Supabase client created:", !!supabase);
   const { toast, showToast, hideToast } = useToast();
-  const [loads, setLoads] = useState([
+
+  const parseCoords = (coords: any) => {
+    if (!coords) return null;
+
+    // Case 1: already object
+    if (typeof coords === "object") {
+      return {
+        lat: Number(coords.lat),
+        lng: Number(coords.lng),
+      };
+    }
+
+    // Case 2: string "lat,lng"
+    if (typeof coords === "string") {
+      const [lat, lng] = coords.split(",").map(Number);
+
+      return {
+        lat,
+        lng,
+      };
+    }
+
+    return null;
+  };
+
+  type LoadItem = {
+    id: string;
+    trip_id: string;
+    client: string;
+    commodity: string;
+    rate: string;
+    startdate: string;
+    enddate: string;
+    status: string;
+    vehicleassignments: any[];
+    clientdetails?: { name?: string } | null;
+    ordernumber?: string;
+    pickuplocations?: unknown;
+    dropofflocations?: unknown;
+    [key: string]: any;
+  };
+
+  type Vehicle = {
+    id: string | number;
+    registration_number?: string;
+    make?: string;
+    model?: string;
+    sub_model?: string;
+    vehicle_type?: string;
+    [key: string]: any;
+  };
+
+  const [loads, setLoads] = useState<LoadItem[]>([
     {
       id: "test-1",
       trip_id: "TEST-123",
@@ -98,7 +151,7 @@ export default function LoadPlanPage() {
     },
   ]);
   const [clients, setClients] = useState([]);
-  const [vehicles, setVehicles] = useState([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [drivers, setDrivers] = useState([]);
   const [costCenters, setCostCenters] = useState([]);
   const [availableDrivers, setAvailableDrivers] = useState([]);
@@ -171,15 +224,71 @@ export default function LoadPlanPage() {
     return "";
   }, []);
 
-  const normalizedLoadingLocation = useMemo(
-    () => normalizeLocationValue(loadingLocation),
-    [loadingLocation, normalizeLocationValue],
-  );
+  // Laoding AND Drop-off location normalization
 
-  const normalizedDropOffPoint = useMemo(
-    () => normalizeLocationValue(dropOffPoint),
-    [dropOffPoint, normalizeLocationValue],
-  );
+  const normalizedLoadingLocation = loadingLocation
+    ? {
+        ...parseCoords(loadingLocation.coords),
+        address: loadingLocation.address || loadingLocation.name,
+      }
+    : null;
+
+  const normalizedDropOffPoint = dropOffPoint
+    ? {
+        ...parseCoords(dropOffPoint.coords),
+        address: dropOffPoint.address || dropOffPoint.name,
+      }
+    : null;
+
+  // const normalizedLoadingLocation = useMemo(
+  //   () => normalizeLocationValue(loadingLocation),
+  //   [loadingLocation, normalizeLocationValue],
+  // );
+
+  // const normalizedDropOffPoint = useMemo(
+  //   () => normalizeLocationValue(dropOffPoint),
+  //   [dropOffPoint, normalizeLocationValue],
+  // );
+
+
+// const createZoneFromPoint = (
+//   point: { lat: number; lng: number },
+//   radiusMeters = 200
+// ) => {
+//   const steps = 16;
+//   const coords: number[][] = [];
+
+//   for (let i = 0; i < steps; i++) {
+//     const angle = (i / steps) * (2 * Math.PI);
+
+//     const dx = (radiusMeters / 111320) * Math.cos(angle);
+//     const dy =
+//       (radiusMeters / (111320 * Math.cos(point.lat * Math.PI / 180))) *
+//       Math.sin(angle);
+
+//     coords.push([
+//       point.lng + dx,
+//       point.lat + dy
+//     ]);
+//   }
+
+//   // close polygon
+//   coords.push(coords[0]);
+
+//   return coords;
+// };
+//   const loadingZone = {
+//   name: "Loading Site",
+//   coordinates: createZoneFromPoint(normalizedLoadingLocation)
+// };
+
+// const dropoffZone = {
+//   name: "Drop-off Site",
+//   coordinates: createZoneFromPoint(normalizedDropOffPoint)
+// };
+
+
+
   // Driver assignments state
   const [driverAssignments, setDriverAssignments] = useState([
     { id: "", name: "" },
@@ -188,6 +297,13 @@ export default function LoadPlanPage() {
   const [selectedTrailerId, setSelectedTrailerId] = useState("");
   const [selectedVehicleType, setSelectedVehicleType] = useState("");
   const [selectedDriverLocation, setSelectedDriverLocation] = useState(null);
+  const normalizedDriverLocation = selectedDriverLocation
+    ? {
+        lat: Number(selectedDriverLocation.latitude),
+        lng: Number(selectedDriverLocation.longitude),
+        name: `${selectedDriverLocation.driver.first_name} ${selectedDriverLocation.driver.surname}`,
+      }
+    : null;
 
   // Cost calculation state
   const [selectedVehicle, setSelectedVehicle] = useState("");
@@ -204,7 +320,8 @@ export default function LoadPlanPage() {
   const [availableStopPoints, setAvailableStopPoints] = useState([]);
   const [isLoadingStopPoints, setIsLoadingStopPoints] = useState(false);
   const [tripDays, setTripDays] = useState(1);
-  const [showLoadingLocationModal, setShowLoadingLocationModal] = useState(false);
+  const [showLoadingLocationModal, setShowLoadingLocationModal] =
+    useState(false);
 
   // Rate Card System - Variable Costs
   const RATE_CARD_SYSTEM = {
@@ -502,19 +619,22 @@ export default function LoadPlanPage() {
   );
 
   // Calculate distance between two coordinates
-  const calculateDistance = useCallback((lat1, lon1, lat2, lon2) => {
-    const R = 6371; // Earth's radius in km
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLon = ((lon2 - lon1) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-  }, []);
+  const calculateDistance = useCallback(
+    (lat1: any, lon1: any, lat2: any, lon2: any) => {
+      const R = 6371; // Earth's radius in km
+      const dLat = ((lat2 - lat1) * Math.PI) / 180;
+      const dLon = ((lon2 - lon1) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat1 * Math.PI) / 180) *
+          Math.cos((lat2 * Math.PI) / 180) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    },
+    [],
+  );
 
   // Get pickup location coordinates using Mapbox
   const getPickupCoordinates = useCallback(async (location) => {
@@ -541,7 +661,7 @@ export default function LoadPlanPage() {
 
   // Get sorted drivers by distance from pickup location
   const getSortedDriversByDistance = useCallback(
-    async (pickupLocation) => {
+    async (pickupLocation: any) => {
       if (!pickupLocation) return drivers;
 
       const pickupCoords = await getPickupCoordinates(pickupLocation);
@@ -557,11 +677,11 @@ export default function LoadPlanPage() {
           .trim()
           .toLowerCase();
         // Calculate similarity between two strings
-        const calculateSimilarity = (str1, str2) => {
+        const calculateSimilarity = (str1: string, str2: string) => {
           const longer = str1.length > str2.length ? str1 : str2;
           const shorter = str1.length > str2.length ? str2 : str1;
           if (longer.length === 0) return 1.0;
-          const editDistance = (s1, s2) => {
+          const editDistance = (s1: string, s2: string) => {
             const costs = [];
             for (let i = 0; i <= s2.length; i++) {
               let lastValue = i;
@@ -658,11 +778,13 @@ export default function LoadPlanPage() {
         const selectedStopPoints = getSelectedStopPointsData();
         const waypoints = selectedStopPoints.map((point) => {
           // Calculate centroid of polygon for waypoint
-          const coords = point.coordinates;
+          const coords = point?.coordinates || null;
           const avgLng =
-            coords.reduce((sum, coord) => sum + coord[0], 0) / coords.length;
+            coords.reduce((sum: any, coord: any) => sum + coord[0], 0) /
+            coords.length;
           const avgLat =
-            coords.reduce((sum, coord) => sum + coord[1], 0) / coords.length;
+            coords.reduce((sum: any, coord: any) => sum + coord[1], 0) /
+            coords.length;
           return `${avgLng},${avgLat}`;
         });
 
@@ -671,8 +793,8 @@ export default function LoadPlanPage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            origin: normalizedLoadingLocation,
-            destination: normalizedDropOffPoint,
+            origin: [normalizedLoadingLocation],
+            destination: [normalizedDropOffPoint],
             pickupTime: etaPickup,
             waypoints: waypoints,
           }),
@@ -793,8 +915,11 @@ export default function LoadPlanPage() {
 
   // Rate Card Calculation Function
   const calculateRateCardCost = useCallback(
-    (vehicleType, kms, days) => {
-      if (!vehicleType || !RATE_CARD_SYSTEM[vehicleType]) {
+    (vehicleType: string, kms: number, days: number) => {
+      if (
+        !vehicleType ||
+        !RATE_CARD_SYSTEM[vehicleType as keyof typeof RATE_CARD_SYSTEM]
+      ) {
         return {
           fuel_cost: 0,
           base_cost: 0,
@@ -807,7 +932,8 @@ export default function LoadPlanPage() {
         };
       }
 
-      const rateCard = RATE_CARD_SYSTEM[vehicleType];
+      const rateCard =
+        RATE_CARD_SYSTEM[vehicleType as keyof typeof RATE_CARD_SYSTEM];
 
       // Rate Card Components
       const fuel_cost = rateCard.fuel_rate; // Fixed fuel component
@@ -911,7 +1037,7 @@ export default function LoadPlanPage() {
 
   // Calculate distance from point to route line
   const distanceToRoute = useCallback(
-    (pointLat, pointLng, routeCoords) => {
+    (pointLat: number, pointLng: number, routeCoords: [number, number][]) => {
       if (!routeCoords || routeCoords.length < 2) return Infinity;
 
       let minDistance = Infinity;
@@ -970,12 +1096,14 @@ export default function LoadPlanPage() {
       try {
         const coordPairs = point.coordinates
           .split(" ")
-          .filter((coord) => coord.trim())
-          .map((coord) => {
+          .filter((coord: string) => coord.trim())
+          .map((coord: string) => {
             const [lng, lat] = coord.split(",");
             return [parseFloat(lng), parseFloat(lat)];
           })
-          .filter((pair) => !isNaN(pair[0]) && !isNaN(pair[1]));
+          .filter(
+            (pair: [number, number]) => !isNaN(pair[0]) && !isNaN(pair[1]),
+          );
 
         if (coordPairs.length === 0) return false;
 
@@ -1033,12 +1161,14 @@ export default function LoadPlanPage() {
             // Parse coordinates format: "28.141508,-26.232723,0 28.140979,-26.232172,0 ..."
             const coordPairs = point.coordinates
               .split(" ")
-              .filter((coord) => coord.trim())
-              .map((coord) => {
+              .filter((coord: string) => coord.trim())
+              .map((coord: string) => {
                 const [lng, lat, alt] = coord.split(",");
                 return [parseFloat(lng), parseFloat(lat)];
               })
-              .filter((pair) => !isNaN(pair[0]) && !isNaN(pair[1]));
+              .filter(
+                (pair: [number, number]) => !isNaN(pair[0]) && !isNaN(pair[1]),
+              );
 
             return {
               id: point.id,
@@ -1057,7 +1187,7 @@ export default function LoadPlanPage() {
 
   // Optimized handlers with useCallback
   const handleDriverChange = useCallback(
-    (driverIndex, driverId) => {
+    (driverIndex: number, driverId: string) => {
       const selectedDriver = drivers.find((d) => d.id === driverId);
       setDriverAssignments((prev) => {
         const updated = [...prev];
@@ -1080,12 +1210,12 @@ export default function LoadPlanPage() {
           ? vehicleTrackingData
           : [];
         // Calculate similarity between two strings
-        const calculateSimilarity = (str1, str2) => {
+        const calculateSimilarity = (str1: string, str2: string) => {
           const longer = str1.length > str2.length ? str1 : str2;
           const shorter = str1.length > str2.length ? str2 : str1;
           if (longer.length === 0) return 1.0;
 
-          const editDistance = (s1, s2) => {
+          const editDistance = (s1: string, s2: string) => {
             const costs = [];
             for (let i = 0; i <= s2.length; i++) {
               let lastValue = i;
@@ -1155,7 +1285,7 @@ export default function LoadPlanPage() {
 
   // Auto-select closest driver when dropdown is opened
   const handleDriverDropdownOpen = useCallback(
-    async (driverIndex) => {
+    async (driverIndex: number) => {
       if (!normalizedLoadingLocation) return;
 
       setIsCalculatingDistance(true);
@@ -1179,17 +1309,17 @@ export default function LoadPlanPage() {
   );
 
   // Helper to get assigned vehicles/drivers display
-  const getAssignmentsDisplay = (load) => {
+  const getAssignmentsDisplay = (load: any) => {
     const assignments =
       load.vehicleAssignments || load.vehicle_assignments || [];
     if (!assignments.length) return "Unassigned";
 
     return assignments
-      .map((assignment) => {
+      .map((assignment: any) => {
         const vehicleName = assignment.vehicle?.name || "Unknown Vehicle";
         const driverNames =
           assignment.drivers
-            ?.map((d) => d.name)
+            ?.map((d: any) => d.name)
             .filter(Boolean)
             .join(", ") || "No Driver";
         return `${vehicleName} (${driverNames})`;
@@ -1198,7 +1328,7 @@ export default function LoadPlanPage() {
   };
 
   // Parse JSON fields safely
-  const parseJsonField = (field) => {
+  const parseJsonField = (field: any) => {
     if (!field) return [];
     if (Array.isArray(field)) return field;
     try {
@@ -1228,7 +1358,7 @@ export default function LoadPlanPage() {
     handleCreate();
   };
 
-  const handleClientSelect = (clientData) => {
+  const handleClientSelect = (clientData: any) => {
     if (typeof clientData === "object" && clientData.address) {
       setSelectedClient(clientData);
       setClient(clientData.name);
@@ -1272,12 +1402,14 @@ export default function LoadPlanPage() {
       ) {
         try {
           const selectedStopPoints = getSelectedStopPointsData();
-          const waypoints = selectedStopPoints.map((point) => {
+          const waypoints = selectedStopPoints.map((point: any) => {
             const coords = point.coordinates;
             const avgLng =
-              coords.reduce((sum, coord) => sum + coord[0], 0) / coords.length;
+              coords.reduce((sum: any, coord: number) => sum + coord, 0) /
+              coords.length;
             const avgLat =
-              coords.reduce((sum, coord) => sum + coord[1], 0) / coords.length;
+              coords.reduce((sum: any, coord: number) => sum + coord, 0) /
+              coords.length;
             return `${avgLng},${avgLat}`;
           });
 
@@ -1558,12 +1690,12 @@ export default function LoadPlanPage() {
                               parseJsonField(row.vehicleassignments) || [];
                             if (!assignments.length) return "Unassigned";
                             return assignments
-                              .map((assignment) => {
+                              .map((assignment: any) => {
                                 const vehicleName =
                                   assignment.vehicle?.name || "Unknown Vehicle";
                                 const driverNames =
                                   assignment.drivers
-                                    ?.map((d) => d.name)
+                                    ?.map((d: any) => d.name)
                                     .filter(Boolean)
                                     .join(", ") || "No Driver";
                                 return `${vehicleName} (${driverNames})`;
@@ -1675,11 +1807,11 @@ export default function LoadPlanPage() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="loadingLocation">Loading Location</Label> 
+                      <Label htmlFor="loadingLocation">Loading Location</Label>
                       <ClientLoadingDropdown
                         label="Loading Location"
                         value={loadingLocation}
-                        onChange={(value) =>
+                        onChange={(value: any) =>
                           setLoadingLocation(normalizeLocationValue(value))
                         }
                         placeholder="Search for client location"
@@ -1698,7 +1830,7 @@ export default function LoadPlanPage() {
                       <ClientLocationDropdown
                         label="Drop Off Point"
                         value={dropOffPoint}
-                        onChange={(value) =>
+                        onChange={(value: any) =>
                           setDropOffPoint(normalizeLocationValue(value))
                         }
                         placeholder="Search for drop off location"
@@ -1763,7 +1895,7 @@ export default function LoadPlanPage() {
                         <div key={index} className="flex gap-2 items-center">
                           <StopPointDropdown
                             value={stopPoint}
-                            onChange={(value) => {
+                            onChange={(value: any) => {
                               const updated = [...stopPoints];
                               updated[index] = value;
                               setStopPoints(updated);
@@ -1800,7 +1932,7 @@ export default function LoadPlanPage() {
                             Optimizing route...
                           </div>
                         )}
-                        <RoutePreviewMap
+                        {/* <RoutePreviewMap
                           origin={normalizedLoadingLocation}
                           destination={normalizedDropOffPoint}
                           routeData={
@@ -1820,6 +1952,19 @@ export default function LoadPlanPage() {
                                 }
                               : undefined
                           }
+                        /> */}
+                        <RoutePreviewMap
+                          origin={normalizedLoadingLocation}
+                          destination={normalizedDropOffPoint}
+                          routeData={
+                            tripType === "national" ? optimizedRoute : null
+                          }
+                          stopPoints={
+                            tripType === "national"
+                              ? getSelectedStopPointsData()
+                              : []
+                          }
+                          driverLocation={normalizedDriverLocation || undefined}
                         />
                       </div>
                     </div>
@@ -1840,7 +1985,7 @@ export default function LoadPlanPage() {
                       <div key={driverIndex} className="mb-2">
                         <DriverDropdown
                           value={driver.id}
-                          onChange={(value) =>
+                          onChange={(value: any) =>
                             handleDriverChange(driverIndex, value)
                           }
                           drivers={availableDrivers}
@@ -1868,7 +2013,7 @@ export default function LoadPlanPage() {
                       </Label>
                       <Select
                         value={selectedVehicleType}
-                        onValueChange={(value) => {
+                        onValueChange={(value: any) => {
                           setSelectedVehicleType(value);
                           setSelectedVehicleId(""); // Reset vehicle selection when type changes
                         }}
@@ -1951,7 +2096,7 @@ export default function LoadPlanPage() {
                   </div>
 
                   {/* Cost Calculation Section */}
-                  <div className="space-y-6 p-6 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200">
+                  <div className="space-y-6 p-6 from-slate-50 to-slate-100 rounded-xl border border-slate-200">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-slate-600 rounded-lg">
                         <TrendingUp className="h-5 w-5 text-white" />
@@ -2065,7 +2210,7 @@ export default function LoadPlanPage() {
                         </div>
 
                         {/* Total Cost - Bottom Aligned */}
-                        <div className="p-6 bg-gradient-to-r from-slate-600 to-slate-700 rounded-xl shadow-lg">
+                        <div className="p-6 from-slate-600 to-slate-700 rounded-xl shadow-lg">
                           <p className="text-sm font-medium text-slate-200 uppercase tracking-wide">
                             Total Estimated Cost
                           </p>
@@ -2081,14 +2226,14 @@ export default function LoadPlanPage() {
                       {/* Right Half - Stylish Bar Chart */}
                       <div className="h-full flex flex-col">
                         <div className="flex items-center gap-3 mb-4">
-                          <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg">
+                          <div className="p-2  from-blue-500 to-purple-600 rounded-lg">
                             <TrendingUp className="h-4 w-4 text-white" />
                           </div>
-                          <h4 className="text-lg font-semibold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+                          <h4 className="text-lg font-semibold  from-slate-800 to-slate-600 bg-clip-text text-transparent">
                             Cost Breakdown
                           </h4>
                         </div>
-                        <div className="flex-1 w-full p-4 bg-gradient-to-br from-white to-slate-50 rounded-xl border border-slate-200 shadow-lg">
+                        <div className="flex-1 w-full p-4  from-white to-slate-50 rounded-xl border border-slate-200 shadow-lg">
                           <ResponsiveContainer width="100%" height="100%">
                             <BarChart
                               data={[
@@ -2261,26 +2406,26 @@ export default function LoadPlanPage() {
                         {/* Legend */}
                         <div className="flex flex-wrap gap-3 justify-center">
                           <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-full border border-blue-200">
-                            <div className="w-3 h-3 rounded-full bg-gradient-to-b from-blue-400 to-blue-600"></div>
+                            <div className="w-3 h-3 rounded-full from-blue-400 to-blue-600"></div>
                             <span className="text-xs font-medium text-blue-700">
                               Fuel
                             </span>
                           </div>
                           <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-full border border-green-200">
-                            <div className="w-3 h-3 rounded-full bg-gradient-to-b from-green-400 to-green-600"></div>
+                            <div className="w-3 h-3 rounded-full from-green-400 to-green-600"></div>
                             <span className="text-xs font-medium text-green-700">
                               Vehicle
                             </span>
                           </div>
                           <div className="flex items-center gap-2 px-3 py-1.5 bg-yellow-50 rounded-full border border-yellow-200">
-                            <div className="w-3 h-3 rounded-full bg-gradient-to-b from-yellow-400 to-yellow-600"></div>
+                            <div className="w-3 h-3 rounded-full from-yellow-400 to-yellow-600"></div>
                             <span className="text-xs font-medium text-yellow-700">
                               Driver
                             </span>
                           </div>
                           {parseFloat(goodsInTransitPremium) > 0 && (
                             <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 rounded-full border border-purple-200">
-                              <div className="w-3 h-3 rounded-full bg-gradient-to-b from-purple-400 to-purple-600"></div>
+                              <div className="w-3 h-3 rounded-full from-purple-400 to-purple-600"></div>
                               <span className="text-xs font-medium text-purple-700">
                                 Premium
                               </span>
@@ -2384,7 +2529,7 @@ export default function LoadPlanPage() {
                               Commodity
                             </p>
                             <p className="text-sm font-medium text-slate-900">
-                              {trip.cargo || "N/A"}
+                              {trip.commodity || "N/A"}
                             </p>
                           </div>
                         </div>
@@ -2462,7 +2607,7 @@ export default function LoadPlanPage() {
                           Route Details
                         </h4>
                         <div className="space-y-3">
-                          {pickupLocations.map((pickup, index) => (
+                          {pickupLocations.map((pickup: any, index: any) => (
                             <div
                               key={index}
                               className="flex items-start gap-3 p-3 bg-emerald-50 rounded-lg border border-emerald-200"
@@ -2489,7 +2634,7 @@ export default function LoadPlanPage() {
                               </div>
                             </div>
                           ))}
-                          {dropoffLocations.map((dropoff, index) => (
+                          {dropoffLocations.map((dropoff: any, index: any) => (
                             <div
                               key={index}
                               className="flex items-start gap-3 p-3 bg-red-50 rounded-lg border border-red-200"
@@ -2526,7 +2671,7 @@ export default function LoadPlanPage() {
                         </h4>
                         {assignments.length > 0 ? (
                           <div className="space-y-3">
-                            {assignments.map((assignment, index) => (
+                            {assignments.map((assignment: any, index: any) => (
                               <div
                                 key={index}
                                 className="p-4 bg-slate-50 rounded-lg border border-slate-200"
@@ -2549,8 +2694,8 @@ export default function LoadPlanPage() {
                                     </p>
                                     <div className="space-y-1">
                                       {assignment.drivers
-                                        ?.filter((d) => d.name)
-                                        .map((driver, dIndex) => (
+                                        ?.filter((d: any) => d.name)
+                                        .map((driver: any, dIndex: any) => (
                                           <p
                                             key={dIndex}
                                             className="text-sm font-medium text-slate-900"

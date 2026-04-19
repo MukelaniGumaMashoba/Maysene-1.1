@@ -247,8 +247,8 @@ Job enters at Awaiting Approval → technician assigned → parts assigned → A
 The "Send to Admin" button is gone. No more Pending Admin Review intermediate step — jobs go straight into the workshop's normal approval flow.
 
 
-login admin : Email: sacaper597@duoley.com
-Password: GNQRKbwz
+Email: sacaper597:GNQRKbwz:@duoley.com
+
 
 
 
