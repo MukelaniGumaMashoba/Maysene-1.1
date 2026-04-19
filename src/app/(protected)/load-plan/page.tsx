@@ -224,21 +224,16 @@ export default function LoadPlanPage() {
     return "";
   }, []);
 
-  // Laoding AND Drop-off location normalization
+  // Loading and drop-off values should be plain address strings
+  const normalizedLoadingLocation = useMemo(
+    () => normalizeLocationValue(loadingLocation),
+    [loadingLocation, normalizeLocationValue],
+  );
 
-  const normalizedLoadingLocation = loadingLocation
-    ? {
-        ...parseCoords(loadingLocation.coords),
-        address: loadingLocation.address || loadingLocation.name,
-      }
-    : null;
-
-  const normalizedDropOffPoint = dropOffPoint
-    ? {
-        ...parseCoords(dropOffPoint.coords),
-        address: dropOffPoint.address || dropOffPoint.name,
-      }
-    : null;
+  const normalizedDropOffPoint = useMemo(
+    () => normalizeLocationValue(dropOffPoint),
+    [dropOffPoint, normalizeLocationValue],
+  );
 
   // const normalizedLoadingLocation = useMemo(
   //   () => normalizeLocationValue(loadingLocation),
@@ -793,8 +788,8 @@ export default function LoadPlanPage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            origin: [normalizedLoadingLocation],
-            destination: [normalizedDropOffPoint],
+            origin: normalizedLoadingLocation,
+            destination: normalizedDropOffPoint,
             pickupTime: etaPickup,
             waypoints: waypoints,
           }),

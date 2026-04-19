@@ -1,19 +1,20 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, Route } from "lucide-react";
+
+type RouteLocation =
+  | string
+  | {
+      lat: number;
+      lng: number;
+      address?: string;
+    };
+
 interface RoutePreviewMapProps {
-  origin: {
-    lat: number;
-    lng: number;
-    address?: string;
-  };
-  destination: {
-    lat: number;
-    lng: number;
-    address?: string;
-  };
+  origin: RouteLocation;
+  destination: RouteLocation;
   routeData?: any;
   stopPoints?: Array<{
     id: number;
@@ -36,7 +37,9 @@ export function RoutePreviewMap({
 }: RoutePreviewMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
-  const [mapLoaded, setMapLoaded] = useState(false);
+  const originLabel = typeof origin === "string" ? origin : origin.address;
+  const destinationLabel =
+    typeof destination === "string" ? destination : destination.address;
 
   useEffect(() => {
     if (!origin || !destination || !mapContainer.current) return;
@@ -55,13 +58,12 @@ export function RoutePreviewMap({
       });
 
       map.current.on("load", () => {
-        setMapLoaded(true);
         updateRoute();
       });
     };
 
     const updateRoute = async () => {
-      if (!map.current || !mapLoaded || !map.current.isStyleLoaded()) return;
+      if (!map.current || !map.current.isStyleLoaded()) return;
 
       try {
         // Geocode locations
@@ -69,8 +71,12 @@ export function RoutePreviewMap({
         //   geocodeLocation(origin),
         //   geocodeLocation(destination),
         // ]);
-        const originCoords = origin;
-        const destCoords = destination;
+        const originCoords =
+          typeof origin === "string" ? await geocodeLocation(origin) : origin;
+        const destCoords =
+          typeof destination === "string"
+            ? await geocodeLocation(destination)
+            : destination;
         const mapboxgl = (await import("mapbox-gl")).default;
 
         if (!originCoords || !destCoords) return;
@@ -130,7 +136,7 @@ export function RoutePreviewMap({
           // .setPopup(
           //   new (await import("mapbox-gl")).default.Popup().setText(origin),
           // )
-          .setPopup(new mapboxgl.Popup().setText(origin.address || "Origin"))
+          .setPopup(new mapboxgl.Popup().setText(originLabel || "Origin"))
           .addTo(map.current);
 
         new (await import("mapbox-gl")).default.Marker({ color: "red" })
@@ -141,7 +147,7 @@ export function RoutePreviewMap({
           //   ),
           // )
           .setPopup(
-            new mapboxgl.Popup().setText(destination.address || "Destination"),
+            new mapboxgl.Popup().setText(destinationLabel || "Destination"),
           )
           .addTo(map.current);
 
@@ -425,7 +431,15 @@ export function RoutePreviewMap({
         map.current = null;
       }
     };
-  }, [origin, destination, routeData, mapLoaded, stopPoints, driverLocation]);
+  }, [
+    origin,
+    destination,
+    originLabel,
+    destinationLabel,
+    routeData,
+    stopPoints,
+    driverLocation,
+  ]);
 
   const createGeofenceCircle = (
     center: { lat: number; lng: number },
@@ -613,11 +627,11 @@ export function RoutePreviewMap({
           <div className="flex items-center gap-4 text-sm text-gray-600">
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span>Loading: {origin.address}</span>
+              <span>Loading: {originLabel || "Not set"}</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-              <span>Drop-off: {destination.address}</span>
+              <span>Drop-off: {destinationLabel || "Not set"}</span>
             </div>
             {stopPoints && stopPoints.length > 0 && (
               <div className="flex items-center gap-1">
