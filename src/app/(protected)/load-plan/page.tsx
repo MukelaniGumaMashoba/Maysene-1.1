@@ -268,29 +268,6 @@ export default function LoadPlanPage() {
 // };
 
 
-  const geocodeLocation = async (location: string) => {
-    try {
-      const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-          location,
-        )}.json?access_token=${
-          process.env.NEXT_PUBLIC_MAPBOX_TOKEN
-        }&country=za&limit=1&proximity=28.0473,-26.2041`,
-      );
-      const data = await response.json();
-
-      if (data.features && data.features.length > 0) {
-        const [lng, lat] = data.features[0].center;
-        return { lat, lng };
-      }
-      return null;
-    } catch (error) {
-      console.error("Geocoding error:", error);
-      return null;
-    }
-  };
-
-
   // Driver assignments state
   const [driverAssignments, setDriverAssignments] = useState<DriverAssignment[]>([
     { id: "", name: "", first_name: "", surname: "" },
@@ -472,7 +449,7 @@ export default function LoadPlanPage() {
         supabase
           .from("clients")
           .select(
-            "id, name, client_id, address, contact_person, phone, pickup_locations, dropoff_locations, commodity, IsLoading",
+            "id, name, client_id, address, contact_person, phone, pickup_locations, dropoff_locations, commodity, IsLoading, coordinates, coords",
           )
           .eq("status", "Active"),
         supabase.from("vehiclesc").select("*"),
@@ -638,7 +615,7 @@ export default function LoadPlanPage() {
     [],
   );
 
-  // Get pickup location coordinates using Mapbox
+  // Get pickup location coordinates directly from stored DB coordinates
   const getPickupCoordinates = useCallback(async (location: unknown) => {
     if (!location) return null;
 
@@ -650,23 +627,7 @@ export default function LoadPlanPage() {
       };
     }
 
-    try {
-      const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-      if (!mapboxToken || !normalizedLocation.label) return null;
-
-      const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-          normalizedLocation.geocodeText || normalizedLocation.label,
-        )}.json?access_token=${mapboxToken}&country=za&limit=1`,
-      );
-      const data = await response.json();
-      if (data.features?.[0]?.center) {
-        const [lon, lat] = data.features[0].center;
-        return { lat, lon };
-      }
-    } catch (error) {
-      console.error("Error geocoding pickup location:", error);
-    }
+    console.warn("Missing DB coordinates for pickup location:", normalizedLocation);
     return null;
   }, []);
 
@@ -872,17 +833,15 @@ export default function LoadPlanPage() {
         const originPoint = normalizedLoadingLocationData.point;
         const destPoint = normalizedDropOffPointData.point;
 
-        const [originCoords, destCoords] = await Promise.all([
-          originPoint
-            ? Promise.resolve(originPoint)
-            : geocodeLocation(normalizedLoadingLocationData.geocodeText || normalizedLoadingLocation),
-          destPoint
-            ? Promise.resolve(destPoint)
-            : geocodeLocation(normalizedDropOffPointData.geocodeText || normalizedDropOffPoint),
-        ]);
+        const originCoords = originPoint;
+        const destCoords = destPoint;
 
         if (!originCoords || !destCoords) {
-          console.log("Could not resolve locations");
+          console.log("Could not resolve locations from DB coordinates", {
+            origin: normalizedLoadingLocationData,
+            destination: normalizedDropOffPointData,
+          });
+          setEstimatedDistance(0);
           return;
         }
 
@@ -1372,7 +1331,7 @@ export default function LoadPlanPage() {
   const handleClientSelect = (clientData: any) => {
     if (
       typeof clientData === "object" &&
-      (clientData.address || clientData.coordinates)
+      (clientData.address || clientData.coordinates || clientData.coords)
     ) {
       setSelectedClient(clientData);
       setClient(clientData.name);
@@ -1388,14 +1347,22 @@ export default function LoadPlanPage() {
   };
 
   const handleUseAsPickup = () => {
-    if (selectedClient?.address || selectedClient?.coordinates) {
+    if (
+      selectedClient?.address ||
+      selectedClient?.coordinates ||
+      selectedClient?.coords
+    ) {
       setLoadingLocation(selectedClient);
     }
     setShowAddressPopup(false);
   };
 
   const handleUseAsDropoff = () => {
-    if (selectedClient?.address || selectedClient?.coordinates) {
+    if (
+      selectedClient?.address ||
+      selectedClient?.coordinates ||
+      selectedClient?.coords
+    ) {
       setDropOffPoint(selectedClient);
     }
     setShowAddressPopup(false);
@@ -1451,20 +1418,17 @@ export default function LoadPlanPage() {
 
       const generatedTripId = `LOAD-${Date.now()}`;
 
+      const loadingPoint = normalizedLoadingLocationData.point;
+      const dropoffPoint = normalizedDropOffPointData.point;
+
       const tripData = {
         // automated trip id
         trip_id: generatedTripId,
         ordernumber: orderNumber,
         rate: rate,
         cargo: commodity,
-        origin:
-          normalizedLoadingLocationData.geocodeText ||
-          normalizedLoadingLocation ||
-          "",
-        destination:
-          normalizedDropOffPointData.geocodeText ||
-          normalizedDropOffPoint ||
-          "",
+        origin: normalizedLoadingLocation || "",
+        destination: normalizedDropOffPoint || "",
         notes: comment,
         status: "pending",
         startdate: etaPickup ? etaPickup.split("T")[0] : null,
@@ -1490,27 +1454,25 @@ export default function LoadPlanPage() {
             },
         pickuplocations: [
           {
-            location:
-              normalizedLoadingLocationData.geocodeText ||
-              normalizedLoadingLocation ||
-              "",
-            address:
-              normalizedLoadingLocationData.geocodeText ||
-              normalizedLoadingLocation ||
-              "",
+            location: normalizedLoadingLocation || "",
+            address: normalizedLoadingLocation || "",
+            coordinates: loadingPoint
+              ? `${loadingPoint.lng},${loadingPoint.lat}`
+              : null,
+            point: loadingPoint,
+            polygon: normalizedLoadingLocationData.polygon,
             scheduled_time: etaPickup || "",
           },
         ],
         dropofflocations: [
           {
-            location:
-              normalizedDropOffPointData.geocodeText ||
-              normalizedDropOffPoint ||
-              "",
-            address:
-              normalizedDropOffPointData.geocodeText ||
-              normalizedDropOffPoint ||
-              "",
+            location: normalizedDropOffPoint || "",
+            address: normalizedDropOffPoint || "",
+            coordinates: dropoffPoint
+              ? `${dropoffPoint.lng},${dropoffPoint.lat}`
+              : null,
+            point: dropoffPoint,
+            polygon: normalizedDropOffPointData.polygon,
             scheduled_time: etaDropoff || "",
           },
         ],

@@ -49,6 +49,7 @@ export function ClientLocationDropdown({
     ? value
     : clients.find(c => 
         (c.coordinates && c.coordinates === value) ||
+        (c.coords && c.coords === value) ||
         (c.address && c.address === value) ||
         c.name === value
       )
@@ -98,6 +99,7 @@ export function ClientLocationDropdown({
                 const isSelected = typeof value === 'object' && value !== null
                   ? value.id === client.id
                   : (client.coordinates && client.coordinates === value) ||
+                    (client.coords && client.coords === value) ||
                     (client.address && client.address === value) ||
                     client.name === value
                 return (
@@ -117,9 +119,9 @@ export function ClientLocationDropdown({
                           📍 {client.address}
                         </div>
                       )}
-                      {client.coordinates && !client.address && (
+                      {(client.coordinates || client.coords) && !client.address && (
                         <div className="text-xs text-muted-foreground">
-                          📌 {client.coordinates.substring(0, 45)}{client.coordinates.length > 45 ? '...' : ''}
+                          📌 {(client.coordinates || client.coords).substring(0, 45)}{(client.coordinates || client.coords).length > 45 ? '...' : ''}
                         </div>
                       )}
                     </div>

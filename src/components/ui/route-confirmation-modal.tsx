@@ -11,8 +11,8 @@ interface RouteConfirmationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  origin: string;
-  destination: string;
+  origin: unknown;
+  destination: unknown;
   routeData?: any;
 }
 

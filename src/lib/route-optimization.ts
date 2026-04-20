@@ -34,17 +34,11 @@ export class TruckRouteOptimizer {
       const normalizedOrigin = normalizeLocationInput(origin);
       const normalizedDestination = normalizeLocationInput(destination);
 
-      const [originCoords, destCoords] = await Promise.all([
-        normalizedOrigin.point
-          ? Promise.resolve(normalizedOrigin.point)
-          : this.geocodeLocation(normalizedOrigin.geocodeText || normalizedOrigin.label),
-        normalizedDestination.point
-          ? Promise.resolve(normalizedDestination.point)
-          : this.geocodeLocation(normalizedDestination.geocodeText || normalizedDestination.label)
-      ]);
+      const originCoords = normalizedOrigin.point;
+      const destCoords = normalizedDestination.point;
 
       if (!originCoords || !destCoords) {
-        throw new Error('Unable to geocode locations');
+        throw new Error('Missing coordinates for route optimization. Please select locations with stored DB coordinates.');
       }
 
       let route, routeType = 'driving';
@@ -128,24 +122,6 @@ export class TruckRouteOptimizer {
     } catch (error) {
       console.error('Route optimization error:', error);
       throw error;
-    }
-  }
-
-  private async geocodeLocation(location: string): Promise<{lat: number, lng: number} | null> {
-    try {
-      const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(location)}.json?access_token=${this.mapboxToken}&country=za&limit=1`
-      );
-      const data = await response.json();
-      
-      if (data.features && data.features.length > 0) {
-        const [lng, lat] = data.features[0].center;
-        return { lat, lng };
-      }
-      return null;
-    } catch (error) {
-      console.error('Geocoding error:', error);
-      return null;
     }
   }
 
