@@ -1,6 +1,8 @@
+import { normalizeLocationInput } from "@/lib/utils/location";
+
 interface RouteRequest {
-  origin: string;
-  destination: string;
+  origin: unknown;
+  destination: unknown;
   profile?: 'driving-traffic' | 'truck';
   avoidTolls?: boolean;
   avoidHighways?: boolean;
@@ -29,9 +31,16 @@ export class TruckRouteOptimizer {
     const { origin, destination, departureTime } = request;
     
     try {
+      const normalizedOrigin = normalizeLocationInput(origin);
+      const normalizedDestination = normalizeLocationInput(destination);
+
       const [originCoords, destCoords] = await Promise.all([
-        this.geocodeLocation(origin),
-        this.geocodeLocation(destination)
+        normalizedOrigin.point
+          ? Promise.resolve(normalizedOrigin.point)
+          : this.geocodeLocation(normalizedOrigin.geocodeText || normalizedOrigin.label),
+        normalizedDestination.point
+          ? Promise.resolve(normalizedDestination.point)
+          : this.geocodeLocation(normalizedDestination.geocodeText || normalizedDestination.label)
       ]);
 
       if (!originCoords || !destCoords) {
@@ -90,7 +99,7 @@ export class TruckRouteOptimizer {
         const data = await response.json();
 
         if (!response.ok || !data.routes || data.routes.length === 0) {
-          throw new Error(`No routes found between ${origin} and ${destination}`);
+          throw new Error(`No routes found between ${normalizedOrigin.label || 'origin'} and ${normalizedDestination.label || 'destination'}`);
         }
 
         route = data.routes[0];
@@ -284,7 +293,7 @@ export class TruckRouteOptimizer {
   }
 
   private detectTollgates(route: any): any[] {
-    const tollgates = [];
+    const tollgates: any[] = [];
     
     if (route.legs) {
       route.legs.forEach((leg: any) => {

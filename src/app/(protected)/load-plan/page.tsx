@@ -79,6 +79,10 @@ import { ClientLoadingDropdown } from "@/components/ui/client-loading-dropdown";
 import { ClientLoadingLocationModal } from "@/components/ui/client-loading-location-modal";
 import { set } from "date-fns";
 import { any, unknown } from "zod";
+import {
+  locationToSearchText,
+  normalizeLocationInput,
+} from "@/lib/utils/location";
 
 export default function LoadPlanPage() {
   console.log("LoadPlanPage component rendering");
@@ -150,17 +154,17 @@ export default function LoadPlanPage() {
       vehicleassignments: [],
     },
   ]);
-  const [clients, setClients] = useState([]);
+  const [clients, setClients] = useState<any[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [drivers, setDrivers] = useState([]);
-  const [costCenters, setCostCenters] = useState([]);
-  const [availableDrivers, setAvailableDrivers] = useState([]);
-  const [vehicleTrackingData, setVehicleTrackingData] = useState([]);
+  const [drivers, setDrivers] = useState<any[]>([]);
+  const [costCenters, setCostCenters] = useState<any[]>([]);
+  const [availableDrivers, setAvailableDrivers] = useState<any[]>([]);
+  const [vehicleTrackingData, setVehicleTrackingData] = useState<any[]>([]);
   const [trailer, setTrailer] = useState<any[]>([]);
 
   // Create Load form state
   const [client, setClient] = useState("");
-  const [selectedClient, setSelectedClient] = useState(null);
+  const [selectedClient, setSelectedClient] = useState<any>(null);
   const [manualClientName, setManualClientName] = useState("");
   const [showAddressPopup, setShowAddressPopup] = useState(false);
   const [commodity, setCommodity] = useState("");
@@ -175,53 +179,24 @@ export default function LoadPlanPage() {
   const [comment, setComment] = useState("");
   // Address & ETA section
   const [etaPickup, setEtaPickup] = useState("");
-  const [loadingLocation, setLoadingLocation] = useState("");
+  const [loadingLocation, setLoadingLocation] = useState<any>(null);
   const [etaDropoff, setEtaDropoff] = useState("");
-  const [dropOffPoint, setDropOffPoint] = useState("");
+  const [dropOffPoint, setDropOffPoint] = useState<any>(null);
   const [showSecondSection, setShowSecondSection] = useState(false);
   const secondRef = useRef<HTMLDivElement | null>(null);
   const [optimizedRoute, setOptimizedRoute] = useState<any>(null);
   const [showRouteModal, setShowRouteModal] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
 
+  type DriverAssignment = {
+    id: string;
+    name: string;
+    first_name?: string;
+    surname?: string;
+  };
+
   const normalizeLocationValue = useCallback((value: unknown): string => {
-    if (typeof value === "string") return value;
-    if (!value || typeof value !== "object") return "";
-
-    const locationValue = value as {
-      address?: unknown;
-      coordinates?: unknown;
-      name?: unknown;
-      place_name?: unknown;
-    };
-
-    // Prefer the most specific information available
-    if (
-      typeof locationValue.place_name === "string" &&
-      locationValue.place_name.trim()
-    ) {
-      return locationValue.place_name;
-    }
-
-    if (
-      typeof locationValue.address === "string" &&
-      locationValue.address.trim()
-    ) {
-      return locationValue.address;
-    }
-
-    if (
-      typeof locationValue.coordinates === "string" &&
-      locationValue.coordinates.trim()
-    ) {
-      return locationValue.coordinates;
-    }
-
-    if (typeof locationValue.name === "string" && locationValue.name.trim()) {
-      return locationValue.name;
-    }
-
-    return "";
+    return locationToSearchText(value);
   }, []);
 
   // Loading and drop-off values should be plain address strings
@@ -233,6 +208,16 @@ export default function LoadPlanPage() {
   const normalizedDropOffPoint = useMemo(
     () => normalizeLocationValue(dropOffPoint),
     [dropOffPoint, normalizeLocationValue],
+  );
+
+  const normalizedLoadingLocationData = useMemo(
+    () => normalizeLocationInput(loadingLocation),
+    [loadingLocation],
+  );
+
+  const normalizedDropOffPointData = useMemo(
+    () => normalizeLocationInput(dropOffPoint),
+    [dropOffPoint],
   );
 
   // const normalizedLoadingLocation = useMemo(
@@ -283,20 +268,42 @@ export default function LoadPlanPage() {
 // };
 
 
+  const geocodeLocation = async (location: string) => {
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+          location,
+        )}.json?access_token=${
+          process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+        }&country=za&limit=1&proximity=28.0473,-26.2041`,
+      );
+      const data = await response.json();
+
+      if (data.features && data.features.length > 0) {
+        const [lng, lat] = data.features[0].center;
+        return { lat, lng };
+      }
+      return null;
+    } catch (error) {
+      console.error("Geocoding error:", error);
+      return null;
+    }
+  };
+
 
   // Driver assignments state
-  const [driverAssignments, setDriverAssignments] = useState([
-    { id: "", name: "" },
+  const [driverAssignments, setDriverAssignments] = useState<DriverAssignment[]>([
+    { id: "", name: "", first_name: "", surname: "" },
   ]);
   const [selectedVehicleId, setSelectedVehicleId] = useState("");
   const [selectedTrailerId, setSelectedTrailerId] = useState("");
   const [selectedVehicleType, setSelectedVehicleType] = useState("");
-  const [selectedDriverLocation, setSelectedDriverLocation] = useState(null);
+  const [selectedDriverLocation, setSelectedDriverLocation] = useState<any>(null);
   const normalizedDriverLocation = selectedDriverLocation
     ? {
-        lat: Number(selectedDriverLocation.latitude),
-        lng: Number(selectedDriverLocation.longitude),
-        name: `${selectedDriverLocation.driver.first_name} ${selectedDriverLocation.driver.surname}`,
+        lat: Number((selectedDriverLocation as any).latitude),
+        lng: Number((selectedDriverLocation as any).longitude),
+        name: `${(selectedDriverLocation as any).driver.first_name} ${(selectedDriverLocation as any).driver.surname}`,
       }
     : null;
 
@@ -311,8 +318,8 @@ export default function LoadPlanPage() {
   const [totalVehicleCost, setTotalVehicleCost] = useState(0);
   const [goodsInTransitPremium, setGoodsInTransitPremium] = useState("");
   const [tripType, setTripType] = useState("local");
-  const [stopPoints, setStopPoints] = useState([]);
-  const [availableStopPoints, setAvailableStopPoints] = useState([]);
+  const [stopPoints, setStopPoints] = useState<any[]>([]);
+  const [availableStopPoints, setAvailableStopPoints] = useState<any[]>([]);
   const [isLoadingStopPoints, setIsLoadingStopPoints] = useState(false);
   const [tripDays, setTripDays] = useState(1);
   const [showLoadingLocationModal, setShowLoadingLocationModal] =
@@ -414,7 +421,7 @@ export default function LoadPlanPage() {
     if (trailerError) {
       console.error("Trailer error:", trailerError);
     } else {
-      setTrailer((trailerData as unknown) || []);
+      setTrailer(Array.isArray(trailerData) ? trailerData : []);
     }
   };
 
@@ -489,7 +496,7 @@ export default function LoadPlanPage() {
       const driversData = driversResult.drivers || [];
 
       // Format drivers from drivers table
-      const formattedDrivers = (driversData || []).map((driver) => ({
+      const formattedDrivers = (driversData || []).map((driver: any) => ({
         id: driver.id,
         name: `${driver.first_name} ${driver.surname}`.trim(),
         first_name: driver.first_name || "",
@@ -499,11 +506,11 @@ export default function LoadPlanPage() {
 
       // Filter available drivers
       const availableDriversList = formattedDrivers.filter(
-        (d) => d.available === true,
+        (d: any) => d.available === true,
       );
 
       // Helper function to parse JSON fields
-      const parseJsonField = (field) => {
+      const parseJsonField = (field: any) => {
         if (!field) return null;
         if (typeof field === "object") return field;
         try {
@@ -514,7 +521,7 @@ export default function LoadPlanPage() {
       };
 
       // Convert trip data to load format for display
-      const loadData = (loadsData || []).map((trip) => {
+      const loadData = (loadsData || []).map((trip: any) => {
         const clientDetails = parseJsonField(trip.clientdetails);
         const pickupLocations = parseJsonField(trip.pickuplocations);
         const dropoffLocations = parseJsonField(trip.dropofflocations);
@@ -591,12 +598,12 @@ export default function LoadPlanPage() {
       "1TON BAKKIE": ["1 ton", "bakkie"],
     };
 
-    const typeKeywords = keywords[selectedVehicleType] || [];
+    const typeKeywords = keywords[selectedVehicleType as keyof typeof keywords] || [];
 
     return vehicles.filter((vehicle) => {
       const searchText =
         `${vehicle.make} ${vehicle.model} ${vehicle.sub_model} ${vehicle.vehicle_type}`.toLowerCase();
-      return typeKeywords.some((keyword) =>
+      return typeKeywords.some((keyword: string) =>
         searchText.includes(keyword.toLowerCase()),
       );
     });
@@ -632,15 +639,24 @@ export default function LoadPlanPage() {
   );
 
   // Get pickup location coordinates using Mapbox
-  const getPickupCoordinates = useCallback(async (location) => {
+  const getPickupCoordinates = useCallback(async (location: unknown) => {
     if (!location) return null;
+
+    const normalizedLocation = normalizeLocationInput(location);
+    if (normalizedLocation.point) {
+      return {
+        lat: normalizedLocation.point.lat,
+        lon: normalizedLocation.point.lng,
+      };
+    }
+
     try {
       const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-      if (!mapboxToken) return null;
+      if (!mapboxToken || !normalizedLocation.label) return null;
 
       const response = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-          location,
+          normalizedLocation.geocodeText || normalizedLocation.label,
         )}.json?access_token=${mapboxToken}&country=za&limit=1`,
       );
       const data = await response.json();
@@ -663,7 +679,7 @@ export default function LoadPlanPage() {
       if (!pickupCoords) return drivers;
 
       // Use stored vehicle tracking data
-      const driversWithDistance = drivers.map((driver) => {
+      const driversWithDistance = drivers.map((driver: any) => {
         // Find matching vehicle by driver name
         const trackingData = Array.isArray(vehicleTrackingData)
           ? vehicleTrackingData
@@ -703,10 +719,10 @@ export default function LoadPlanPage() {
 
         const dbDriverName =
           `${driver.first_name} ${driver.surname}`.toLowerCase();
-        let bestVehicleMatch = null;
+        let bestVehicleMatch: any = null;
         let bestMatchScore = 0;
 
-        trackingData.forEach((vehicle) => {
+        trackingData.forEach((vehicle: any) => {
           if (!vehicle.driver_name || vehicle.driver_name === "UNKNOWN") return;
 
           const cleanTrackingName = vehicle.driver_name
@@ -758,7 +774,7 @@ export default function LoadPlanPage() {
   // Preview route when locations change (only for national trips) - without saving
   useEffect(() => {
     const previewRoute = async () => {
-      if (!normalizedLoadingLocation || !normalizedDropOffPoint) {
+      if (!loadingLocation || !dropOffPoint) {
         setOptimizedRoute(null);
         return;
       }
@@ -775,10 +791,10 @@ export default function LoadPlanPage() {
           // Calculate centroid of polygon for waypoint
           const coords = point?.coordinates || null;
           const avgLng =
-            coords.reduce((sum: any, coord: any) => sum + coord[0], 0) /
+            coords.reduce((sum: number, coord: number[]) => sum + coord[0], 0) /
             coords.length;
           const avgLat =
-            coords.reduce((sum: any, coord: any) => sum + coord[1], 0) /
+            coords.reduce((sum: number, coord: number[]) => sum + coord[1], 0) /
             coords.length;
           return `${avgLng},${avgLat}`;
         });
@@ -788,8 +804,8 @@ export default function LoadPlanPage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            origin: normalizedLoadingLocation,
-            destination: normalizedDropOffPoint,
+            origin: loadingLocation,
+            destination: dropOffPoint,
             pickupTime: etaPickup,
             waypoints: waypoints,
           }),
@@ -807,8 +823,8 @@ export default function LoadPlanPage() {
 
     previewRoute();
   }, [
-    normalizedLoadingLocation,
-    normalizedDropOffPoint,
+    loadingLocation,
+    dropOffPoint,
     orderNumber,
     etaPickup,
     tripType,
@@ -817,8 +833,8 @@ export default function LoadPlanPage() {
 
   // Update sorted drivers when pickup location changes
   useEffect(() => {
-    if (normalizedLoadingLocation) {
-      getSortedDriversByDistance(normalizedLoadingLocation).then((sorted) => {
+    if (loadingLocation) {
+      getSortedDriversByDistance(loadingLocation).then((sorted) => {
         setSortedDrivers(sorted);
         // Also update available drivers with distance info
         const availableWithDistance = sorted.filter(
@@ -830,15 +846,15 @@ export default function LoadPlanPage() {
       setSortedDrivers(drivers);
       setAvailableDrivers(drivers.filter((d) => d.available === true));
     }
-  }, [normalizedLoadingLocation, getSortedDriversByDistance, drivers]);
+  }, [loadingLocation, getSortedDriversByDistance, drivers]);
 
   // Calculate estimated distance when locations change
   useEffect(() => {
     const calculateRouteDistance = async () => {
-      if (!normalizedLoadingLocation || !normalizedDropOffPoint) {
+      if (!loadingLocation || !dropOffPoint) {
         console.log("Missing locations for distance calc:", {
-          loadingLocation: normalizedLoadingLocation,
-          dropOffPoint: normalizedDropOffPoint,
+          loadingLocation,
+          dropOffPoint,
         });
         setEstimatedDistance(0);
         return;
@@ -851,44 +867,29 @@ export default function LoadPlanPage() {
           return;
         }
 
-        console.log(
-          "Calculating distance between:",
-          normalizedLoadingLocation,
-          "and",
-          normalizedDropOffPoint,
-        );
+        console.log("Calculating distance between:", loadingLocation, "and", dropOffPoint);
 
-        // First geocode the locations to get coordinates
-        const [originResponse, destResponse] = await Promise.all([
-          fetch(
-            `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-              normalizedLoadingLocation,
-            )}.json?access_token=${mapboxToken}&country=za&limit=1`,
-          ),
-          fetch(
-            `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-              normalizedDropOffPoint,
-            )}.json?access_token=${mapboxToken}&country=za&limit=1`,
-          ),
+        const originPoint = normalizedLoadingLocationData.point;
+        const destPoint = normalizedDropOffPointData.point;
+
+        const [originCoords, destCoords] = await Promise.all([
+          originPoint
+            ? Promise.resolve(originPoint)
+            : geocodeLocation(normalizedLoadingLocationData.geocodeText || normalizedLoadingLocation),
+          destPoint
+            ? Promise.resolve(destPoint)
+            : geocodeLocation(normalizedDropOffPointData.geocodeText || normalizedDropOffPoint),
         ]);
 
-        const [originData, destData] = await Promise.all([
-          originResponse.json(),
-          destResponse.json(),
-        ]);
-
-        if (!originData.features?.[0] || !destData.features?.[0]) {
-          console.log("Could not geocode locations");
+        if (!originCoords || !destCoords) {
+          console.log("Could not resolve locations");
           return;
         }
-
-        const originCoords = originData.features[0].center;
-        const destCoords = destData.features[0].center;
 
         console.log("Origin coords:", originCoords, "Dest coords:", destCoords);
 
         const response = await fetch(
-          `https://api.mapbox.com/directions/v5/mapbox/driving/${originCoords[0]},${originCoords[1]};${destCoords[0]},${destCoords[1]}?access_token=${mapboxToken}&geometries=geojson`,
+          `https://api.mapbox.com/directions/v5/mapbox/driving/${originCoords.lng},${originCoords.lat};${destCoords.lng},${destCoords.lat}?access_token=${mapboxToken}&geometries=geojson`,
         );
         const data = await response.json();
         console.log("Mapbox response:", data);
@@ -906,7 +907,14 @@ export default function LoadPlanPage() {
     };
 
     calculateRouteDistance();
-  }, [normalizedLoadingLocation, normalizedDropOffPoint]);
+  }, [
+    loadingLocation,
+    dropOffPoint,
+    normalizedLoadingLocation,
+    normalizedDropOffPoint,
+    normalizedLoadingLocationData,
+    normalizedDropOffPointData,
+  ]);
 
   // Rate Card Calculation Function
   const calculateRateCardCost = useCallback(
@@ -936,7 +944,7 @@ export default function LoadPlanPage() {
       const ppk_cost = kms * rateCard.ppk; // Per kilometer cost
       const extra_stop_cost = rateCard.extra_stop || 0;
       const standing_day_cost =
-        (rateCard.standing_day_cost || 0) * (days > 1 ? days - 1 : 0);
+        ((rateCard as any).standing_day_cost || 0) * (days > 1 ? days - 1 : 0);
 
       // Transport Cost = Fuel + Base + PPK + Standing Days
       const transport_cost =
@@ -1085,7 +1093,7 @@ export default function LoadPlanPage() {
     const [originLng, originLat] = routeCoords[0];
     const [destLng, destLat] = routeCoords[routeCoords.length - 1];
 
-    return availableStopPoints.filter((point) => {
+    return availableStopPoints.filter((point: any) => {
       if (!point.coordinates) return false;
 
       try {
@@ -1104,10 +1112,10 @@ export default function LoadPlanPage() {
 
         // Use centroid of stop point polygon
         const avgLng =
-          coordPairs.reduce((sum, coord) => sum + coord[0], 0) /
+          coordPairs.reduce((sum: number, coord: number[]) => sum + coord[0], 0) /
           coordPairs.length;
         const avgLat =
-          coordPairs.reduce((sum, coord) => sum + coord[1], 0) /
+          coordPairs.reduce((sum: number, coord: number[]) => sum + coord[1], 0) /
           coordPairs.length;
 
         // Check if within 25km of route
@@ -1149,7 +1157,7 @@ export default function LoadPlanPage() {
     return stopPoints
       .map((pointId) => {
         const point = availableStopPoints.find(
-          (p) => p.id.toString() === pointId,
+          (p: any) => p.id.toString() === pointId,
         );
         if (point?.coordinates) {
           try {
@@ -1177,13 +1185,18 @@ export default function LoadPlanPage() {
         }
         return null;
       })
-      .filter(Boolean);
+      .filter(
+        (
+          point,
+        ): point is { id: number; name: string; coordinates: number[][] } =>
+          Boolean(point),
+      );
   };
 
   // Optimized handlers with useCallback
   const handleDriverChange = useCallback(
     (driverIndex: number, driverId: string) => {
-      const selectedDriver = drivers.find((d) => d.id === driverId);
+      const selectedDriver = drivers.find((d: any) => d.id === driverId);
       setDriverAssignments((prev) => {
         const updated = [...prev];
         updated[driverIndex] = {
@@ -1237,10 +1250,10 @@ export default function LoadPlanPage() {
 
         const selectedDriverName =
           `${selectedDriver.first_name} ${selectedDriver.surname}`.toLowerCase();
-        let bestDriverMatch = null;
+        let bestDriverMatch: any = null;
         let bestDriverScore = 0;
 
-        trackingData.forEach((vehicle) => {
+        trackingData.forEach((vehicle: any) => {
           if (!vehicle.driver_name || vehicle.driver_name === "UNKNOWN") return;
 
           const cleanTrackingName = vehicle.driver_name
@@ -1275,7 +1288,10 @@ export default function LoadPlanPage() {
   );
 
   const addDriver = useCallback(() => {
-    setDriverAssignments((prev) => [...prev, { id: "", name: "" }]);
+    setDriverAssignments((prev) => [
+      ...prev,
+      { id: "", name: "", first_name: "", surname: "" },
+    ]);
   }, []);
 
   // Auto-select closest driver when dropdown is opened
@@ -1354,7 +1370,10 @@ export default function LoadPlanPage() {
   };
 
   const handleClientSelect = (clientData: any) => {
-    if (typeof clientData === "object" && clientData.address) {
+    if (
+      typeof clientData === "object" &&
+      (clientData.address || clientData.coordinates)
+    ) {
       setSelectedClient(clientData);
       setClient(clientData.name);
       setManualClientName(""); // Clear manual input
@@ -1369,15 +1388,15 @@ export default function LoadPlanPage() {
   };
 
   const handleUseAsPickup = () => {
-    if (selectedClient?.address) {
-      setLoadingLocation(selectedClient.address);
+    if (selectedClient?.address || selectedClient?.coordinates) {
+      setLoadingLocation(selectedClient);
     }
     setShowAddressPopup(false);
   };
 
   const handleUseAsDropoff = () => {
-    if (selectedClient?.address) {
-      setDropOffPoint(selectedClient.address);
+    if (selectedClient?.address || selectedClient?.coordinates) {
+      setDropOffPoint(selectedClient);
     }
     setShowAddressPopup(false);
   };
@@ -1412,8 +1431,8 @@ export default function LoadPlanPage() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              origin: normalizedLoadingLocation,
-              destination: normalizedDropOffPoint,
+              origin: loadingLocation,
+              destination: dropOffPoint,
               orderId: orderNumber,
               pickupTime: etaPickup,
               waypoints: waypoints,
@@ -1438,8 +1457,14 @@ export default function LoadPlanPage() {
         ordernumber: orderNumber,
         rate: rate,
         cargo: commodity,
-        origin: normalizedLoadingLocation,
-        destination: normalizedDropOffPoint,
+        origin:
+          normalizedLoadingLocationData.geocodeText ||
+          normalizedLoadingLocation ||
+          "",
+        destination:
+          normalizedDropOffPointData.geocodeText ||
+          normalizedDropOffPoint ||
+          "",
         notes: comment,
         status: "pending",
         startdate: etaPickup ? etaPickup.split("T")[0] : null,
@@ -1465,15 +1490,27 @@ export default function LoadPlanPage() {
             },
         pickuplocations: [
           {
-            location: normalizedLoadingLocation || "",
-            address: normalizedLoadingLocation || "",
+            location:
+              normalizedLoadingLocationData.geocodeText ||
+              normalizedLoadingLocation ||
+              "",
+            address:
+              normalizedLoadingLocationData.geocodeText ||
+              normalizedLoadingLocation ||
+              "",
             scheduled_time: etaPickup || "",
           },
         ],
         dropofflocations: [
           {
-            location: normalizedDropOffPoint || "",
-            address: normalizedDropOffPoint || "",
+            location:
+              normalizedDropOffPointData.geocodeText ||
+              normalizedDropOffPoint ||
+              "",
+            address:
+              normalizedDropOffPointData.geocodeText ||
+              normalizedDropOffPoint ||
+              "",
             scheduled_time: etaDropoff || "",
           },
         ],
@@ -1806,9 +1843,7 @@ export default function LoadPlanPage() {
                       <ClientLoadingDropdown
                         label="Loading Location"
                         value={loadingLocation}
-                        onChange={(value: any) =>
-                          setLoadingLocation(normalizeLocationValue(value))
-                        }
+                        onChange={(value: any) => setLoadingLocation(value)}
                         placeholder="Search for client location"
                         clients={clients}
                       />
@@ -1825,9 +1860,7 @@ export default function LoadPlanPage() {
                       <ClientLocationDropdown
                         label="Drop Off Point"
                         value={dropOffPoint}
-                        onChange={(value: any) =>
-                          setDropOffPoint(normalizeLocationValue(value))
-                        }
+                        onChange={(value: any) => setDropOffPoint(value)}
                         placeholder="Search for drop off location"
                         clients={clients}
                       />
@@ -1949,8 +1982,8 @@ export default function LoadPlanPage() {
                           }
                         /> */}
                         <RoutePreviewMap
-                          origin={normalizedLoadingLocation}
-                          destination={normalizedDropOffPoint}
+                          origin={loadingLocation}
+                          destination={dropOffPoint}
                           routeData={
                             tripType === "national" ? optimizedRoute : null
                           }

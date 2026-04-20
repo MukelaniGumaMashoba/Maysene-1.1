@@ -39,23 +39,23 @@ export function ClientLocationDropdown({
   }, [isOpen])
 
   const handleSelect = (client) => {
-    // Use address for routing, fallback to coordinates or name
-    const location = client.address || client.coordinates || client.name
-    onChange(location)
+    onChange(client)
     setIsOpen(false)
     setSearchTerm('')
   }
 
   // Find the selected client to display its name and address
-  const selectedClient = clients.find(c => 
-    (c.address && c.address === value) || 
-    (c.coordinates && c.coordinates === value) ||
-    c.name === value
-  )
+  const selectedClient = typeof value === 'object' && value !== null
+    ? value
+    : clients.find(c => 
+        (c.coordinates && c.coordinates === value) ||
+        (c.address && c.address === value) ||
+        c.name === value
+      )
 
   const displayValue = selectedClient 
     ? `${selectedClient.name}${selectedClient.address ? ' - ' + selectedClient.address : ''}`
-    : value || ''
+    : typeof value === 'string' ? value : ''
 
 
   return (
@@ -70,10 +70,10 @@ export function ClientLocationDropdown({
         )}
       >
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
           <span className="truncate">{displayValue || placeholder}</span>
         </div>
-        <ChevronDown className={cn("h-4 w-4 transition-transform flex-shrink-0", isOpen && "rotate-180")} />
+        <ChevronDown className={cn("h-4 w-4 transition-transform shrink-0", isOpen && "rotate-180")} />
       </button>
 
       {isOpen && (
@@ -95,9 +95,11 @@ export function ClientLocationDropdown({
               </div>
             ) : (
               filteredClients.map((client) => {
-                const isSelected = (client.address && client.address === value) || 
-                                  (client.coordinates && client.coordinates === value) ||
-                                  client.name === value
+                const isSelected = typeof value === 'object' && value !== null
+                  ? value.id === client.id
+                  : (client.coordinates && client.coordinates === value) ||
+                    (client.address && client.address === value) ||
+                    client.name === value
                 return (
                   <div
                     key={client.id}
@@ -107,7 +109,7 @@ export function ClientLocationDropdown({
                     )}
                     onClick={() => handleSelect(client)}
                   >
-                    <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0 mr-2 mt-0.5" />
+                    <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mr-2 mt-0.5" />
                     <div className="flex flex-col gap-1 flex-1 min-w-0">
                       <div className="font-semibold truncate">{client.name}</div>
                       {client.address && (

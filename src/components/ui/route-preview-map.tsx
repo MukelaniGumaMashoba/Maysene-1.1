@@ -1,20 +1,13 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, Route } from "lucide-react";
-
-type RouteLocation =
-  | string
-  | {
-      lat: number;
-      lng: number;
-      address?: string;
-    };
+import { normalizeLocationInput } from "@/lib/utils/location";
 
 interface RoutePreviewMapProps {
-  origin: RouteLocation;
-  destination: RouteLocation;
+  origin: unknown;
+  destination: unknown;
   routeData?: any;
   stopPoints?: Array<{
     id: number;
@@ -37,9 +30,13 @@ export function RoutePreviewMap({
 }: RoutePreviewMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
-  const originLabel = typeof origin === "string" ? origin : origin.address;
-  const destinationLabel =
-    typeof destination === "string" ? destination : destination.address;
+  const normalizedOrigin = useMemo(() => normalizeLocationInput(origin), [origin]);
+  const normalizedDestination = useMemo(
+    () => normalizeLocationInput(destination),
+    [destination],
+  );
+  const originLabel = normalizedOrigin.label || "Origin";
+  const destinationLabel = normalizedDestination.label || "Destination";
 
   useEffect(() => {
     if (!origin || !destination || !mapContainer.current) return;
@@ -72,11 +69,15 @@ export function RoutePreviewMap({
         //   geocodeLocation(destination),
         // ]);
         const originCoords =
-          typeof origin === "string" ? await geocodeLocation(origin) : origin;
+          normalizedOrigin.point ||
+          (normalizedOrigin.geocodeText || normalizedOrigin.label
+            ? await geocodeLocation(normalizedOrigin.geocodeText || normalizedOrigin.label)
+            : null);
         const destCoords =
-          typeof destination === "string"
-            ? await geocodeLocation(destination)
-            : destination;
+          normalizedDestination.point ||
+          (normalizedDestination.geocodeText || normalizedDestination.label
+            ? await geocodeLocation(normalizedDestination.geocodeText || normalizedDestination.label)
+            : null);
         const mapboxgl = (await import("mapbox-gl")).default;
 
         if (!originCoords || !destCoords) return;
@@ -235,18 +236,20 @@ export function RoutePreviewMap({
             id: "loading-zone",
             name: "Loading Location",
             center: originCoords,
+            polygon: normalizedOrigin.polygon,
             color: "#22c55e",
           },
           {
             id: "dropoff-zone",
             name: "Drop-off Location",
             center: destCoords,
+            polygon: normalizedDestination.polygon,
             color: "#ef4444",
           },
         ];
 
         for (const zone of geofences) {
-          const polygon = createGeofenceCircle(zone.center, 200);
+          const polygon = zone.polygon || createGeofenceCircle(zone.center, 200);
 
           if (map.current.getSource(zone.id)) {
             if (map.current.getLayer(zone.id)) {
