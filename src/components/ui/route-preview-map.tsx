@@ -38,6 +38,18 @@ export function RoutePreviewMap({
   const originLabel = normalizedOrigin.label || "Origin";
   const destinationLabel = normalizedDestination.label || "Destination";
 
+  // Debug logging
+  useEffect(() => {
+    console.log("=== Route Preview Map Debug Info ===");
+    console.log("Raw origin data:", origin);
+    console.log("Normalized origin:", normalizedOrigin);
+    console.log("Raw destination data:", destination);
+    console.log("Normalized destination:", normalizedDestination);
+    console.log("Origin has point:", !!normalizedOrigin.point);
+    console.log("Destination has point:", !!normalizedDestination.point);
+    console.log("=====================================");
+  }, [origin, destination, normalizedOrigin, normalizedDestination]);
+
   useEffect(() => {
     if (!origin || !destination || !mapContainer.current) return;
 
@@ -63,24 +75,28 @@ export function RoutePreviewMap({
       if (!map.current || !map.current.isStyleLoaded()) return;
 
       try {
-        // Geocode locations
-        // const [originCoords, destCoords] = await Promise.all([
-        //   geocodeLocation(origin),
-        //   geocodeLocation(destination),
-        // ]);
-        const originCoords =
-          normalizedOrigin.point ||
-          (normalizedOrigin.geocodeText || normalizedOrigin.label
-            ? await geocodeLocation(normalizedOrigin.geocodeText || normalizedOrigin.label)
-            : null);
-        const destCoords =
-          normalizedDestination.point ||
-          (normalizedDestination.geocodeText || normalizedDestination.label
-            ? await geocodeLocation(normalizedDestination.geocodeText || normalizedDestination.label)
-            : null);
+        // Use coordinates from database first, skip geocoding
+        const originCoords = normalizedOrigin.point;
+        const destCoords = normalizedDestination.point;
+
+        console.log("Route Preview - Using DB coordinates:", {
+          origin: originCoords,
+          destination: destCoords,
+        });
+
         const mapboxgl = (await import("mapbox-gl")).default;
 
-        if (!originCoords || !destCoords) return;
+        if (!originCoords || !destCoords) {
+          console.warn("Route Preview - Missing coordinates:", {
+            origin: !originCoords,
+            destination: !destCoords,
+            originLabel: normalizedOrigin.label,
+            destinationLabel: normalizedDestination.label,
+            originRaw: origin,
+            destinationRaw: destination,
+          });
+          return;
+        }
 
         // Add driver location marker if available
         if (driverLocation) {
@@ -468,28 +484,6 @@ export function RoutePreviewMap({
     coords.push(coords[0]); // close polygon
 
     return coords;
-  };
-
-  const geocodeLocation = async (location: string) => {
-    try {
-      const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-          location,
-        )}.json?access_token=${
-          process.env.NEXT_PUBLIC_MAPBOX_TOKEN
-        }&country=za&limit=1&proximity=28.0473,-26.2041`,
-      );
-      const data = await response.json();
-
-      if (data.features && data.features.length > 0) {
-        const [lng, lat] = data.features[0].center;
-        return { lat, lng };
-      }
-      return null;
-    } catch (error) {
-      console.error("Geocoding error:", error);
-      return null;
-    }
   };
 
   // const getRoute = async (
