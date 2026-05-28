@@ -151,7 +151,7 @@ export function ClientLoadingLocationModal({ isOpen, onClose, onSuccess }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-fit max-h-[90vh] flex flex-col">
+      <DialogContent className="w-full max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MapPin className="h-5 w-5 text-blue-600" />
@@ -174,7 +174,7 @@ export function ClientLoadingLocationModal({ isOpen, onClose, onSuccess }) {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-2">
+            <div>
               {isLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-blue-600" />

@@ -80,6 +80,14 @@ export function DriverDropdown({
     return (longer.length - editDistance(longer, shorter)) / longer.length
   }
 
+  const normalizedVehicleTrackingData = Array.isArray(vehicleTrackingData)
+    ? vehicleTrackingData
+    : Array.isArray(vehicleTrackingData?.data)
+      ? vehicleTrackingData.data
+      : Array.isArray(vehicleTrackingData?.result?.data)
+        ? vehicleTrackingData.result.data
+        : []
+
   // Get plate for selected driver
   const getDriverPlate = (driver) => {
     if (!driver) return ''
@@ -88,7 +96,7 @@ export function DriverDropdown({
     let bestMatch = null
     let bestSimilarity = 0
     
-    vehicleTrackingData.forEach(vehicle => {
+    normalizedVehicleTrackingData.forEach(vehicle => {
       if (!vehicle.driver_name || vehicle.driver_name === 'UNKNOWN') return
       
       // Remove all numbers and extra spaces from tracking name
@@ -121,12 +129,12 @@ export function DriverDropdown({
         )}
       >
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          <User className="h-4 w-4 text-muted-foreground shrink-0" />
           <span className="truncate">
             {isCalculatingDistance ? "Finding closest driver..." : (displayValue || placeholder)}
           </span>
         </div>
-        <ChevronDown className={cn("h-4 w-4 transition-transform flex-shrink-0", isOpen && "rotate-180")} />
+        <ChevronDown className={cn("h-4 w-4 transition-transform shrink-0", isOpen && "rotate-180")} />
       </button>
 
       {isOpen && (

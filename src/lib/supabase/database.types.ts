@@ -14,21 +14,86 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_invoice_payments: {
+        Row: {
+          account_invoice_id: string
+          account_number: string
+          amount: number
+          billing_month: string | null
+          created_at: string
+          created_by: string | null
+          created_by_email: string | null
+          id: string
+          invoice_number: string
+          notes: string | null
+          payment_date: string
+          payment_method: string | null
+          payment_reference: string
+        }
+        Insert: {
+          account_invoice_id: string
+          account_number: string
+          amount: number
+          billing_month?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_email?: string | null
+          id?: string
+          invoice_number: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string | null
+          payment_reference: string
+        }
+        Update: {
+          account_invoice_id?: string
+          account_number?: string
+          amount?: number
+          billing_month?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_email?: string | null
+          id?: string
+          invoice_number?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string | null
+          payment_reference?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_invoice_payments_account_invoice_id_fkey"
+            columns: ["account_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "account_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       account_invoices: {
         Row: {
           account_number: string
+          balance_due: number
           billing_month: string | null
           client_address: string | null
           company_name: string | null
+          company_registration_number: string | null
           created_at: string
           created_by: string | null
+          credit_amount: number
           customer_vat_number: string | null
           discount_amount: number
+          due_date: string | null
+          fully_paid_at: string | null
           id: string
           invoice_date: string
           invoice_number: string
+          last_payment_at: string | null
+          last_payment_reference: string | null
           line_items: Json
           notes: string | null
+          paid_amount: number
+          payment_status: string
           subtotal: number
           total_amount: number
           updated_at: string
@@ -36,18 +101,27 @@ export type Database = {
         }
         Insert: {
           account_number: string
+          balance_due?: number
           billing_month?: string | null
           client_address?: string | null
           company_name?: string | null
+          company_registration_number?: string | null
           created_at?: string
           created_by?: string | null
+          credit_amount?: number
           customer_vat_number?: string | null
           discount_amount?: number
+          due_date?: string | null
+          fully_paid_at?: string | null
           id?: string
           invoice_date?: string
           invoice_number: string
+          last_payment_at?: string | null
+          last_payment_reference?: string | null
           line_items?: Json
           notes?: string | null
+          paid_amount?: number
+          payment_status?: string
           subtotal?: number
           total_amount?: number
           updated_at?: string
@@ -55,22 +129,226 @@ export type Database = {
         }
         Update: {
           account_number?: string
+          balance_due?: number
           billing_month?: string | null
           client_address?: string | null
           company_name?: string | null
+          company_registration_number?: string | null
           created_at?: string
           created_by?: string | null
+          credit_amount?: number
           customer_vat_number?: string | null
           discount_amount?: number
+          due_date?: string | null
+          fully_paid_at?: string | null
           id?: string
           invoice_date?: string
           invoice_number?: string
+          last_payment_at?: string | null
+          last_payment_reference?: string | null
           line_items?: Json
           notes?: string | null
+          paid_amount?: number
+          payment_status?: string
           subtotal?: number
           total_amount?: number
           updated_at?: string
           vat_amount?: number
+        }
+        Relationships: []
+      }
+      account_invoices_duplicate: {
+        Row: {
+          account_number: string
+          balance_due: number
+          billing_month: string | null
+          client_address: string | null
+          company_name: string | null
+          company_registration_number: string | null
+          created_at: string
+          created_by: string | null
+          credit_amount: number
+          customer_vat_number: string | null
+          discount_amount: number
+          due_date: string | null
+          fully_paid_at: string | null
+          id: string
+          invoice_date: string
+          invoice_number: string
+          last_payment_at: string | null
+          last_payment_reference: string | null
+          line_items: Json
+          notes: string | null
+          paid_amount: number
+          payment_status: string
+          subtotal: number
+          total_amount: number
+          updated_at: string
+          vat_amount: number
+        }
+        Insert: {
+          account_number: string
+          balance_due?: number
+          billing_month?: string | null
+          client_address?: string | null
+          company_name?: string | null
+          company_registration_number?: string | null
+          created_at?: string
+          created_by?: string | null
+          credit_amount?: number
+          customer_vat_number?: string | null
+          discount_amount?: number
+          due_date?: string | null
+          fully_paid_at?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number: string
+          last_payment_at?: string | null
+          last_payment_reference?: string | null
+          line_items?: Json
+          notes?: string | null
+          paid_amount?: number
+          payment_status?: string
+          subtotal?: number
+          total_amount?: number
+          updated_at?: string
+          vat_amount?: number
+        }
+        Update: {
+          account_number?: string
+          balance_due?: number
+          billing_month?: string | null
+          client_address?: string | null
+          company_name?: string | null
+          company_registration_number?: string | null
+          created_at?: string
+          created_by?: string | null
+          credit_amount?: number
+          customer_vat_number?: string | null
+          discount_amount?: number
+          due_date?: string | null
+          fully_paid_at?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number?: string
+          last_payment_at?: string | null
+          last_payment_reference?: string | null
+          line_items?: Json
+          notes?: string | null
+          paid_amount?: number
+          payment_status?: string
+          subtotal?: number
+          total_amount?: number
+          updated_at?: string
+          vat_amount?: number
+        }
+        Relationships: []
+      }
+      account_payment_allocations: {
+        Row: {
+          account_invoice_id: string | null
+          account_number: string
+          allocation_type: string
+          amount: number
+          billing_month: string | null
+          created_at: string
+          created_by: string | null
+          created_by_email: string | null
+          id: string
+          meta: Json
+          notes: string | null
+          payment_date: string
+          payment_id: string
+          reference: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_invoice_id?: string | null
+          account_number: string
+          allocation_type: string
+          amount: number
+          billing_month?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_email?: string | null
+          id?: string
+          meta?: Json
+          notes?: string | null
+          payment_date: string
+          payment_id: string
+          reference?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_invoice_id?: string | null
+          account_number?: string
+          allocation_type?: string
+          amount?: number
+          billing_month?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_email?: string | null
+          id?: string
+          meta?: Json
+          notes?: string | null
+          payment_date?: string
+          payment_id?: string
+          reference?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_payment_allocations_account_invoice_id_fkey"
+            columns: ["account_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "account_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_payment_allocations_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "account_invoice_payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounts_completed_jobs_locks: {
+        Row: {
+          created_at: string
+          id: string
+          is_locked: boolean
+          lock_date: string | null
+          lock_key: string
+          locked_at: string | null
+          locked_by: string | null
+          unlocked_at: string | null
+          unlocked_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_locked?: boolean
+          lock_date?: string | null
+          lock_key?: string
+          locked_at?: string | null
+          locked_by?: string | null
+          unlocked_at?: string | null
+          unlocked_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_locked?: boolean
+          lock_date?: string | null
+          lock_key?: string
+          locked_at?: string | null
+          locked_by?: string | null
+          unlocked_at?: string | null
+          unlocked_by?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -160,10 +438,12 @@ export type Database = {
           actual_end_time: string | null
           actual_finish_time: string | null
           actual_fuel_cost: number | null
+          actual_rate: number | null
           actual_start: string | null
           actual_start_time: string | null
           actual_total_cost: number | null
           actual_vehicle_cost: number | null
+          amount_to_split: number | null
           cargo: string | null
           cargo_weight: string | null
           cargoweight: string | null
@@ -188,6 +468,7 @@ export type Database = {
           finish_time_variance_minutes: number | null
           fuel_price_used: number | null
           id: number
+          invoice_rate: number | null
           load_inspection_id: number | null
           notes: string | null
           ordernumber: string | null
@@ -211,6 +492,9 @@ export type Database = {
           selected_stop_points: Json | null
           selectedclient: string | null
           selectedstoppoints: Json | null
+          split_allocations: Json
+          split_handover_logs: Json
+          split_updated_at: string | null
           start_time_variance_minutes: number | null
           startdate: string | null
           status: string
@@ -239,10 +523,12 @@ export type Database = {
           actual_end_time?: string | null
           actual_finish_time?: string | null
           actual_fuel_cost?: number | null
+          actual_rate?: number | null
           actual_start?: string | null
           actual_start_time?: string | null
           actual_total_cost?: number | null
           actual_vehicle_cost?: number | null
+          amount_to_split?: number | null
           cargo?: string | null
           cargo_weight?: string | null
           cargoweight?: string | null
@@ -267,6 +553,7 @@ export type Database = {
           finish_time_variance_minutes?: number | null
           fuel_price_used?: number | null
           id?: never
+          invoice_rate?: number | null
           load_inspection_id?: number | null
           notes?: string | null
           ordernumber?: string | null
@@ -290,6 +577,9 @@ export type Database = {
           selected_stop_points?: Json | null
           selectedclient?: string | null
           selectedstoppoints?: Json | null
+          split_allocations?: Json
+          split_handover_logs?: Json
+          split_updated_at?: string | null
           start_time_variance_minutes?: number | null
           startdate?: string | null
           status?: string
@@ -318,10 +608,12 @@ export type Database = {
           actual_end_time?: string | null
           actual_finish_time?: string | null
           actual_fuel_cost?: number | null
+          actual_rate?: number | null
           actual_start?: string | null
           actual_start_time?: string | null
           actual_total_cost?: number | null
           actual_vehicle_cost?: number | null
+          amount_to_split?: number | null
           cargo?: string | null
           cargo_weight?: string | null
           cargoweight?: string | null
@@ -346,6 +638,7 @@ export type Database = {
           finish_time_variance_minutes?: number | null
           fuel_price_used?: number | null
           id?: never
+          invoice_rate?: number | null
           load_inspection_id?: number | null
           notes?: string | null
           ordernumber?: string | null
@@ -369,6 +662,9 @@ export type Database = {
           selected_stop_points?: Json | null
           selectedclient?: string | null
           selectedstoppoints?: Json | null
+          split_allocations?: Json
+          split_handover_logs?: Json
+          split_updated_at?: string | null
           start_time_variance_minutes?: number | null
           startdate?: string | null
           status?: string
@@ -790,6 +1086,192 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      bulk_account_invoices: {
+        Row: {
+          account_number: string
+          billing_month: string | null
+          client_address: string | null
+          company_name: string | null
+          company_registration_number: string | null
+          created_at: string
+          created_by: string | null
+          customer_vat_number: string | null
+          discount_amount: number
+          id: string
+          invoice_date: string
+          invoice_locked: boolean
+          invoice_locked_at: string | null
+          invoice_locked_by: string | null
+          invoice_number: string
+          line_items: Json
+          notes: string | null
+          subtotal: number
+          system_locked: boolean
+          system_locked_at: string | null
+          system_locked_by: string | null
+          system_locked_date: string | null
+          total_amount: number
+          updated_at: string
+          vat_amount: number
+        }
+        Insert: {
+          account_number: string
+          billing_month?: string | null
+          client_address?: string | null
+          company_name?: string | null
+          company_registration_number?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_vat_number?: string | null
+          discount_amount?: number
+          id?: string
+          invoice_date?: string
+          invoice_locked?: boolean
+          invoice_locked_at?: string | null
+          invoice_locked_by?: string | null
+          invoice_number: string
+          line_items?: Json
+          notes?: string | null
+          subtotal?: number
+          system_locked?: boolean
+          system_locked_at?: string | null
+          system_locked_by?: string | null
+          system_locked_date?: string | null
+          total_amount?: number
+          updated_at?: string
+          vat_amount?: number
+        }
+        Update: {
+          account_number?: string
+          billing_month?: string | null
+          client_address?: string | null
+          company_name?: string | null
+          company_registration_number?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_vat_number?: string | null
+          discount_amount?: number
+          id?: string
+          invoice_date?: string
+          invoice_locked?: boolean
+          invoice_locked_at?: string | null
+          invoice_locked_by?: string | null
+          invoice_number?: string
+          line_items?: Json
+          notes?: string | null
+          subtotal?: number
+          system_locked?: boolean
+          system_locked_at?: string | null
+          system_locked_by?: string | null
+          system_locked_date?: string | null
+          total_amount?: number
+          updated_at?: string
+          vat_amount?: number
+        }
+        Relationships: []
+      }
+      bulk_account_invoices_duplicate: {
+        Row: {
+          account_number: string
+          billing_month: string | null
+          client_address: string | null
+          company_name: string | null
+          company_registration_number: string | null
+          created_at: string
+          created_by: string | null
+          customer_vat_number: string | null
+          discount_amount: number
+          id: string
+          invoice_date: string
+          invoice_locked: boolean
+          invoice_locked_at: string | null
+          invoice_locked_by: string | null
+          invoice_number: string
+          line_items: Json
+          notes: string | null
+          subtotal: number
+          system_locked: boolean
+          system_locked_at: string | null
+          system_locked_by: string | null
+          system_locked_date: string | null
+          total_amount: number
+          updated_at: string
+          vat_amount: number
+        }
+        Insert: {
+          account_number: string
+          billing_month?: string | null
+          client_address?: string | null
+          company_name?: string | null
+          company_registration_number?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_vat_number?: string | null
+          discount_amount?: number
+          id?: string
+          invoice_date?: string
+          invoice_locked?: boolean
+          invoice_locked_at?: string | null
+          invoice_locked_by?: string | null
+          invoice_number: string
+          line_items?: Json
+          notes?: string | null
+          subtotal?: number
+          system_locked?: boolean
+          system_locked_at?: string | null
+          system_locked_by?: string | null
+          system_locked_date?: string | null
+          total_amount?: number
+          updated_at?: string
+          vat_amount?: number
+        }
+        Update: {
+          account_number?: string
+          billing_month?: string | null
+          client_address?: string | null
+          company_name?: string | null
+          company_registration_number?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_vat_number?: string | null
+          discount_amount?: number
+          id?: string
+          invoice_date?: string
+          invoice_locked?: boolean
+          invoice_locked_at?: string | null
+          invoice_locked_by?: string | null
+          invoice_number?: string
+          line_items?: Json
+          notes?: string | null
+          subtotal?: number
+          system_locked?: boolean
+          system_locked_at?: string | null
+          system_locked_by?: string | null
+          system_locked_date?: string | null
+          total_amount?: number
+          updated_at?: string
+          vat_amount?: number
+        }
+        Relationships: []
+      }
+      bulk_document_sequences: {
+        Row: {
+          name: string
+          next_value: number
+          updated_at: string
+        }
+        Insert: {
+          name: string
+          next_value: number
+          updated_at?: string
+        }
+        Update: {
+          name?: string
+          next_value?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       capabilities: {
         Row: {
@@ -1235,6 +1717,8 @@ export type Database = {
           completion_date: string | null
           completion_notes: string | null
           contact_person: string | null
+          cost_center_code: string | null
+          cost_center_name: string | null
           created_at: string | null
           created_by: string | null
           customer_address: string | null
@@ -1317,6 +1801,8 @@ export type Database = {
           completion_date?: string | null
           completion_notes?: string | null
           contact_person?: string | null
+          cost_center_code?: string | null
+          cost_center_name?: string | null
           created_at?: string | null
           created_by?: string | null
           customer_address?: string | null
@@ -1399,6 +1885,8 @@ export type Database = {
           completion_date?: string | null
           completion_notes?: string | null
           contact_person?: string | null
+          cost_center_code?: string | null
+          cost_center_name?: string | null
           created_at?: string | null
           created_by?: string | null
           customer_address?: string | null
@@ -1727,11 +2215,13 @@ export type Database = {
           client_info_matched_at: string | null
           company: string | null
           contact_name: string | null
+          cost_center_code: string | null
           cost_code: string | null
           created_at: string
           email: string | null
           id: string
           legal_name: string | null
+          operational: boolean
           physical_address_1: string | null
           physical_address_2: string | null
           physical_address_3: string | null
@@ -1741,7 +2231,12 @@ export type Database = {
           postal_address_2: string | null
           postal_address_3: string | null
           registration_number: string | null
+          site_allocated: string | null
           source_entity_id: string | null
+          total_amount_locked: boolean
+          total_amount_locked_at: string | null
+          total_amount_locked_by: string | null
+          total_amount_locked_value: number | null
           validated: boolean | null
           vat_number: string | null
         }
@@ -1751,11 +2246,13 @@ export type Database = {
           client_info_matched_at?: string | null
           company?: string | null
           contact_name?: string | null
+          cost_center_code?: string | null
           cost_code?: string | null
           created_at?: string
           email?: string | null
           id?: string
           legal_name?: string | null
+          operational?: boolean
           physical_address_1?: string | null
           physical_address_2?: string | null
           physical_address_3?: string | null
@@ -1765,7 +2262,12 @@ export type Database = {
           postal_address_2?: string | null
           postal_address_3?: string | null
           registration_number?: string | null
+          site_allocated?: string | null
           source_entity_id?: string | null
+          total_amount_locked?: boolean
+          total_amount_locked_at?: string | null
+          total_amount_locked_by?: string | null
+          total_amount_locked_value?: number | null
           validated?: boolean | null
           vat_number?: string | null
         }
@@ -1775,11 +2277,13 @@ export type Database = {
           client_info_matched_at?: string | null
           company?: string | null
           contact_name?: string | null
+          cost_center_code?: string | null
           cost_code?: string | null
           created_at?: string
           email?: string | null
           id?: string
           legal_name?: string | null
+          operational?: boolean
           physical_address_1?: string | null
           physical_address_2?: string | null
           physical_address_3?: string | null
@@ -1789,9 +2293,133 @@ export type Database = {
           postal_address_2?: string | null
           postal_address_3?: string | null
           registration_number?: string | null
+          site_allocated?: string | null
           source_entity_id?: string | null
+          total_amount_locked?: boolean
+          total_amount_locked_at?: string | null
+          total_amount_locked_by?: string | null
+          total_amount_locked_value?: number | null
           validated?: boolean | null
           vat_number?: string | null
+        }
+        Relationships: []
+      }
+      credit_note_applications: {
+        Row: {
+          account_invoice_id: string | null
+          account_number: string
+          amount: number
+          applied_to: string
+          billing_month: string
+          bucket_application: Json
+          comment: string | null
+          created_at: string
+          created_by: string | null
+          created_by_email: string | null
+          credit_note_id: string
+          id: string
+          reference: string | null
+        }
+        Insert: {
+          account_invoice_id?: string | null
+          account_number: string
+          amount: number
+          applied_to?: string
+          billing_month: string
+          bucket_application?: Json
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_email?: string | null
+          credit_note_id: string
+          id?: string
+          reference?: string | null
+        }
+        Update: {
+          account_invoice_id?: string | null
+          account_number?: string
+          amount?: number
+          applied_to?: string
+          billing_month?: string
+          bucket_application?: Json
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_email?: string | null
+          credit_note_id?: string
+          id?: string
+          reference?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_note_applications_credit_note_id_fkey"
+            columns: ["credit_note_id"]
+            isOneToOne: false
+            referencedRelation: "credit_notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_notes: {
+        Row: {
+          account_invoice_id: string | null
+          account_number: string
+          amount: number
+          applied_amount: number
+          billing_month_applies_to: string
+          client_name: string | null
+          comment: string | null
+          created_at: string
+          created_by: string | null
+          created_by_email: string | null
+          credit_note_date: string
+          credit_note_number: string
+          id: string
+          reason: string | null
+          reference: string | null
+          status: string
+          unapplied_amount: number
+          updated_at: string
+        }
+        Insert: {
+          account_invoice_id?: string | null
+          account_number: string
+          amount: number
+          applied_amount?: number
+          billing_month_applies_to: string
+          client_name?: string | null
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_email?: string | null
+          credit_note_date?: string
+          credit_note_number: string
+          id?: string
+          reason?: string | null
+          reference?: string | null
+          status?: string
+          unapplied_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          account_invoice_id?: string | null
+          account_number?: string
+          amount?: number
+          applied_amount?: number
+          billing_month_applies_to?: string
+          client_name?: string | null
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_email?: string | null
+          credit_note_date?: string
+          credit_note_number?: string
+          id?: string
+          reason?: string | null
+          reference?: string | null
+          status?: string
+          unapplied_amount?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -3361,6 +3989,69 @@ export type Database = {
         }
         Relationships: []
       }
+      imported_account_payments: {
+        Row: {
+          account_number: string
+          allocation_current_due: number
+          allocation_overdue_120_plus_days: number
+          allocation_overdue_30_days: number
+          allocation_overdue_60_days: number
+          allocation_overdue_90_days: number
+          amount: number
+          billing_month_applied_to: string | null
+          client_name: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          payer_name: string | null
+          payment_date: string
+          reference: string | null
+          source_sheet: string | null
+          source_workbook: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_number: string
+          allocation_current_due?: number
+          allocation_overdue_120_plus_days?: number
+          allocation_overdue_30_days?: number
+          allocation_overdue_60_days?: number
+          allocation_overdue_90_days?: number
+          amount?: number
+          billing_month_applied_to?: string | null
+          client_name?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          payer_name?: string | null
+          payment_date: string
+          reference?: string | null
+          source_sheet?: string | null
+          source_workbook?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_number?: string
+          allocation_current_due?: number
+          allocation_overdue_120_plus_days?: number
+          allocation_overdue_30_days?: number
+          allocation_overdue_60_days?: number
+          allocation_overdue_90_days?: number
+          amount?: number
+          billing_month_applied_to?: string | null
+          client_name?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          payer_name?: string | null
+          payment_date?: string
+          reference?: string | null
+          source_sheet?: string | null
+          source_workbook?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       inspection_templates: {
         Row: {
           created_at: string | null
@@ -3747,6 +4438,60 @@ export type Database = {
           quantity?: number
           unit_price?: number
           vat_amount?: number
+        }
+        Relationships: []
+      }
+      invoice_number_events: {
+        Row: {
+          allocated_at: string
+          allocated_by: string | null
+          context: Json
+          error_message: string | null
+          failed_at: string | null
+          id: string
+          invoice_number: string
+          persisted_at: string | null
+          persisted_invoice_id: string | null
+          persisted_table: string | null
+          prefix: string
+          request_key: string | null
+          sequence_name: string
+          source: string
+          status: string
+        }
+        Insert: {
+          allocated_at?: string
+          allocated_by?: string | null
+          context?: Json
+          error_message?: string | null
+          failed_at?: string | null
+          id?: string
+          invoice_number: string
+          persisted_at?: string | null
+          persisted_invoice_id?: string | null
+          persisted_table?: string | null
+          prefix?: string
+          request_key?: string | null
+          sequence_name?: string
+          source: string
+          status?: string
+        }
+        Update: {
+          allocated_at?: string
+          allocated_by?: string | null
+          context?: Json
+          error_message?: string | null
+          failed_at?: string | null
+          id?: string
+          invoice_number?: string
+          persisted_at?: string | null
+          persisted_invoice_id?: string | null
+          persisted_table?: string | null
+          prefix?: string
+          request_key?: string | null
+          sequence_name?: string
+          source?: string
+          status?: string
         }
         Relationships: []
       }
@@ -4163,6 +4908,54 @@ export type Database = {
           },
         ]
       }
+      job_card_invoice_queue: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          job_card_id: string
+          job_number: string | null
+          payload: Json
+          processed_at: string | null
+          processed_by: string | null
+          processed_invoice_id: string | null
+          queued_at: string
+          queued_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          job_card_id: string
+          job_number?: string | null
+          payload?: Json
+          processed_at?: string | null
+          processed_by?: string | null
+          processed_invoice_id?: string | null
+          queued_at?: string
+          queued_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          job_card_id?: string
+          job_number?: string | null
+          payload?: Json
+          processed_at?: string | null
+          processed_by?: string | null
+          processed_invoice_id?: string | null
+          queued_at?: string
+          queued_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       job_card_workflow_history: {
         Row: {
           action_at: string | null
@@ -4215,6 +5008,8 @@ export type Database = {
           completion_date: string | null
           completion_notes: string | null
           contact_person: string | null
+          cost_center_code: string | null
+          cost_center_name: string | null
           created_at: string | null
           created_by: string | null
           customer_address: string | null
@@ -4229,21 +5024,31 @@ export type Database = {
           due_date: string | null
           end_time: string | null
           equipment_used: Json | null
+          escalated_at: string | null
+          escalation_role: string | null
+          escalation_source_role: string | null
           estimated_cost: number | null
           estimated_duration_hours: number | null
+          fc_note_acknowledged: boolean
           id: string
+          invoiced_by: string | null
           ip_address: string | null
           job_date: string | null
           job_description: string | null
           job_location: string | null
           job_number: string
           job_status: string | null
+          job_sub_type: string | null
           job_type: string
           latitude: number | null
           longitude: number | null
           move_to: string | null
+          move_to_role: string | null
           new_account_number: string | null
+          new_serial_number: string | null
           odormeter: string | null
+          old_serial_number: string | null
+          order_number: string | null
           parts_required: Json | null
           priority: string | null
           products_required: Json | null
@@ -4277,11 +5082,14 @@ export type Database = {
           temporary_registration: string | null
           updated_at: string | null
           updated_by: string | null
+          vehicle_chassis: string | null
+          vehicle_colour: string | null
           vehicle_id: string | null
           vehicle_make: string | null
           vehicle_model: string | null
           vehicle_registration: string | null
           vehicle_year: number | null
+          vin_number: string | null
           vin_numer: string | null
           work_notes: string | null
         }
@@ -4298,6 +5106,8 @@ export type Database = {
           completion_date?: string | null
           completion_notes?: string | null
           contact_person?: string | null
+          cost_center_code?: string | null
+          cost_center_name?: string | null
           created_at?: string | null
           created_by?: string | null
           customer_address?: string | null
@@ -4312,21 +5122,31 @@ export type Database = {
           due_date?: string | null
           end_time?: string | null
           equipment_used?: Json | null
+          escalated_at?: string | null
+          escalation_role?: string | null
+          escalation_source_role?: string | null
           estimated_cost?: number | null
           estimated_duration_hours?: number | null
+          fc_note_acknowledged?: boolean
           id?: string
+          invoiced_by?: string | null
           ip_address?: string | null
           job_date?: string | null
           job_description?: string | null
           job_location?: string | null
           job_number: string
           job_status?: string | null
+          job_sub_type?: string | null
           job_type: string
           latitude?: number | null
           longitude?: number | null
           move_to?: string | null
+          move_to_role?: string | null
           new_account_number?: string | null
+          new_serial_number?: string | null
           odormeter?: string | null
+          old_serial_number?: string | null
+          order_number?: string | null
           parts_required?: Json | null
           priority?: string | null
           products_required?: Json | null
@@ -4360,11 +5180,14 @@ export type Database = {
           temporary_registration?: string | null
           updated_at?: string | null
           updated_by?: string | null
+          vehicle_chassis?: string | null
+          vehicle_colour?: string | null
           vehicle_id?: string | null
           vehicle_make?: string | null
           vehicle_model?: string | null
           vehicle_registration?: string | null
           vehicle_year?: number | null
+          vin_number?: string | null
           vin_numer?: string | null
           work_notes?: string | null
         }
@@ -4381,6 +5204,8 @@ export type Database = {
           completion_date?: string | null
           completion_notes?: string | null
           contact_person?: string | null
+          cost_center_code?: string | null
+          cost_center_name?: string | null
           created_at?: string | null
           created_by?: string | null
           customer_address?: string | null
@@ -4395,21 +5220,31 @@ export type Database = {
           due_date?: string | null
           end_time?: string | null
           equipment_used?: Json | null
+          escalated_at?: string | null
+          escalation_role?: string | null
+          escalation_source_role?: string | null
           estimated_cost?: number | null
           estimated_duration_hours?: number | null
+          fc_note_acknowledged?: boolean
           id?: string
+          invoiced_by?: string | null
           ip_address?: string | null
           job_date?: string | null
           job_description?: string | null
           job_location?: string | null
           job_number?: string
           job_status?: string | null
+          job_sub_type?: string | null
           job_type?: string
           latitude?: number | null
           longitude?: number | null
           move_to?: string | null
+          move_to_role?: string | null
           new_account_number?: string | null
+          new_serial_number?: string | null
           odormeter?: string | null
+          old_serial_number?: string | null
+          order_number?: string | null
           parts_required?: Json | null
           priority?: string | null
           products_required?: Json | null
@@ -4443,11 +5278,14 @@ export type Database = {
           temporary_registration?: string | null
           updated_at?: string | null
           updated_by?: string | null
+          vehicle_chassis?: string | null
+          vehicle_colour?: string | null
           vehicle_id?: string | null
           vehicle_make?: string | null
           vehicle_model?: string | null
           vehicle_registration?: string | null
           vehicle_year?: number | null
+          vin_number?: string | null
           vin_numer?: string | null
           work_notes?: string | null
         }
@@ -5109,6 +5947,39 @@ export type Database = {
           },
         ]
       }
+      parts_orders: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: number
+          notes: string | null
+          parts_data: Json | null
+          status: string | null
+          supplier_id: number | null
+          supplier_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: number
+          notes?: string | null
+          parts_data?: Json | null
+          status?: string | null
+          supplier_id?: number | null
+          supplier_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: number
+          notes?: string | null
+          parts_data?: Json | null
+          status?: string | null
+          supplier_id?: number | null
+          supplier_name?: string | null
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount_due: number | null
@@ -5153,69 +6024,164 @@ export type Database = {
       }
       payments_: {
         Row: {
+          account_fusion: string | null
+          account_invoice_id: string | null
+          account_solflo: string | null
+          account_status: string | null
+          age_analysis_imported_at: string | null
+          amount_due: number
           amount_excl_vat: number | null
           amount_incl_vat: number | null
+          avg_days_to_pay: number
           balance_due: number | null
           billing_month: string | null
+          category: string | null
+          city: string | null
+          client_contact: string | null
+          client_name: string | null
           company: string | null
           cost_code: string | null
+          country: string | null
           created_at: string
+          credit_amount: number
+          credit_limit: number
+          currency: string
+          current_due: number
+          debtor_note: string | null
           due_amount: number | null
           due_date: string | null
+          email: string | null
           id: string
           invoice_date: string | null
+          invoice_number: string | null
+          last_payment: number
+          last_payment_date: string | null
           last_updated: string | null
+          outstanding_balance: number
+          overdue_120_plus_days: number
           overdue_30_days: number | null
           overdue_60_days: number | null
           overdue_90_days: number | null
           paid_amount: number | null
           payment_status: string | null
+          payment_terms: string | null
+          phone: string | null
+          post_code: string | null
+          postal_address: string | null
           reference: string | null
+          region: string | null
+          solutions_rep: string | null
           vat_amount: number | null
         }
         Insert: {
+          account_fusion?: string | null
+          account_invoice_id?: string | null
+          account_solflo?: string | null
+          account_status?: string | null
+          age_analysis_imported_at?: string | null
+          amount_due?: number
           amount_excl_vat?: number | null
           amount_incl_vat?: number | null
+          avg_days_to_pay?: number
           balance_due?: number | null
           billing_month?: string | null
+          category?: string | null
+          city?: string | null
+          client_contact?: string | null
+          client_name?: string | null
           company?: string | null
           cost_code?: string | null
+          country?: string | null
           created_at?: string
+          credit_amount?: number
+          credit_limit?: number
+          currency?: string
+          current_due?: number
+          debtor_note?: string | null
           due_amount?: number | null
           due_date?: string | null
+          email?: string | null
           id?: string
           invoice_date?: string | null
+          invoice_number?: string | null
+          last_payment?: number
+          last_payment_date?: string | null
           last_updated?: string | null
+          outstanding_balance?: number
+          overdue_120_plus_days?: number
           overdue_30_days?: number | null
           overdue_60_days?: number | null
           overdue_90_days?: number | null
           paid_amount?: number | null
           payment_status?: string | null
+          payment_terms?: string | null
+          phone?: string | null
+          post_code?: string | null
+          postal_address?: string | null
           reference?: string | null
+          region?: string | null
+          solutions_rep?: string | null
           vat_amount?: number | null
         }
         Update: {
+          account_fusion?: string | null
+          account_invoice_id?: string | null
+          account_solflo?: string | null
+          account_status?: string | null
+          age_analysis_imported_at?: string | null
+          amount_due?: number
           amount_excl_vat?: number | null
           amount_incl_vat?: number | null
+          avg_days_to_pay?: number
           balance_due?: number | null
           billing_month?: string | null
+          category?: string | null
+          city?: string | null
+          client_contact?: string | null
+          client_name?: string | null
           company?: string | null
           cost_code?: string | null
+          country?: string | null
           created_at?: string
+          credit_amount?: number
+          credit_limit?: number
+          currency?: string
+          current_due?: number
+          debtor_note?: string | null
           due_amount?: number | null
           due_date?: string | null
+          email?: string | null
           id?: string
           invoice_date?: string | null
+          invoice_number?: string | null
+          last_payment?: number
+          last_payment_date?: string | null
           last_updated?: string | null
+          outstanding_balance?: number
+          overdue_120_plus_days?: number
           overdue_30_days?: number | null
           overdue_60_days?: number | null
           overdue_90_days?: number | null
           paid_amount?: number | null
           payment_status?: string | null
+          payment_terms?: string | null
+          phone?: string | null
+          post_code?: string | null
+          postal_address?: string | null
           reference?: string | null
+          region?: string | null
+          solutions_rep?: string | null
           vat_amount?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "payments__account_invoice_id_fkey"
+            columns: ["account_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "account_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       product_items: {
         Row: {
@@ -6050,6 +7016,45 @@ export type Database = {
         }
         Relationships: []
       }
+      system_locks: {
+        Row: {
+          created_at: string
+          id: string
+          is_locked: boolean
+          lock_date: string | null
+          lock_key: string
+          locked_at: string | null
+          locked_by: string | null
+          unlocked_at: string | null
+          unlocked_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_locked?: boolean
+          lock_date?: string | null
+          lock_key: string
+          locked_at?: string | null
+          locked_by?: string | null
+          unlocked_at?: string | null
+          unlocked_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_locked?: boolean
+          lock_date?: string | null
+          lock_key?: string
+          locked_at?: string | null
+          locked_by?: string | null
+          unlocked_at?: string | null
+          unlocked_by?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       systems: {
         Row: {
           created_at: string
@@ -6079,6 +7084,7 @@ export type Database = {
           assigned_parts: Json | null
           created_at: string
           id: number
+          name: string | null
           new_stock_assigned: boolean | null
           stock: Json | null
           technician_email: string | null
@@ -6087,6 +7093,7 @@ export type Database = {
           assigned_parts?: Json | null
           created_at?: string
           id?: number
+          name?: string | null
           new_stock_assigned?: boolean | null
           stock?: Json | null
           technician_email?: string | null
@@ -6095,6 +7102,7 @@ export type Database = {
           assigned_parts?: Json | null
           created_at?: string
           id?: number
+          name?: string | null
           new_stock_assigned?: boolean | null
           stock?: Json | null
           technician_email?: string | null
@@ -6302,6 +7310,7 @@ export type Database = {
           specialties: string[]
           status: boolean | null
           type: string | null
+          updated_at: string | null
           vehicle_type: string
           workshop_id: string | null
         }
@@ -6323,6 +7332,7 @@ export type Database = {
           specialties: string[]
           status?: boolean | null
           type?: string | null
+          updated_at?: string | null
           vehicle_type: string
           workshop_id?: string | null
         }
@@ -6344,6 +7354,7 @@ export type Database = {
           specialties?: string[]
           status?: boolean | null
           type?: string | null
+          updated_at?: string | null
           vehicle_type?: string
           workshop_id?: string | null
         }
@@ -6506,6 +7517,7 @@ export type Database = {
           costcentre: Json | null
           costCentre: string | null
           created_at: string | null
+          current_fuel_liters: number | null
           current_latitude: number | null
           current_longitude: number | null
           current_speed: number | null
@@ -6520,11 +7532,24 @@ export type Database = {
           dropofflocations: Json | null
           dropoffLocations: Json | null
           end_date: string | null
+          end_fuel_liters: number | null
           end_mileage: number | null
           enddate: string | null
           endDate: string | null
           estimated_distance: number | null
+          fuel_breakdown: Json
+          fuel_cost_total: number
+          fuel_filled_liters: number
+          fuel_last_updated_at: string | null
+          fuel_level_percentage: number | null
+          fuel_liters_per_hour: number
+          fuel_liters_per_km: number
+          fuel_operating_hours: number
           fuel_price_per_liter: number | null
+          fuel_source: string | null
+          fuel_used_liters: number
+          fuel_window_end_at: string | null
+          fuel_window_start_at: string | null
           goods_in_transit_premium: number | null
           id: number
           last_break_time: string | null
@@ -6554,6 +7579,7 @@ export type Database = {
           selectedClient: string | null
           selectedstoppoints: Json | null
           selectedStopPoints: Json | null
+          start_fuel_liters: number | null
           start_mileage: number | null
           startdate: string | null
           startDate: string | null
@@ -6603,6 +7629,7 @@ export type Database = {
           costcentre?: Json | null
           costCentre?: string | null
           created_at?: string | null
+          current_fuel_liters?: number | null
           current_latitude?: number | null
           current_longitude?: number | null
           current_speed?: number | null
@@ -6617,11 +7644,24 @@ export type Database = {
           dropofflocations?: Json | null
           dropoffLocations?: Json | null
           end_date?: string | null
+          end_fuel_liters?: number | null
           end_mileage?: number | null
           enddate?: string | null
           endDate?: string | null
           estimated_distance?: number | null
+          fuel_breakdown?: Json
+          fuel_cost_total?: number
+          fuel_filled_liters?: number
+          fuel_last_updated_at?: string | null
+          fuel_level_percentage?: number | null
+          fuel_liters_per_hour?: number
+          fuel_liters_per_km?: number
+          fuel_operating_hours?: number
           fuel_price_per_liter?: number | null
+          fuel_source?: string | null
+          fuel_used_liters?: number
+          fuel_window_end_at?: string | null
+          fuel_window_start_at?: string | null
           goods_in_transit_premium?: number | null
           id?: never
           last_break_time?: string | null
@@ -6651,6 +7691,7 @@ export type Database = {
           selectedClient?: string | null
           selectedstoppoints?: Json | null
           selectedStopPoints?: Json | null
+          start_fuel_liters?: number | null
           start_mileage?: number | null
           startdate?: string | null
           startDate?: string | null
@@ -6700,6 +7741,7 @@ export type Database = {
           costcentre?: Json | null
           costCentre?: string | null
           created_at?: string | null
+          current_fuel_liters?: number | null
           current_latitude?: number | null
           current_longitude?: number | null
           current_speed?: number | null
@@ -6714,11 +7756,24 @@ export type Database = {
           dropofflocations?: Json | null
           dropoffLocations?: Json | null
           end_date?: string | null
+          end_fuel_liters?: number | null
           end_mileage?: number | null
           enddate?: string | null
           endDate?: string | null
           estimated_distance?: number | null
+          fuel_breakdown?: Json
+          fuel_cost_total?: number
+          fuel_filled_liters?: number
+          fuel_last_updated_at?: string | null
+          fuel_level_percentage?: number | null
+          fuel_liters_per_hour?: number
+          fuel_liters_per_km?: number
+          fuel_operating_hours?: number
           fuel_price_per_liter?: number | null
+          fuel_source?: string | null
+          fuel_used_liters?: number
+          fuel_window_end_at?: string | null
+          fuel_window_start_at?: string | null
           goods_in_transit_premium?: number | null
           id?: never
           last_break_time?: string | null
@@ -6748,6 +7803,7 @@ export type Database = {
           selectedClient?: string | null
           selectedstoppoints?: Json | null
           selectedStopPoints?: Json | null
+          start_fuel_liters?: number | null
           start_mileage?: number | null
           startdate?: string | null
           startDate?: string | null
@@ -6952,6 +8008,60 @@ export type Database = {
           site_id?: string | null
           tech_admin?: boolean | null
           workshop_id?: number | null
+        }
+        Relationships: []
+      }
+      vehicle_billing_queue: {
+        Row: {
+          action_type: string
+          cost_code: string | null
+          created_at: string
+          error: string | null
+          id: string
+          job_card_id: string | null
+          lock_date: string | null
+          payload: Json
+          processed_at: string | null
+          processed_by: string | null
+          queued_at: string
+          queued_by: string | null
+          status: string
+          updated_at: string
+          vehicle_reg: string | null
+        }
+        Insert: {
+          action_type: string
+          cost_code?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          job_card_id?: string | null
+          lock_date?: string | null
+          payload?: Json
+          processed_at?: string | null
+          processed_by?: string | null
+          queued_at?: string
+          queued_by?: string | null
+          status?: string
+          updated_at?: string
+          vehicle_reg?: string | null
+        }
+        Update: {
+          action_type?: string
+          cost_code?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          job_card_id?: string | null
+          lock_date?: string | null
+          payload?: Json
+          processed_at?: string | null
+          processed_by?: string | null
+          queued_at?: string
+          queued_by?: string | null
+          status?: string
+          updated_at?: string
+          vehicle_reg?: string | null
         }
         Relationships: []
       }
@@ -7839,6 +8949,10 @@ export type Database = {
           additional_data: string | null
           advatrans_software_development: string | null
           after_hours: string | null
+          allied_software_development: string | null
+          amount_locked: boolean
+          amount_locked_at: string | null
+          amount_locked_by: string | null
           beame_1: string | null
           beame_1_rental: string | null
           beame_1_sub: string | null
@@ -7854,11 +8968,15 @@ export type Database = {
           beame_5: string | null
           beame_5_rental: string | null
           beame_5_sub: string | null
+          bidtrack: string | null
+          bidtrack_rental: string | null
+          bidtrack_sub: string | null
           branch: string | null
           breathaloc: string | null
           breathaloc_rental: string | null
           buzzer: string | null
           buzzer_rental: string | null
+          calibration: boolean
           cia: string | null
           cia_rental: string | null
           colour: string | null
@@ -7867,6 +8985,7 @@ export type Database = {
           controlroom: string | null
           corpconnect_data_no: string | null
           corpconnect_sim_no: string | null
+          cost_center_code: string | null
           created_at: string
           data_number: string | null
           dms01_driver_facing: string | null
@@ -7878,6 +8997,8 @@ export type Database = {
           early_warning_rental: string | null
           engine: string | null
           epilite_software_development: string | null
+          eps_dashboard: string | null
+          eps_routing: string | null
           eps_software_development: string | null
           flat_panic: string | null
           flat_panic_rental: string | null
@@ -7916,6 +9037,7 @@ export type Database = {
           mtx_sim_id: string | null
           new_account_number: string | null
           once_off_fees: Json
+          operational: boolean
           pfk_10m: string | null
           pfk_10m_rental: string | null
           pfk_15m: string | null
@@ -7959,6 +9081,7 @@ export type Database = {
           sim_id: string | null
           single_probe_rental: string | null
           single_probe_sub: string | null
+          site_allocated: string | null
           sky_ican: string | null
           sky_ican_rental: string | null
           sky_idata: string | null
@@ -8038,6 +9161,7 @@ export type Database = {
           vw502f_road_facing_camera_rental: string | null
           waterford_software_development: string | null
           year: string | null
+          yotg_software_development: string | null
         }
         Insert: {
           _10m_cable_for_camera_4pin?: string | null
@@ -8074,6 +9198,10 @@ export type Database = {
           additional_data?: string | null
           advatrans_software_development?: string | null
           after_hours?: string | null
+          allied_software_development?: string | null
+          amount_locked?: boolean
+          amount_locked_at?: string | null
+          amount_locked_by?: string | null
           beame_1?: string | null
           beame_1_rental?: string | null
           beame_1_sub?: string | null
@@ -8089,11 +9217,15 @@ export type Database = {
           beame_5?: string | null
           beame_5_rental?: string | null
           beame_5_sub?: string | null
+          bidtrack?: string | null
+          bidtrack_rental?: string | null
+          bidtrack_sub?: string | null
           branch?: string | null
           breathaloc?: string | null
           breathaloc_rental?: string | null
           buzzer?: string | null
           buzzer_rental?: string | null
+          calibration?: boolean
           cia?: string | null
           cia_rental?: string | null
           colour?: string | null
@@ -8102,6 +9234,7 @@ export type Database = {
           controlroom?: string | null
           corpconnect_data_no?: string | null
           corpconnect_sim_no?: string | null
+          cost_center_code?: string | null
           created_at?: string
           data_number?: string | null
           dms01_driver_facing?: string | null
@@ -8113,6 +9246,8 @@ export type Database = {
           early_warning_rental?: string | null
           engine?: string | null
           epilite_software_development?: string | null
+          eps_dashboard?: string | null
+          eps_routing?: string | null
           eps_software_development?: string | null
           flat_panic?: string | null
           flat_panic_rental?: string | null
@@ -8151,6 +9286,7 @@ export type Database = {
           mtx_sim_id?: string | null
           new_account_number?: string | null
           once_off_fees?: Json
+          operational?: boolean
           pfk_10m?: string | null
           pfk_10m_rental?: string | null
           pfk_15m?: string | null
@@ -8194,6 +9330,7 @@ export type Database = {
           sim_id?: string | null
           single_probe_rental?: string | null
           single_probe_sub?: string | null
+          site_allocated?: string | null
           sky_ican?: string | null
           sky_ican_rental?: string | null
           sky_idata?: string | null
@@ -8273,6 +9410,7 @@ export type Database = {
           vw502f_road_facing_camera_rental?: string | null
           waterford_software_development?: string | null
           year?: string | null
+          yotg_software_development?: string | null
         }
         Update: {
           _10m_cable_for_camera_4pin?: string | null
@@ -8309,6 +9447,10 @@ export type Database = {
           additional_data?: string | null
           advatrans_software_development?: string | null
           after_hours?: string | null
+          allied_software_development?: string | null
+          amount_locked?: boolean
+          amount_locked_at?: string | null
+          amount_locked_by?: string | null
           beame_1?: string | null
           beame_1_rental?: string | null
           beame_1_sub?: string | null
@@ -8324,11 +9466,15 @@ export type Database = {
           beame_5?: string | null
           beame_5_rental?: string | null
           beame_5_sub?: string | null
+          bidtrack?: string | null
+          bidtrack_rental?: string | null
+          bidtrack_sub?: string | null
           branch?: string | null
           breathaloc?: string | null
           breathaloc_rental?: string | null
           buzzer?: string | null
           buzzer_rental?: string | null
+          calibration?: boolean
           cia?: string | null
           cia_rental?: string | null
           colour?: string | null
@@ -8337,6 +9483,7 @@ export type Database = {
           controlroom?: string | null
           corpconnect_data_no?: string | null
           corpconnect_sim_no?: string | null
+          cost_center_code?: string | null
           created_at?: string
           data_number?: string | null
           dms01_driver_facing?: string | null
@@ -8348,6 +9495,8 @@ export type Database = {
           early_warning_rental?: string | null
           engine?: string | null
           epilite_software_development?: string | null
+          eps_dashboard?: string | null
+          eps_routing?: string | null
           eps_software_development?: string | null
           flat_panic?: string | null
           flat_panic_rental?: string | null
@@ -8386,6 +9535,7 @@ export type Database = {
           mtx_sim_id?: string | null
           new_account_number?: string | null
           once_off_fees?: Json
+          operational?: boolean
           pfk_10m?: string | null
           pfk_10m_rental?: string | null
           pfk_15m?: string | null
@@ -8429,6 +9579,7 @@ export type Database = {
           sim_id?: string | null
           single_probe_rental?: string | null
           single_probe_sub?: string | null
+          site_allocated?: string | null
           sky_ican?: string | null
           sky_ican_rental?: string | null
           sky_idata?: string | null
@@ -8508,6 +9659,7 @@ export type Database = {
           vw502f_road_facing_camera_rental?: string | null
           waterford_software_development?: string | null
           year?: string | null
+          yotg_software_development?: string | null
         }
         Relationships: []
       }
@@ -8547,6 +9699,9 @@ export type Database = {
           additional_data: string | null
           advatrans_software_development: string | null
           after_hours: string | null
+          amount_locked: boolean
+          amount_locked_at: string | null
+          amount_locked_by: string | null
           beame_1: string | null
           beame_1_rental: string | null
           beame_1_sub: string | null
@@ -8562,11 +9717,15 @@ export type Database = {
           beame_5: string | null
           beame_5_rental: string | null
           beame_5_sub: string | null
+          bidtrack: string | null
+          bidtrack_rental: string | null
+          bidtrack_sub: string | null
           branch: string | null
           breathaloc: string | null
           breathaloc_rental: string | null
           buzzer: string | null
           buzzer_rental: string | null
+          calibration: boolean
           cia: string | null
           cia_rental: string | null
           colour: string | null
@@ -8575,6 +9734,7 @@ export type Database = {
           controlroom: string | null
           corpconnect_data_no: string | null
           corpconnect_sim_no: string | null
+          cost_center_code: string | null
           created_at: string
           data_number: string | null
           dms01_driver_facing: string | null
@@ -8586,6 +9746,8 @@ export type Database = {
           early_warning_rental: string | null
           engine: string | null
           epilite_software_development: string | null
+          eps_dashboard: string | null
+          eps_routing: string | null
           eps_software_development: string | null
           flat_panic: string | null
           flat_panic_rental: string | null
@@ -8623,6 +9785,8 @@ export type Database = {
           mtx_mc202x_sub: string | null
           mtx_sim_id: string | null
           new_account_number: string | null
+          once_off_fees: Json
+          operational: boolean
           pfk_10m: string | null
           pfk_10m_rental: string | null
           pfk_15m: string | null
@@ -8666,6 +9830,7 @@ export type Database = {
           sim_id: string | null
           single_probe_rental: string | null
           single_probe_sub: string | null
+          site_allocated: string | null
           sky_ican: string | null
           sky_ican_rental: string | null
           sky_idata: string | null
@@ -8719,7 +9884,7 @@ export type Database = {
           tt_express_software_development: string | null
           tt_fmcg_software_development: string | null
           tt_linehaul_software_development: string | null
-          unique_id: string | null
+          unique_id: string
           vehicle_validated: boolean
           vin: string | null
           vt_logistics_software_development: string | null
@@ -8745,6 +9910,7 @@ export type Database = {
           vw502f_road_facing_camera_rental: string | null
           waterford_software_development: string | null
           year: string | null
+          yotg_software_development: string | null
         }
         Insert: {
           _10m_cable_for_camera_4pin?: string | null
@@ -8781,6 +9947,9 @@ export type Database = {
           additional_data?: string | null
           advatrans_software_development?: string | null
           after_hours?: string | null
+          amount_locked?: boolean
+          amount_locked_at?: string | null
+          amount_locked_by?: string | null
           beame_1?: string | null
           beame_1_rental?: string | null
           beame_1_sub?: string | null
@@ -8796,11 +9965,15 @@ export type Database = {
           beame_5?: string | null
           beame_5_rental?: string | null
           beame_5_sub?: string | null
+          bidtrack?: string | null
+          bidtrack_rental?: string | null
+          bidtrack_sub?: string | null
           branch?: string | null
           breathaloc?: string | null
           breathaloc_rental?: string | null
           buzzer?: string | null
           buzzer_rental?: string | null
+          calibration?: boolean
           cia?: string | null
           cia_rental?: string | null
           colour?: string | null
@@ -8809,6 +9982,7 @@ export type Database = {
           controlroom?: string | null
           corpconnect_data_no?: string | null
           corpconnect_sim_no?: string | null
+          cost_center_code?: string | null
           created_at?: string
           data_number?: string | null
           dms01_driver_facing?: string | null
@@ -8820,6 +9994,8 @@ export type Database = {
           early_warning_rental?: string | null
           engine?: string | null
           epilite_software_development?: string | null
+          eps_dashboard?: string | null
+          eps_routing?: string | null
           eps_software_development?: string | null
           flat_panic?: string | null
           flat_panic_rental?: string | null
@@ -8857,6 +10033,8 @@ export type Database = {
           mtx_mc202x_sub?: string | null
           mtx_sim_id?: string | null
           new_account_number?: string | null
+          once_off_fees?: Json
+          operational?: boolean
           pfk_10m?: string | null
           pfk_10m_rental?: string | null
           pfk_15m?: string | null
@@ -8900,6 +10078,7 @@ export type Database = {
           sim_id?: string | null
           single_probe_rental?: string | null
           single_probe_sub?: string | null
+          site_allocated?: string | null
           sky_ican?: string | null
           sky_ican_rental?: string | null
           sky_idata?: string | null
@@ -8953,7 +10132,7 @@ export type Database = {
           tt_express_software_development?: string | null
           tt_fmcg_software_development?: string | null
           tt_linehaul_software_development?: string | null
-          unique_id?: string | null
+          unique_id?: string
           vehicle_validated?: boolean
           vin?: string | null
           vt_logistics_software_development?: string | null
@@ -8979,6 +10158,7 @@ export type Database = {
           vw502f_road_facing_camera_rental?: string | null
           waterford_software_development?: string | null
           year?: string | null
+          yotg_software_development?: string | null
         }
         Update: {
           _10m_cable_for_camera_4pin?: string | null
@@ -9015,6 +10195,9 @@ export type Database = {
           additional_data?: string | null
           advatrans_software_development?: string | null
           after_hours?: string | null
+          amount_locked?: boolean
+          amount_locked_at?: string | null
+          amount_locked_by?: string | null
           beame_1?: string | null
           beame_1_rental?: string | null
           beame_1_sub?: string | null
@@ -9030,11 +10213,15 @@ export type Database = {
           beame_5?: string | null
           beame_5_rental?: string | null
           beame_5_sub?: string | null
+          bidtrack?: string | null
+          bidtrack_rental?: string | null
+          bidtrack_sub?: string | null
           branch?: string | null
           breathaloc?: string | null
           breathaloc_rental?: string | null
           buzzer?: string | null
           buzzer_rental?: string | null
+          calibration?: boolean
           cia?: string | null
           cia_rental?: string | null
           colour?: string | null
@@ -9043,6 +10230,7 @@ export type Database = {
           controlroom?: string | null
           corpconnect_data_no?: string | null
           corpconnect_sim_no?: string | null
+          cost_center_code?: string | null
           created_at?: string
           data_number?: string | null
           dms01_driver_facing?: string | null
@@ -9054,6 +10242,8 @@ export type Database = {
           early_warning_rental?: string | null
           engine?: string | null
           epilite_software_development?: string | null
+          eps_dashboard?: string | null
+          eps_routing?: string | null
           eps_software_development?: string | null
           flat_panic?: string | null
           flat_panic_rental?: string | null
@@ -9091,6 +10281,8 @@ export type Database = {
           mtx_mc202x_sub?: string | null
           mtx_sim_id?: string | null
           new_account_number?: string | null
+          once_off_fees?: Json
+          operational?: boolean
           pfk_10m?: string | null
           pfk_10m_rental?: string | null
           pfk_15m?: string | null
@@ -9134,6 +10326,7 @@ export type Database = {
           sim_id?: string | null
           single_probe_rental?: string | null
           single_probe_sub?: string | null
+          site_allocated?: string | null
           sky_ican?: string | null
           sky_ican_rental?: string | null
           sky_idata?: string | null
@@ -9187,7 +10380,7 @@ export type Database = {
           tt_express_software_development?: string | null
           tt_fmcg_software_development?: string | null
           tt_linehaul_software_development?: string | null
-          unique_id?: string | null
+          unique_id?: string
           vehicle_validated?: boolean
           vin?: string | null
           vt_logistics_software_development?: string | null
@@ -9213,6 +10406,7 @@ export type Database = {
           vw502f_road_facing_camera_rental?: string | null
           waterford_software_development?: string | null
           year?: string | null
+          yotg_software_development?: string | null
         }
         Relationships: []
       }
@@ -10556,22 +11750,31 @@ export type Database = {
       }
       workshop_assignments: {
         Row: {
+          assigned_at: string | null
           created_at: string | null
+          driver_id: string | null
           id: number
           job_id: number | null
           tech_id: number | null
+          vehicle_id: string | null
         }
         Insert: {
+          assigned_at?: string | null
           created_at?: string | null
+          driver_id?: string | null
           id?: never
           job_id?: number | null
           tech_id?: number | null
+          vehicle_id?: string | null
         }
         Update: {
+          assigned_at?: string | null
           created_at?: string | null
+          driver_id?: string | null
           id?: never
           job_id?: number | null
           tech_id?: number | null
+          vehicle_id?: string | null
         }
         Relationships: [
           {
@@ -10665,6 +11868,8 @@ export type Database = {
           actual_cost: number | null
           actual_duration_hours: number | null
           after_photos: Json | null
+          allocated_at: string | null
+          allocation_status: string | null
           approval_history: Json | null
           approval_status: string | null
           approved: boolean | null
@@ -10717,6 +11922,7 @@ export type Database = {
           source: string | null
           start_time: string | null
           status: string | null
+          subcontractor_id: string | null
           sublet: number | null
           technician: boolean | null
           technician_id: string | null
@@ -10736,6 +11942,8 @@ export type Database = {
           actual_cost?: number | null
           actual_duration_hours?: number | null
           after_photos?: Json | null
+          allocated_at?: string | null
+          allocation_status?: string | null
           approval_history?: Json | null
           approval_status?: string | null
           approved?: boolean | null
@@ -10788,6 +11996,7 @@ export type Database = {
           source?: string | null
           start_time?: string | null
           status?: string | null
+          subcontractor_id?: string | null
           sublet?: number | null
           technician?: boolean | null
           technician_id?: string | null
@@ -10807,6 +12016,8 @@ export type Database = {
           actual_cost?: number | null
           actual_duration_hours?: number | null
           after_photos?: Json | null
+          allocated_at?: string | null
+          allocation_status?: string | null
           approval_history?: Json | null
           approval_status?: string | null
           approved?: boolean | null
@@ -10859,6 +12070,7 @@ export type Database = {
           source?: string | null
           start_time?: string | null
           status?: string | null
+          subcontractor_id?: string | null
           sublet?: number | null
           technician?: boolean | null
           technician_id?: string | null
@@ -10873,7 +12085,15 @@ export type Database = {
           work_notes?: string | null
           workflow_status?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "workshop_job_subcontractor_id_fkey"
+            columns: ["subcontractor_id"]
+            isOneToOne: false
+            referencedRelation: "subcontractor"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       workshop_job_status_history: {
         Row: {
@@ -11090,6 +12310,10 @@ export type Database = {
       }
     }
     Functions: {
+      allocate_bulk_document_number: {
+        Args: { prefix?: string; sequence_name: string }
+        Returns: string
+      }
       allocate_document_number: {
         Args: { prefix?: string; sequence_name: string }
         Returns: string
@@ -11111,6 +12335,26 @@ export type Database = {
           p_technician_name: string
         }
         Returns: Json
+      }
+      calculate_age_analysis_rollover_month: {
+        Args: { p_account_number?: string; p_target_billing_month?: string }
+        Returns: {
+          account_number: string
+          billing_month: string
+          company: string
+          credit_amount: number
+          credit_note_total: number
+          current_due: number
+          invoice_total: number
+          outstanding_balance: number
+          overdue_120_plus_days: number
+          overdue_30_days: number
+          overdue_60_days: number
+          overdue_90_days: number
+          paid_amount: number
+          payment_status: string
+          payment_total: number
+        }[]
       }
       calculate_monthly_billing: { Args: never; Returns: undefined }
       calculate_premium_with_tolerance: {
@@ -11241,8 +12485,75 @@ export type Database = {
         Returns: undefined
       }
       reset_loan_vehicles: { Args: never; Returns: undefined }
+      rollover_age_analysis_backfill: {
+        Args: {
+          p_account_number?: string
+          p_from_billing_month: string
+          p_persist?: boolean
+          p_to_billing_month?: string
+        }
+        Returns: {
+          accounts_processed: number
+          billing_month: string
+        }[]
+      }
+      rollover_age_analysis_month: {
+        Args: {
+          p_account_number?: string
+          p_persist?: boolean
+          p_target_billing_month?: string
+        }
+        Returns: {
+          account_number: string
+          billing_month: string
+          company: string
+          credit_amount: number
+          credit_note_total: number
+          current_due: number
+          invoice_total: number
+          outstanding_balance: number
+          overdue_120_plus_days: number
+          overdue_30_days: number
+          overdue_60_days: number
+          overdue_90_days: number
+          paid_amount: number
+          payment_status: string
+          payment_total: number
+          persisted: boolean
+        }[]
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      tech_stock_append_assigned_parts: {
+        Args: { p_parts: Json; p_technician_email: string }
+        Returns: Json
+      }
+      tech_stock_assign_inventory_parts:
+        | {
+            Args: {
+              p_inventory_item_ids: number[]
+              p_parts: Json
+              p_technician_email: string
+            }
+            Returns: {
+              moved_count: number
+              technician_email: string
+              total_parts: number
+            }[]
+          }
+        | {
+            Args: {
+              p_inventory_item_ids: number[]
+              p_parts?: Json
+              p_tech_stock_id?: number
+              p_technician_email: string
+            }
+            Returns: {
+              moved_count: number
+              technician_email: string
+              total_parts: number
+            }[]
+          }
       trigger_monthly_billing: { Args: never; Returns: string }
       unaccent: { Args: { "": string }; Returns: string }
       update_overdue_amounts: { Args: never; Returns: undefined }

@@ -39,7 +39,7 @@ export function SendToWorkshopDialog({ jobId, jobDescription, vehicleReg, client
     setLoading(true);
     try {
       const year = new Date().getFullYear();
-      const jobId_workshop =
+      const jobid_workshop =
         'JC-' + year + '-' + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
 
       // Create workshop job linked to fleet job
@@ -69,7 +69,7 @@ export function SendToWorkshopDialog({ jobId, jobDescription, vehicleReg, client
 
       if (jobError) throw jobError;
 
-      toast.success(`Job sent to internal workshop as ${jobId_workshop}`);
+      toast.success(`Job sent to internal workshop as ${jobid_workshop}`);
       setOpen(false);
       setNotes('');
       onSuccess?.();

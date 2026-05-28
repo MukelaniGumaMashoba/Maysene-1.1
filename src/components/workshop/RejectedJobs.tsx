@@ -69,7 +69,8 @@ export default function RejectedJobs() {
     notes: '',
     client_name: '',
     client_phone: '',
-    location: ''
+    location: '',
+    jobid_workshop: ''
   })
   const supabase = createClient()
 
@@ -202,11 +203,11 @@ export default function RejectedJobs() {
       const { data: newJob, error: jobError } = await supabase
         .from('workshop_job')
         .insert({
-          jobId_workshop: newJobNumber,
+          jobid_workshop: newJobNumber,
           registration_no: originalJobData.registration_no || originalJobData.vehicle_registration,
           job_type: originalJobData.job_type,
           description: originalJobData.description || originalJobData.job_description,
-          notes: `Reopened from rejected job ${originalJobData.jobId_workshop || originalJobData.job_number}. Original rejection reason: ${rejectedJob.rejection_reason}`,
+          notes: `Reopened from rejected job ${originalJobData.jobid_workshop || originalJobData.job_number}. Original rejection reason: ${rejectedJob.rejection_reason}`,
           estimated_cost: originalJobData.estimated_cost || 0,
           priority: originalJobData.priority || 'medium',
           due_date: originalJobData.due_date || '',
@@ -314,7 +315,7 @@ export default function RejectedJobs() {
                     <div className="flex-1">
                       <div className="flex items-center space-x-4 mb-2">
                         <h3 className="font-semibold text-lg">
-                          {rejectedJob.job_data.jobId_workshop || rejectedJob.job_data.job_number || 'N/A'}
+                          {rejectedJob.job_data.jobid_workshop || rejectedJob.job_data.job_number || 'N/A'}
                         </h3>
                         <Badge variant="destructive">Rejected</Badge>
                         {rejectedJob.reopened_at && (
@@ -408,7 +409,7 @@ export default function RejectedJobs() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <Card className="max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
             <CardHeader>
-              <CardTitle>Job Details - {selectedJob.job_data.jobId_workshop || selectedJob.job_data.job_number || 'N/A'}</CardTitle>
+              <CardTitle>Job Details - {selectedJob.job_data.jobid_workshop || selectedJob.job_data.job_number || 'N/A'}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

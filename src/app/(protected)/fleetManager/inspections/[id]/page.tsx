@@ -32,9 +32,13 @@ export default function InspectionDetail() {
         .single();
 
       if (!error && data) {
-        const checklist = (data as any)?.checklist;
+        const inspectionData =
+          typeof data === "object" && data !== null
+            ? (data as Record<string, any>)
+            : {};
+        const checklist = inspectionData?.checklist;
         const parsed = {
-          ...data,
+          ...inspectionData,
           checklist: Array.isArray(checklist) ? checklist : [],
         };
         setInspection(parsed);
@@ -55,14 +59,14 @@ export default function InspectionDetail() {
 
   const handleSendToAdmin = async () => {
     const year = new Date().getFullYear();
-    const jobId_workshop = 'JC-' + year + '-' + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    const jobid_workshop = 'JC-' + year + '-' + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
 
     const { error } = await supabase.from('workshop_job').insert({
-      jobId_workshop,
+      jobid_workshop : jobid_workshop,
       registration_no: inspection.vehicle?.registration_number || '',
       job_type: 'inspection-fault',
       description: `Inspection #${inspection.id} faults: ${faultyItems.join(', ')}`,
-      status: 'Pending Admin Review',
+      status: 'Awaiting Approval',
       priority: 'medium',
       client_name: inspection.driver ? `${inspection.driver.first_name} ${inspection.driver.surname}` : '',
       location: inspection.location || '',
@@ -73,7 +77,7 @@ export default function InspectionDetail() {
     if (error) {
       alert('Failed to send to admin: ' + error.message);
     } else {
-      alert(`Job card ${jobId_workshop} sent to admin successfully!`);
+      alert(`Job card ${jobid_workshop} sent to admin successfully!`);
     }
   };
 

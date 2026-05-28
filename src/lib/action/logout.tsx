@@ -5,12 +5,13 @@ import { cookies } from "next/headers"
 
 export async function logout() {
     const supabase = await createClient()
-    const { error } = await supabase.auth.signOut()
+    const { error } = await supabase.auth.signOut({ scope: 'local' })
     if (error) {
         console.error(error)
     }
-    // const cookieStore = await cookies()
-    // cookieStore.delete('access_token')
-    // cookieStore.delete('refresh_token')
-    // cookieStore.delete('role')
+
+    const cookieStore = await cookies()
+    cookieStore.delete('access_token')
+    cookieStore.delete('refresh_token')
+    cookieStore.delete('role')
 }
