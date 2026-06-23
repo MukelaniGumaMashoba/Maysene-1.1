@@ -396,7 +396,7 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
     fetchAssignmentInfo()
   }, [trip.vehicleassignments, trip.vehicle_assignments])
 
-  const driverName = driverInfo ? driverInfo.surname : 'Unassigned'
+  const driverName = driverInfo?.surname || 'Unassigned'
   const initials = driverName !== 'Unassigned' ? driverName.split(' ').map((s: string) => s[0]).slice(0,2).join('') : 'DR'
 
   if (loading) {

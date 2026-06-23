@@ -57,8 +57,9 @@
     "src/components/autocomplete.jsx",
     "src/app/(protected)/load-plan/page.jsx",
     "src/components/dashboard/trips.tsx",
-    ".next/dev/types/**/*.ts"
-, "src/app/(protected)/workshop/jobs/page.tsx"  ],
+    ".next/dev/types/**/*.ts",
+    "src/app/(protected)/workshop/jobs/page.tsx"
+  ],
   "exclude": [
     "node_modules"
   ]
