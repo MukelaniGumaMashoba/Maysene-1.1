@@ -1038,20 +1038,8 @@ export default function LoadPlanPage() {
     [calculateDistance],
   );
 
-  // Filter stop points within 25km of route and between origin/destination
+  // All stop points (no filtering)
   const filteredStopPoints = useMemo(() => {
-    if (
-      !normalizedLoadingLocation ||
-      !normalizedDropOffPoint ||
-      !optimizedRoute?.route?.geometry?.coordinates
-    ) {
-      return availableStopPoints;
-    }
-
-    const routeCoords = optimizedRoute.route.geometry.coordinates;
-    const [originLng, originLat] = routeCoords[0];
-    const [destLng, destLat] = routeCoords[routeCoords.length - 1];
-
     return availableStopPoints.filter((point: any) => {
       if (!point.coordinates) return false;
 
@@ -1067,49 +1055,12 @@ export default function LoadPlanPage() {
             (pair: [number, number]) => !isNaN(pair[0]) && !isNaN(pair[1]),
           );
 
-        if (coordPairs.length === 0) return false;
-
-        // Use centroid of stop point polygon
-        const avgLng =
-          coordPairs.reduce((sum: number, coord: number[]) => sum + coord[0], 0) /
-          coordPairs.length;
-        const avgLat =
-          coordPairs.reduce((sum: number, coord: number[]) => sum + coord[1], 0) /
-          coordPairs.length;
-
-        // Check if within 25km of route
-        const distance = distanceToRoute(avgLat, avgLng, routeCoords);
-        if (distance > 25) return false;
-
-        // Check if between origin and destination
-        const distToOrigin = calculateDistance(
-          avgLat,
-          avgLng,
-          originLat,
-          originLng,
-        );
-        const distToDest = calculateDistance(avgLat, avgLng, destLat, destLng);
-        const originToDestDist = calculateDistance(
-          originLat,
-          originLng,
-          destLat,
-          destLng,
-        );
-
-        // Point is between origin and destination if sum of distances is roughly equal to direct distance
-        return distToOrigin + distToDest <= originToDestDist * 1.2; // 20% tolerance
+        return coordPairs.length > 0;
       } catch (error) {
         return false;
       }
     });
-  }, [
-    availableStopPoints,
-    normalizedLoadingLocation,
-    normalizedDropOffPoint,
-    optimizedRoute,
-    distanceToRoute,
-    calculateDistance,
-  ]);
+  }, [availableStopPoints]);
 
   // Get selected stop points with coordinates
   const getSelectedStopPointsData = () => {
@@ -1891,7 +1842,7 @@ export default function LoadPlanPage() {
                               setStopPoints(updated);
                             }}
                             stopPoints={filteredStopPoints as unknown as never[]}
-                            placeholder="Search stop points (25km radius, between origin/destination)"
+                            placeholder="Search stop points"
                             isLoading={isLoadingStopPoints}
                           />
                           <Button
