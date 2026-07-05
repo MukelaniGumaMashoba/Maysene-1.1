@@ -42,16 +42,15 @@ import { SlidingNumber } from "@/components/ui/sliding-number";
 import Link from "next/link";
 
 interface DashboardStats {
+  activeBreakdowns: number;
+  pendingApprovals: number;
+  availableTechnicians: number;
   totalVehicles: number;
   monthlyRevenue: number;
   completedJobs: number;
+  drivers: number;
   tows: number;
-  activeJobCards: number;
-  pendingApprovals: number;
-  availableTechnicians: number;
-  driverStats: number;
-  technicianStats: number;
-  workshopStats: number;
+  qoutes: number;
 }
 interface RecentActivity {
   id: string;
@@ -74,16 +73,15 @@ export default function Dashboard() {
   const [userRole, setUserRole] = useState<string>("");
   const [userEmail, setUserEmail] = useState<string>("");
   const [stats, setStats] = useState<DashboardStats>({
+    activeBreakdowns: 0,
+    pendingApprovals: 0,
+    availableTechnicians: 0,
     totalVehicles: 0,
     monthlyRevenue: 0,
     completedJobs: 0,
+    drivers: 0,
     tows: 0,
-    activeJobCards: 0,
-    pendingApprovals: 0,
-    availableTechnicians: 0,
-    driverStats: 0,
-    technicianStats: 0,
-    workshopStats: 0,
+    qoutes: 0,
   });
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -166,7 +164,7 @@ export default function Dashboard() {
       try {
         const data = await getDashboardStats();
         if (isMounted) setStats(data as any);
-      } catch {
+      } catch (err) {
         if (isMounted) setError("Failed to load dashboard stats");
       } finally {
         if (isMounted) setLoading(false);
@@ -465,90 +463,93 @@ export default function Dashboard() {
           <h2 className="text-3xl font-bold tracking-tight">
             Dashboard Overview
           </h2>
-          <div className="text-sm text-gray-500">
-            Last updated: {new Date().toLocaleString()}
-          </div>
         </div>
         {loading && <div>Loading stats...</div>}
         {error && <div className="text-red-500">{error}</div>}
 
         {/* Stats Cards */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {/* Active Drivers */}
+          {/* Active Breakdowns */}
           <Card className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-500 to-rose-600 text-white shadow-lg transition-transform hover:scale-[1.02] hover:shadow-xl">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-base font-semibold">
-                Active Jobs
-              </CardTitle>
-              <div className="rounded-full bg-white/20 p-2">
-                <AlertTriangle className="h-5 w-5 text-white" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <SlidingNumber
-                from={0}
-                to={stats.workshopStats}
-                duration={1}
-                className="text-3xl font-extrabold tracking-tight"
-                digitHeight={42}
-              />
-              <p className="mt-1 text-xs text-white/80">
-                Total number of cards logged
-              </p>
-            </CardContent>
+            <Link href="/workshop/jobs">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-base font-semibold">
+                  Active Breakdowns
+                </CardTitle>
+                <div className="rounded-full bg-white/20 p-2">
+                  <AlertTriangle className="h-5 w-5 text-white" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <SlidingNumber
+                  from={0}
+                  to={stats.activeBreakdowns}
+                  duration={1}
+                  className="text-3xl font-extrabold tracking-tight"
+                  digitHeight={42}
+                />
+                <p className="mt-1 text-xs text-white/80">
+                  Total breakdowns reported
+                </p>
+              </CardContent>
+            </Link>
           </Card>
 
-          {/* Technicians Available */}
+          {/* Drivers */}
           <Card className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg transition-transform hover:scale-[1.02] hover:shadow-xl">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-base font-semibold">
-                Drivers Available
-              </CardTitle>
-              <div className="rounded-full bg-white/20 p-2">
-                <Users className="h-5 w-5 text-white" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <SlidingNumber
-                from={0}
-                to={stats.driverStats}
-                duration={1}
-                className="text-3xl font-extrabold tracking-tight"
-                digitHeight={42}
-              />
-              <p className="mt-1 text-xs text-white/80">All Drivers</p>
-            </CardContent>
+            <Link href="/drivers">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-base font-semibold">
+                  Drivers
+                </CardTitle>
+                <div className="rounded-full bg-white/20 p-2">
+                  <Users className="h-5 w-5 text-white" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <SlidingNumber
+                  from={0}
+                  to={stats.drivers}
+                  duration={1}
+                  className="text-3xl font-extrabold tracking-tight"
+                  digitHeight={42}
+                />
+                <p className="mt-1 text-xs text-white/80">All drivers</p>
+              </CardContent>
+            </Link>
           </Card>
 
           {/* Fleet Vehicles */}
           <Card className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg transition-transform hover:scale-[1.02] hover:shadow-xl">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-base font-semibold">
-                Fleet Vehicles
-              </CardTitle>
-              <div className="rounded-full bg-white/20 p-2">
-                <Truck className="h-5 w-5 text-white" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <SlidingNumber
-                from={0}
-                to={stats.totalVehicles}
-                duration={1}
-                className="text-3xl font-extrabold tracking-tight"
-                digitHeight={42}
-              />
-              <p className="mt-1 text-xs text-white/80">
-                Vehicles for the company
-              </p>
-            </CardContent>
+            <Link href="/vehicles">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-base font-semibold">
+                  Fleet Vehicles
+                </CardTitle>
+                <div className="rounded-full bg-white/20 p-2">
+                  <Truck className="h-5 w-5 text-white" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <SlidingNumber
+                  from={0}
+                  to={stats.totalVehicles}
+                  duration={1}
+                  className="text-3xl font-extrabold tracking-tight"
+                  digitHeight={42}
+                />
+                <p className="mt-1 text-xs text-white/80">
+                  Vehicles for the company
+                </p>
+              </CardContent>
+            </Link>
           </Card>
 
-          {/* Total Vehicles */}
+          {/* Number of Tows */}
           <Card className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-cyan-500 to-teal-600 text-white shadow-lg transition-transform hover:scale-[1.02] hover:shadow-xl">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-base font-semibold">
-                Total Technicians
+                Number of Tows
               </CardTitle>
               <div className="rounded-full bg-white/20 p-2">
                 <TrendingUp className="h-5 w-5 text-white" />
@@ -557,13 +558,13 @@ export default function Dashboard() {
             <CardContent>
               <SlidingNumber
                 from={0}
-                to={stats.technicianStats}
+                to={stats.tows}
                 duration={1}
                 className="text-3xl font-extrabold tracking-tight"
                 digitHeight={42}
               />
               <p className="mt-1 text-xs text-white/80">
-                Total Towing Operations
+                Total towing operations
               </p>
             </CardContent>
           </Card>
@@ -694,13 +695,13 @@ export default function Dashboard() {
                   {normalizedRole === "fleetmanager" && (
                     <div className="flex items-center justify-between p-4 border rounded-xl bg-muted/20 hover:bg-muted/30 transition">
                       <div>
-                        <p className="font-medium">Awaiting Approval</p>
+                        <p className="font-medium">Awaiting Breakdowns</p>
                         <p className="text-sm text-gray-600">
-                          Total jobs: {stats.pendingApprovals}
+                          Total jobs: {stats.activeBreakdowns}
                         </p>
                       </div>
-                      <Link href="/jobWorkShop?status=Awaiting Approval">
-                        <Button size="sm">Review Awaiting Approval</Button>
+                      <Link href="/jobsFleet">
+                        <Button size="sm">Review</Button>
                       </Link>
                     </div>
                   )}
@@ -717,7 +718,7 @@ export default function Dashboard() {
                         </div>
                         <Link
                           href={{
-                            pathname: "/jobs",
+                            pathname: "/workshop/jobs",
                             query: { statusFilter: "requires-technician"},
                           }}
                         >
@@ -777,28 +778,45 @@ export default function Dashboard() {
               <Card className="rounded-2xl shadow-md hover:shadow-lg transition">
                 <CardHeader>
                   <CardTitle className="text-lg font-semibold">
-                    Job Cards Logged
+                    Breakdowns Logged
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold text-primary">
-                    {stats.activeJobCards}
+                    {stats.activeBreakdowns}
                   </div>
                   <p className="text-sm text-gray-600">
-                    Total JoCards Reported
+                    Total breakdowns reported
                   </p>
                 </CardContent>
               </Card>
               <Card className="rounded-2xl shadow-md hover:shadow-lg transition">
                 <CardHeader>
                   <CardTitle className="text-lg font-semibold">
-                    Weekly Trend
+                    Number of Tows
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-green-600">TBC</div>
+                  <div className="text-3xl font-bold text-primary">
+                    {stats.tows}
+                  </div>
                   <p className="text-sm text-gray-600">
-                    Improvement over last week
+                    Total towing operations
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="rounded-2xl shadow-md hover:shadow-lg transition">
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold">
+                    Open Jobs
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-primary">
+                    {stats.completedJobs}
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Jobs completed this month
                   </p>
                 </CardContent>
               </Card>

@@ -1890,8 +1890,8 @@ export default function LoadPlanPage() {
                               updated[index] = value;
                               setStopPoints(updated);
                             }}
-                            stopPoints={filteredStopPoints as unknown as never[]}
-                            placeholder="Search stop points (25km radius, between origin/destination)"
+                            stopPoints={availableStopPoints}
+                            placeholder="Search stop points"
                             isLoading={isLoadingStopPoints}
                           />
                           <Button

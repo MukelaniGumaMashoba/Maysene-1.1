@@ -119,7 +119,7 @@ export async function getdrivers() {
 // Returns the number of active breakdowns (status = 'available')
 export async function getNumberofTows() {
     const supabase = createClient();
-    const { count, error } = await (await supabase).from('job_card')
+    const { count, error } = await (await supabase).from('job_cards')
         .select('*', { count: 'exact', head: true })
         .eq('job_type', 'Towing');
     if (error) throw error;
@@ -152,5 +152,4 @@ export async function getDashboardStats() {
         qoutes,
     };
 }
-
 

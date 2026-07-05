@@ -396,8 +396,10 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
     fetchAssignmentInfo()
   }, [trip.vehicleassignments, trip.vehicle_assignments])
 
-  const driverName = driverInfo ? driverInfo.surname : 'Unassigned'
-  const initials = driverName !== 'Unassigned' ? driverName.split(' ').map((s: string) => s[0]).slice(0,2).join('') : 'DR'
+  const driverName = [driverInfo?.first_name, driverInfo?.surname].filter(Boolean).join(' ') || 'Unassigned'
+  const initials = driverName === 'Unassigned'
+    ? 'DR'
+    : driverName.split(' ').filter(Boolean).map((s: string) => s[0]?.toUpperCase() ?? '').join('').slice(0, 2) || 'DR'
 
   if (loading) {
     return (
@@ -427,7 +429,7 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
           {initials}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-xs font-semibold text-slate-900 truncate">{driverInfo?.surname || 'Unassigned'}</div>
+          <div className="text-xs font-semibold text-slate-900 truncate">{driverName}</div>
           <div className="text-xs text-slate-500">{driverInfo ? driverInfo.phone_number : 'No driver assigned'}</div>
         </div>
       </div>
@@ -491,7 +493,11 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
           onClick={async () => {
             const supabase = createClient();
             let routeCoords = null;
-            let stopPoints = [];
+            let stopPoints: Array<{
+              name: string;
+              coordinates: [number, number];
+              polygon: [number, number][];
+            }> = [];
             let trackingVehicle = null;
             
             // Get vehicle plate to match with tracking data

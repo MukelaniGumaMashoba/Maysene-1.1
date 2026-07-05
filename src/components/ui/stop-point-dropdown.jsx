@@ -18,16 +18,20 @@ export function StopPointDropdown({
 
   // Filter stop points based on search term
   const filteredStopPoints = useMemo(() => {
-    if (!searchTerm) return stopPoints.slice(0, 50) // Limit initial results
+    const validStopPoints = stopPoints.filter(point => point?.id != null)
+
+    if (!searchTerm) return validStopPoints.slice(0, 50) // Limit initial results
     
-    return stopPoints.filter(point => 
+    return validStopPoints.filter(point => 
       point.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       point.name2?.toLowerCase().includes(searchTerm.toLowerCase())
     ).slice(0, 20) // Limit search results
   }, [stopPoints, searchTerm])
 
+  const getStopPointId = (point) => point?.id != null ? String(point.id) : null
+
   // Get selected stop point display name
-  const selectedStopPoint = stopPoints.find(p => p.id.toString() === value)
+  const selectedStopPoint = stopPoints.find(p => getStopPointId(p) === value)
   const displayValue = selectedStopPoint 
     ? `${selectedStopPoint.name}${selectedStopPoint.name2 ? ` - ${selectedStopPoint.name2}` : ''}`
     : ''
@@ -38,7 +42,9 @@ export function StopPointDropdown({
   }
 
   const handleStopPointSelect = (stopPoint) => {
-    onChange(stopPoint.id.toString())
+    const id = getStopPointId(stopPoint)
+    if (!id) return
+    onChange(id)
     setSearchTerm('')
     setShowDropdown(false)
   }
@@ -93,9 +99,9 @@ export function StopPointDropdown({
                   Clear selection
                 </div>
               )}
-              {filteredStopPoints.map((stopPoint) => (
+              {filteredStopPoints.map((stopPoint, index) => (
                 <div
-                  key={stopPoint.id}
+                  key={getStopPointId(stopPoint) ?? `stop-point-${index}`}
                   className="p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors"
                   onMouseDown={(e) => {
                     e.preventDefault()
