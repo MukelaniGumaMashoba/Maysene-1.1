@@ -418,7 +418,7 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
   return (
     <div className={cn(
       "w-[30%] bg-white rounded-lg border shadow-sm hover:shadow-md transition-all duration-200 p-3",
-      trip.unauthorized_stops_count > 0 && trip.status?.toLowerCase() !== 'delivered'
+      trip.unauthorized_stops_count > 0 && !['delivered', 'offloading'].includes(trip.status?.toLowerCase())
         ? isFlashing 
           ? "unauthorized-stop-alert" 
           : "border-red-300 bg-red-25"
@@ -676,7 +676,7 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
 
   // Sort trips to put unauthorized stops at the top
   const tripsList = trips
-    .filter(trip => trip.status?.toLowerCase() !== 'delivered')
+    .filter(trip => !['delivered', 'offloading'].includes(trip.status?.toLowerCase()))
     .sort((a, b) => {
       // First sort by unauthorized stops (descending)
       const aUnauthorized = a.unauthorized_stops_count || 0
@@ -713,10 +713,6 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
     { label: "Loading", value: "loading" },
     { label: "On Trip", value: "on-trip" },
     { label: "Offloading", value: "offloading" },
-    { label: "Weighing In/Out", value: "weighing" },
-    { label: "Depo", value: "depo" },
-    { label: "Handover", value: "handover" },
-    { label: "Delivered", value: "delivered" }
   ]
 
   const getWaypointsWithStops = (trip: any) => {
@@ -808,7 +804,7 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
             {/* Trip Card - 70% */}
             <div className={cn(
               "w-[70%] bg-white rounded-lg border shadow-sm hover:shadow-md transition-all duration-200",
-              trip.unauthorized_stops_count > 0 && trip.status?.toLowerCase() !== 'delivered'
+              trip.unauthorized_stops_count > 0 && !['delivered', 'offloading'].includes(trip.status?.toLowerCase())
                 ? "border-red-300 bg-red-25"
                 : "border-slate-200"
             )}>
@@ -844,11 +840,10 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
                   <div className="flex flex-col items-end">
                     <span className={cn(
                       "px-2 py-1 rounded-full text-xs font-semibold uppercase tracking-wide",
-                      trip.status?.toLowerCase() === 'delivered' ? 'bg-emerald-100 text-emerald-700' :
+                      ['delivered', 'offloading'].includes(trip.status?.toLowerCase()) ? 'bg-emerald-100 text-emerald-700' :
                       trip.status?.toLowerCase() === 'on-trip' ? 'bg-blue-100 text-blue-700' :
                       ['pending', 'accepted'].includes(trip.status?.toLowerCase()) ? 'bg-amber-100 text-amber-700' :
                       ['rejected', 'cancelled', 'stopped'].includes(trip.status?.toLowerCase()) ? 'bg-red-100 text-red-700' :
-                      ['completed', 'depo', 'handover'].includes(trip.status?.toLowerCase()) ? 'bg-green-100 text-green-700' :
                       'bg-slate-100 text-slate-700'
                     )}>
                       {trip.status || 'Unknown'}

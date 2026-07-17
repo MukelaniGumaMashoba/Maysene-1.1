@@ -381,7 +381,7 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
     }
   }, [refreshTrigger])
 
-  const tripsList = trips.filter(trip => trip.status?.toLowerCase() !== 'delivered')
+  const tripsList = trips.filter(trip => !['delivered', 'offloading'].includes(trip.status?.toLowerCase()))
 
   const TRIP_STATUSES = [
     'Pending',
@@ -391,8 +391,6 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
     'Loading',
     'On Trip',
     'Offloading',
-    'Weighing In/Out',
-    'Delivered'
   ]
 
   const getWaypointsWithStops = (trip: any) => {
@@ -684,21 +682,21 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
                     size="sm" 
                     className="bg-emerald-600 hover:bg-emerald-700 text-white h-7 text-xs ml-auto"
                     onClick={async () => {
-                      if (!confirm('Mark this trip as completed?')) return;
+                      if (!confirm('End this trip?')) return;
                       try {
                         const supabase = createClient();
-                        const { error } = await supabase.from('trips').update({ status: 'Delivered' }).eq('id', trip.id);
+                        const { error } = await supabase.from('trips').update({ status: 'Offloading' }).eq('id', trip.id);
                         if (error) throw error;
-                        alert('Trip marked as delivered');
+                        alert('Trip ended');
                         setRefreshTrigger(prev => prev + 1);
                       } catch (err) {
-                        console.error('Failed to complete trip', err);
-                        alert('Failed to complete trip');
+                        console.error('Failed to end trip', err);
+                        alert('Failed to end trip');
                       }
                     }}
                   >
                     <CheckCircle className="w-3 h-3 mr-1" />
-                    Complete Trip
+                    End Trip
                   </Button>
                 </div>
               </div>

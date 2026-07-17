@@ -85,7 +85,7 @@ function RoutingSection() {
     fetchTrips()
   }, [])
 
-  const tripsList = trips.filter(trip => trip.status?.toLowerCase() !== 'delivered')
+  const tripsList = trips.filter(trip => !['delivered', 'offloading'].includes(trip.status?.toLowerCase()))
 
   const TRIP_STATUSES = [
     'Pending',
@@ -95,8 +95,6 @@ function RoutingSection() {
     'Loading',
     'On Trip',
     'Offloading',
-    'Weighing In/Out',
-    'Delivered'
   ]
 
   const getWaypoints = (trip: any) => {

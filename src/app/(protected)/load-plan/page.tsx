@@ -2460,7 +2460,7 @@ export default function LoadPlanPage() {
             {/* Trip Routes Display */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               {loads
-                .filter((trip) => trip.status?.toLowerCase() !== "delivered")
+                .filter((trip) => !['delivered', 'offloading'].includes(trip.status?.toLowerCase()))
                 .map((trip) => {
                   const assignments =
                     parseJsonField(trip.vehicleassignments) || [];
