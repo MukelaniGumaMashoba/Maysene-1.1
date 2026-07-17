@@ -69,10 +69,11 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 // Trip Time Info Component with ETA
 function TripTimeInfo({ trip, gpsData }: any) {
   const [eta, setEta] = useState<any>(null);
-  const [etaError, setEtaError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+
     async function fetchEta() {
       const tripId = trip.id || trip.trip_id;
       if (!tripId) return;
@@ -104,7 +105,7 @@ function TripTimeInfo({ trip, gpsData }: any) {
         }
         
         const vehicles = gpsData || [];
-        const trackingVehicle = vehicles.find(v => {
+        const trackingVehicle = vehicles.find((v: any) => {
           const reg = v.registration || v.plate || '';
           return reg.toLowerCase() === vehicleInfo.registration_number.toLowerCase();
         });
@@ -114,92 +115,52 @@ function TripTimeInfo({ trip, gpsData }: any) {
           return;
         }
         
-        console.log('TripTimeInfo: Vehicle location:', trackingVehicle.latitude, trackingVehicle.longitude);
-        
-        // Get destination from trip
         const dropoffLocations = trip.dropoff_locations || trip.dropofflocations || [];
         const destination = dropoffLocations[0]?.location || dropoffLocations[0]?.address || trip.destination;
-        console.log('Destination:', destination);
         
         if (!destination) {
-          console.log('TripTimeInfo: No destination found');
           setLoading(false);
           return;
         }
         
-        // Calculate ETA using Mapbox Directions API
-        const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-        if (!mapboxToken) {
-          console.error('TripTimeInfo: Mapbox token not configured');
-          setLoading(false);
-          return;
-        }
-        
-        // Geocode destination
-        console.log('Geocoding destination...');
-        const geocodeResponse = await fetch(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(destination)}.json?access_token=${mapboxToken}&country=za&limit=1`
-        );
-        const geocodeData = await geocodeResponse.json();
-        console.log('Geocode result:', geocodeData);
-        
-        if (!geocodeData.features?.[0]?.center) {
-          console.log('TripTimeInfo: Could not geocode destination');
-          setLoading(false);
-          return;
-        }
-        
-        const [destLng, destLat] = geocodeData.features[0].center;
-        console.log('Destination coords:', destLat, destLng);
-        
-        // Get route and ETA from Mapbox with accurate road-following
-        console.log('Calculating route...');
-        const directionsUrl = `https://api.mapbox.com/directions/v5/mapbox/driving/${trackingVehicle.longitude},${trackingVehicle.latitude};${destLng},${destLat}?access_token=${mapboxToken}&geometries=geojson&overview=full&steps=true&continue_straight=false`;
-        const directionsResponse = await fetch(directionsUrl);
-        const directionsData = await directionsResponse.json();
-        console.log('Directions result:', directionsData);
-        
-        if (directionsData.routes?.[0]) {
-          const route = directionsData.routes[0];
-          const durationSeconds = route.duration;
-          const distanceMeters = route.distance;
-          
-          // Calculate ETA
-          const etaDate = new Date(Date.now() + durationSeconds * 1000);
-          
-          console.log('✅ TripTimeInfo: ETA calculated:', etaDate);
-          console.log('Distance:', distanceMeters, 'Duration:', durationSeconds);
-          setEta({
-            eta: etaDate.toISOString(),
-            distance: distanceMeters,
-            duration: Math.round(durationSeconds / 60), // minutes
-            vehicleLocation: {
-              lat: trackingVehicle.latitude,
-              lng: trackingVehicle.longitude
+        // Use Google Maps Distance Matrix
+        if (typeof google !== 'undefined' && google.maps) {
+          const service = new google.maps.DistanceMatrixService();
+          service.getDistanceMatrix(
+            {
+              origins: [{ lat: parseFloat(trackingVehicle.latitude), lng: parseFloat(trackingVehicle.longitude) }],
+              destinations: [destination],
+              travelMode: google.maps.TravelMode.DRIVING,
+              unitSystem: google.maps.UnitSystem.METRIC,
+            },
+            (response, status) => {
+              if (cancelled) return;
+              if (status === 'OK' && response?.rows?.[0]?.elements?.[0]?.duration) {
+                const element = response.rows[0].elements[0];
+                const etaDate = new Date(Date.now() + element.duration.value * 1000);
+                setEta({
+                  eta: etaDate.toISOString(),
+                  distance: element.distance.value,
+                  duration: Math.round(element.duration.value / 60),
+                });
+              }
+              setLoading(false);
             }
-          });
-          setEtaError(null);
+          );
         } else {
-          console.log('TripTimeInfo: No route found');
-          setEtaError('Could not calculate route');
+          setLoading(false);
         }
       } catch (error) {
-        console.error('❌ TripTimeInfo: Error calculating ETA:', error);
-        setEtaError(error instanceof Error ? error.message : 'Unknown error');
+        console.error('Error calculating ETA:', error);
         setEta(null);
-      } finally {
         setLoading(false);
-        console.log('=== TripTimeInfo END ===');
       }
     }
     
-    // Run immediately
     fetchEta();
-    
-    // Refresh ETA every 60 seconds
     const interval = setInterval(fetchEta, 60000);
-    return () => clearInterval(interval);
-  }, [trip.id, trip.trip_id]);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [trip.id, trip.trip_id, gpsData]);
 
   const pickupTime = trip.pickup_locations?.[0]?.scheduled_time || trip.pickuplocations?.[0]?.scheduled_time;
   const dropoffTime = trip.dropoff_locations?.[0]?.scheduled_time || trip.dropofflocations?.[0]?.scheduled_time;
@@ -236,9 +197,9 @@ function TripTimeInfo({ trip, gpsData }: any) {
                 <span className="font-semibold text-slate-900">
                   {new Date(dropoffTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} {new Date(dropoffTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                 </span>
+              </div>
+            )}
           </div>
-        )}
-      </div>
         </div>
       )}
       {/* ETA Section (30%) */}
@@ -248,22 +209,22 @@ function TripTimeInfo({ trip, gpsData }: any) {
         </div>
       )}
       {eta && (
-        <div className="bg-blue-50 rounded p-1.5 border border-blue-200 flex flex-col justify-between" style={{ flexBasis: '30%', minWidth: 0 }}>
+        <div className="bg-green-50 rounded p-1.5 border border-green-200 flex flex-col justify-between" style={{ flexBasis: '30%', minWidth: 0 }}>
           <div>
             <div className="flex items-center gap-1 mb-1">
-              <Clock className="w-2.5 h-2.5 text-blue-600" />
-              <span className="text-xs font-medium text-blue-800">Live ETA</span>
+              <Clock className="w-2.5 h-2.5 text-green-600" />
+              <span className="text-xs font-medium text-green-800">ETA</span>
             </div>
             <div className="flex items-center justify-between text-xs">
               <span className="font-medium text-slate-700">Arrival</span>
-              <span className="font-semibold text-blue-900">
+              <span className="font-semibold text-green-900">
                 {new Date(eta.eta).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} {new Date(eta.eta).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
           </div>
           {eta.distance && (
             <div className="flex items-center justify-between text-xs mt-1">
-              <span className="text-slate-600">Remaining</span>
+              <span className="text-slate-600">Distance</span>
               <span className="font-medium text-slate-900">{(eta.distance / 1000).toFixed(1)} km</span>
             </div>
           )}
@@ -1581,6 +1542,7 @@ export default function Dashboard() {
                   Select {timeType === 'pickup' ? 'pickup' : 'drop-off'} date and time:
                 </p>
                 <DateTimePicker
+                  key={`${currentTripForTime?.id}-${timeType}`}
                   value={selectedTime}
                   onChange={setSelectedTime}
                   placeholder={`Select ${timeType} time`}

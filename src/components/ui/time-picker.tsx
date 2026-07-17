@@ -18,6 +18,14 @@ export function TimePicker({ value, onChange, placeholder = "Select time" }: Tim
   const [minute, setMinute] = React.useState(value ? value.split(':')[1] : "")
   const [open, setOpen] = React.useState(false)
 
+  React.useEffect(() => {
+    if (value) {
+      const [h, m] = value.split(':')
+      setHour(h || '')
+      setMinute(m || '')
+    }
+  }, [value])
+
   const handleConfirm = () => {
     if (hour && minute) {
       onChange(`${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`)
@@ -47,7 +55,12 @@ export function TimePicker({ value, onChange, placeholder = "Select time" }: Tim
           <Input
             type="time"
             value={value || ""}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(e) => {
+              const [h, m] = e.target.value.split(':')
+              setHour(h || '')
+              setMinute(m || '')
+              onChange(e.target.value)
+            }}
             className="w-full"
           />
           <Button onClick={handleConfirm} className="w-full">

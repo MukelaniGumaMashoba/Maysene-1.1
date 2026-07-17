@@ -1042,6 +1042,7 @@ export default function Dashboard() {
                   Select {timeType === 'pickup' ? 'pickup' : 'drop-off'} date and time:
                 </p>
                 <DateTimePicker
+                  key={`${currentTripForTime?.id}-${timeType}`}
                   value={selectedTime}
                   onChange={setSelectedTime}
                   placeholder={`Select ${timeType} time`}
