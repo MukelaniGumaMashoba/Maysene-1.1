@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { GoogleMap } from "@react-google-maps/api";
 import {
   Card,
   CardContent,
@@ -66,7 +67,7 @@ import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from 'recharts';
 
 // Trip Time Info Component with ETA
-function TripTimeInfo({ trip }: any) {
+function TripTimeInfo({ trip, gpsData }: any) {
   const [eta, setEta] = useState<any>(null);
   const [etaError, setEtaError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -74,25 +75,13 @@ function TripTimeInfo({ trip }: any) {
   useEffect(() => {
     async function fetchEta() {
       const tripId = trip.id || trip.trip_id;
-      console.log('=== TripTimeInfo START ===');
-      console.log('Trip ID:', tripId);
-      console.log('Trip object:', trip);
-      
-      if (!tripId) {
-        console.log('TripTimeInfo: No trip ID available');
-        return;
-      }
+      if (!tripId) return;
       
       setLoading(true);
       try {
-        console.log('TripTimeInfo: Calculating ETA for trip:', tripId);
-        
         const supabase = createClient();
         const assignments = trip.vehicleassignments || trip.vehicle_assignments || [];
-        console.log('Assignments:', assignments);
-        
         if (!assignments.length) {
-          console.log('TripTimeInfo: No vehicle assignments');
           setLoading(false);
           return;
         }
@@ -100,38 +89,27 @@ function TripTimeInfo({ trip }: any) {
         const assignment = assignments[0];
         let vehicleInfo = null;
         
-        // Get vehicle registration
         if (assignment.vehicle?.id) {
-          console.log('Fetching vehicle info for ID:', assignment.vehicle.id);
           const { data: vehicle } = await supabase
             .from('vehiclesc')
             .select('registration_number')
             .eq('id', assignment.vehicle.id)
             .single();
           vehicleInfo = vehicle;
-          console.log('Vehicle info:', vehicleInfo);
         }
         
         if (!vehicleInfo?.registration_number) {
-          console.log('TripTimeInfo: No vehicle registration found');
           setLoading(false);
           return;
         }
         
-        // Get vehicle location from EPS API (same as Track button)
-        console.log('Fetching vehicle tracking data...');
-        const response = await fetch('/api/vehicles');
-        const result = await response.json();
-        const vehicles = result.data || [];
-        console.log('Total vehicles from API:', vehicles.length);
-        
-        const trackingVehicle = vehicles.find(v => 
-          v.plate && v.plate.toLowerCase() === vehicleInfo.registration_number.toLowerCase()
-        );
-        console.log('Matching vehicle:', trackingVehicle);
+        const vehicles = gpsData || [];
+        const trackingVehicle = vehicles.find(v => {
+          const reg = v.registration || v.plate || '';
+          return reg.toLowerCase() === vehicleInfo.registration_number.toLowerCase();
+        });
         
         if (!trackingVehicle?.latitude || !trackingVehicle?.longitude) {
-          console.log('TripTimeInfo: No vehicle location found');
           setLoading(false);
           return;
         }
@@ -304,7 +282,7 @@ function TripTimeInfo({ trip }: any) {
 
 
 // Driver Card Component with fetched driver info
-function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setNoteText, setNoteOpen, setAvailableDrivers, setCurrentTripForChange, setChangeDriverOpen }: any) {
+function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setNoteText, setNoteOpen, setAvailableDrivers, setCurrentTripForChange, setChangeDriverOpen, gpsData }: any) {
   const [driverInfo, setDriverInfo] = useState<any>(null)
   const [vehicleInfo, setVehicleInfo] = useState<any>(null)
   const [loading, setLoading] = useState(false)
@@ -345,35 +323,23 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
             .single()
           setDriverInfo(driver)
           
-          // Fetch vehicle location from EPS API
-          if (driver) {
-            try {
-              const response = await fetch('/api/vehicles')
-              const result = await response.json()
-              const vehicles = result.data || []
-              
-              const vehicle = vehicles.find((v: any) => {
-                // First priority: match by plate number
-                if (vehicleInfo?.registration_number && v.plate) {
-                  return v.plate.toLowerCase() === vehicleInfo.registration_number.toLowerCase()
-                }
-                
-                // Second priority: match by driver name using fuzzy matching
-                if (v.driver_name && v.driver_name !== 'UNKNOWN') {
-                  const cleanTrackingName = v.driver_name.replace(/\d+/g, '').replace(/\s+/g, ' ').trim().toLowerCase()
-                  const driverFullName = `${driver.first_name} ${driver.surname}`.toLowerCase()
-                  return cleanTrackingName.includes(driver.first_name.toLowerCase()) && 
-                         cleanTrackingName.includes(driver.surname.toLowerCase())
-                }
-                
-                return false
-              })
-              
-              if (vehicle) {
-                setVehicleLocation(vehicle)
+          // Match vehicle from GPS data
+          if (driver && gpsData.length > 0) {
+            const vehicle = gpsData.find((v: any) => {
+              const reg = v.registration || v.plate || '';
+              if (vehicleInfo?.registration_number && reg) {
+                return reg.toLowerCase() === vehicleInfo.registration_number.toLowerCase()
               }
-            } catch (error) {
-              console.error('Error fetching vehicle location:', error)
+              if (v.driver_name && v.driver_name !== 'UNKNOWN') {
+                const cleanTrackingName = v.driver_name.replace(/\d+/g, '').replace(/\s+/g, ' ').trim().toLowerCase()
+                return cleanTrackingName.includes(driver.first_name.toLowerCase()) && 
+                       cleanTrackingName.includes(driver.surname.toLowerCase())
+              }
+              return false
+            })
+            
+            if (vehicle) {
+              setVehicleLocation(vehicle)
             }
           }
         }
@@ -394,7 +360,7 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
     }
 
     fetchAssignmentInfo()
-  }, [trip.vehicleassignments, trip.vehicle_assignments])
+  }, [trip.vehicleassignments, trip.vehicle_assignments, gpsData])
 
   const driverName = [driverInfo?.first_name, driverInfo?.surname].filter(Boolean).join(' ') || 'Unassigned'
   const initials = driverName === 'Unassigned'
@@ -504,18 +470,10 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
             const vehiclePlate = vehicleInfo?.registration_number;
             
             if (vehiclePlate) {
-              try {
-                const response = await fetch('/api/vehicles');
-                const result = await response.json();
-                const vehicles = result.data || [];
-                
-                // Find vehicle by plate number
-                trackingVehicle = vehicles.find(v => 
-                  v.plate && v.plate.toLowerCase() === vehiclePlate.toLowerCase()
-                );
-              } catch (error) {
-                console.error('Error fetching tracking data:', error);
-              }
+              trackingVehicle = gpsData.find((v: any) => {
+                const reg = v.registration || v.plate || '';
+                return reg.toLowerCase() === vehiclePlate.toLowerCase();
+              });
             }
             
             if (trip.route) {
@@ -628,7 +586,7 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
 }
 
 // Enhanced routing components with proper waypoints
-function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNoteText, setNoteOpen, setAvailableDrivers, setCurrentTripForChange, setChangeDriverOpen, refreshTrigger, setRefreshTrigger, setPickupTimeOpen, setDropoffTimeOpen, setCurrentTripForTime, setTimeType, setSelectedTime, currentUnauthorizedTrip, setCurrentUnauthorizedTrip, setUnauthorizedStopModalOpen, loadingPhotos, setLoadingPhotos, setCurrentTripPhotos, setPhotosModalOpen }: any) {
+function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNoteText, setNoteOpen, setAvailableDrivers, setCurrentTripForChange, setChangeDriverOpen, refreshTrigger, setRefreshTrigger, setPickupTimeOpen, setDropoffTimeOpen, setCurrentTripForTime, setTimeType, setSelectedTime, currentUnauthorizedTrip, setCurrentUnauthorizedTrip, setUnauthorizedStopModalOpen, loadingPhotos, setLoadingPhotos, setCurrentTripPhotos, setPhotosModalOpen, gpsData }: any) {
   const [trips, setTrips] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -799,6 +757,7 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
               setAvailableDrivers={setAvailableDrivers}
               setCurrentTripForChange={setCurrentTripForChange}
               setChangeDriverOpen={setChangeDriverOpen}
+              gpsData={gpsData}
             />
 
             {/* Trip Card - 70% */}
@@ -870,7 +829,7 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
                 </div>
 
                 {/* Time Information */}
-                <TripTimeInfo trip={trip} />
+                <TripTimeInfo trip={trip} gpsData={gpsData} />
 
                 {/* Enhanced Timeline */}
                 <div className="mb-2">
@@ -1065,6 +1024,21 @@ export default function Dashboard() {
   const [vehicleAvailability, setVehicleAvailability] = useState<any[]>([]);
   const [driverAvailability, setDriverAvailability] = useState<any[]>([]);
   const [loadingPhotos, setLoadingPhotos] = useState(false);
+  const [gpsData, setGpsData] = useState<any[]>([]);
+
+  // Fetch GPS data once on mount
+  useEffect(() => {
+    async function fetchGps() {
+      try {
+        const response = await fetch('/api/vehicle/maysene');
+        const result = await response.json();
+        setGpsData(Array.isArray(result) ? result : (result.data || []));
+      } catch (error) {
+        console.error('Error fetching GPS data:', error);
+      }
+    }
+    fetchGps();
+  }, []);
 
   // Get user role from cookies
   useEffect(() => {
@@ -1079,39 +1053,22 @@ export default function Dashboard() {
   }, []);
 
   const handleViewMap = async (driverName: string, trip?: any) => {
-    if (trip?.vehicleLocation && trip.vehicleLocation.latitude && trip.vehicleLocation.longitude) {
+    const vl = trip?.vehicleLocation;
+    if (vl && vl.latitude && vl.longitude) {
       const vehicleData = {
-        ...trip.vehicleLocation,
+        ...vl,
         trip,
         routeCoordinates: trip.routeCoords,
         stopPoints: trip.stopPoints,
         driverDetails: {
           fullName: driverName,
-          plate: trip.vehicleLocation.plate,
-          speed: trip.vehicleLocation.speed,
-          mileage: trip.vehicleLocation.mileage,
-          address: trip.vehicleLocation.address,
-          geozone: trip.vehicleLocation.geozone,
-          company: trip.vehicleLocation.company,
-          lastUpdate: trip.vehicleLocation.loc_time
-        }
-      };
-      setMapData(vehicleData);
-      setMapOpen(true);
-    } else if (trip?.vehicleLocation) {
-      const vehicleData = {
-        ...trip.vehicleLocation,
-        latitude: trip.vehicleLocation.latitude,
-        longitude: trip.vehicleLocation.longitude,
-        driverDetails: {
-          fullName: driverName,
-          plate: trip.vehicleLocation.plate,
-          speed: trip.vehicleLocation.speed,
-          mileage: trip.vehicleLocation.mileage,
-          address: trip.vehicleLocation.address,
-          geozone: trip.vehicleLocation.geozone,
-          company: trip.vehicleLocation.company,
-          lastUpdate: trip.vehicleLocation.loc_time
+          plate: vl.registration || vl.plate,
+          speed: vl.speed,
+          mileage: vl.odometer_km || vl.mileage,
+          address: vl.address,
+          geozone: vl.geozone,
+          company: vl.company,
+          lastUpdate: vl.gps_time || vl.loc_time
         }
       };
       setMapData(vehicleData);
@@ -1223,6 +1180,7 @@ export default function Dashboard() {
               setLoadingPhotos={setLoadingPhotos}
               setCurrentTripPhotos={setCurrentTripPhotos}
               setPhotosModalOpen={setPhotosModalOpen}
+              gpsData={gpsData}
             />
           </div>
         )}
@@ -1808,186 +1766,74 @@ export default function Dashboard() {
                 )}
               </div>
               <div className="flex-1 min-h-0">
-                <div 
-                  id="driver-map" 
-                  className="w-full h-full min-h-[400px] rounded border"
-                  ref={(el) => {
-                    if (el && mapData) {
-                      el.innerHTML = ''
-                      
-                      const script = document.createElement('script')
-                      script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js'
-                      script.onload = () => {
-                        const link = document.createElement('link')
-                        link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css'
-                        link.rel = 'stylesheet'
-                        document.head.appendChild(link)
-                        
-                        if (window.mapboxgl) {
-                          window.mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
-                          const map = new window.mapboxgl.Map({
-                            container: el,
-                            style: 'mapbox://styles/mapbox/streets-v12',
-                            center: [parseFloat(mapData.longitude), parseFloat(mapData.latitude)],
-                            zoom: 15
-                          })
-                          
-                          map.on('load', () => {
-                            // Driver location marker
-                            const vehicleEl = document.createElement('div')
-                            vehicleEl.innerHTML = '🚛'
-                            vehicleEl.style.cssText = `
-                              font-size: 24px; width: 32px; height: 32px;
-                              display: flex; align-items: center; justify-content: center;
-                              background: #3b82f6; border: 3px solid #fff;
-                              border-radius: 50%; animation: pulse 2s infinite;
-                              box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                            `
-                            
-                            const style = document.createElement('style')
-                            style.textContent = `@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }`
-                            document.head.appendChild(style)
-                            
-                            const vehicleMarker = new window.mapboxgl.Marker(vehicleEl)
-                              .setLngLat([parseFloat(mapData.longitude), parseFloat(mapData.latitude)])
-                              .addTo(map)
-                            
-                            // Add route coordinates if available
-                            if (mapData.routeCoordinates) {
-                              map.addSource('planned-route', {
-                                type: 'geojson',
-                                data: {
-                                  type: 'Feature',
-                                  properties: {},
-                                  geometry: {
-                                    type: 'LineString',
-                                    coordinates: mapData.routeCoordinates
-                                  }
-                                }
-                              });
-                              
-                              // Main route line
-                              map.addLayer({
-                                id: 'planned-route-line',
-                                type: 'line',
-                                source: 'planned-route',
-                                layout: { 'line-join': 'round', 'line-cap': 'round' },
-                                paint: { 'line-color': '#ef4444', 'line-width': 6, 'line-opacity': 0.8 }
-                              });
-                              
-                              // Add start and end markers
-                              const startEl = document.createElement('div');
-                              startEl.innerHTML = '🚩';
-                              startEl.style.fontSize = '24px';
-                              new window.mapboxgl.Marker(startEl)
-                                .setLngLat(mapData.routeCoordinates[0])
-                                .addTo(map);
-                              
-                              const endEl = document.createElement('div');
-                              endEl.innerHTML = '🏁';
-                              endEl.style.fontSize = '24px';
-                              new window.mapboxgl.Marker(endEl)
-                                .setLngLat(mapData.routeCoordinates[mapData.routeCoordinates.length - 1])
-                                .addTo(map);
-                              
-                              // Add stop points if available
-                              if (mapData.stopPoints && mapData.stopPoints.length > 0) {
-                                mapData.stopPoints.forEach((stopPoint, index) => {
-                                  // Add polygon if coordinates available
-                                  if (stopPoint.polygon && stopPoint.polygon.length > 2) {
-                                    map.addSource(`stop-polygon-${index}`, {
-                                      type: 'geojson',
-                                      data: {
-                                        type: 'Feature',
-                                        properties: { name: stopPoint.name },
-                                        geometry: {
-                                          type: 'Polygon',
-                                          coordinates: [stopPoint.polygon]
-                                        }
-                                      }
-                                    });
-                                    
-                                    map.addLayer({
-                                      id: `stop-polygon-fill-${index}`,
-                                      type: 'fill',
-                                      source: `stop-polygon-${index}`,
-                                      paint: {
-                                        'fill-color': '#fbbf24',
-                                        'fill-opacity': 0.3
-                                      }
-                                    });
-                                    
-                                    map.addLayer({
-                                      id: `stop-polygon-outline-${index}`,
-                                      type: 'line',
-                                      source: `stop-polygon-${index}`,
-                                      paint: {
-                                        'line-color': '#f59e0b',
-                                        'line-width': 2
-                                      }
-                                    });
-                                  }
-                                  
-                                  // Add center marker
-                                  const stopEl = document.createElement('div');
-                                  stopEl.innerHTML = '🛑';
-                                  stopEl.style.fontSize = '20px';
-                                  
-                                  const marker = new window.mapboxgl.Marker(stopEl)
-                                    .setLngLat(stopPoint.coordinates)
-                                    .addTo(map);
-                                  
-                                  const popup = new window.mapboxgl.Popup({ offset: 25 })
-                                    .setHTML(`<div class="p-2"><strong>Stop Point ${index + 1}</strong><br/>${stopPoint.name}</div>`);
-                                  marker.setPopup(popup);
-                                });
-                              }
-                              
-                              // Fit map to show vehicle, route, and stop points
-                              const bounds = new window.mapboxgl.LngLatBounds();
-                              bounds.extend([parseFloat(mapData.longitude), parseFloat(mapData.latitude)]);
-                              mapData.routeCoordinates.forEach(coord => bounds.extend(coord));
-                              if (mapData.stopPoints) {
-                                mapData.stopPoints.forEach(stop => {
-                                  bounds.extend(stop.coordinates);
-                                  if (stop.polygon) {
-                                    stop.polygon.forEach(coord => bounds.extend(coord));
-                                  }
-                                });
-                              }
-                              map.fitBounds(bounds, { padding: 50 });
-                            }
-                            
-                            // Add popup with driver details
-                            if (mapData.driverDetails) {
-                              const popup = new window.mapboxgl.Popup({ offset: 25 })
-                                .setHTML(`
-                                  <div class="p-3">
-                                    <div class="font-bold text-blue-900 mb-2">${mapData.driverDetails.fullName}</div>
-                                    <div class="text-sm space-y-1">
-                                      <div><strong>Vehicle:</strong> ${mapData.driverDetails.plate}</div>
-                                      <div><strong>Speed:</strong> ${mapData.driverDetails.speed} km/h</div>
-                                      <div><strong>Company:</strong> ${mapData.driverDetails.company || 'N/A'}</div>
-                                      <div class="text-xs text-gray-600 mt-2">
-                                        Last updated: ${new Date(mapData.driverDetails.lastUpdate).toLocaleTimeString()}
-                                      </div>
-                                    </div>
-                                  </div>
-                                `)
-                              vehicleMarker.setPopup(popup)
-                            }
-                          })
-                        }
+                <div className="w-full h-full min-h-[400px] rounded border">
+                  <GoogleMap
+                    mapContainerStyle={{ width: '100%', height: '100%', minHeight: '400px' }}
+                    center={{ lat: parseFloat(mapData.latitude), lng: parseFloat(mapData.longitude) }}
+                    zoom={15}
+                    onLoad={(map) => {
+                      const pos = new google.maps.LatLng(parseFloat(mapData.latitude), parseFloat(mapData.longitude));
+
+                      // Vehicle marker (pulsing blue circle with truck icon)
+                      const vehicleDiv = document.createElement('div');
+                      vehicleDiv.innerHTML = `<div style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:#3b82f6;border:3px solid #fff;border-radius:50%;box-shadow:0 4px 12px rgba(0,0,0,0.3);font-size:18px;">🚛</div>`;
+                      new google.maps.marker.AdvancedMarkerElement({ position: pos, content: vehicleDiv, map });
+
+                      // Route polyline
+                      if (mapData.routeCoordinates?.length) {
+                        const path = mapData.routeCoordinates.map((c: number[]) => new google.maps.LatLng(c[1], c[0]));
+                        new google.maps.Polyline({ path, geodesic: true, strokeColor: '#ef4444', strokeOpacity: 0.8, strokeWeight: 6, map });
+
+                        // Start marker
+                        const startDiv = document.createElement('div');
+                        startDiv.innerHTML = `<div style="font-size:24px;">🚩</div>`;
+                        new google.maps.marker.AdvancedMarkerElement({ position: path[0], content: startDiv, map });
+
+                        // End marker
+                        const endDiv = document.createElement('div');
+                        endDiv.innerHTML = `<div style="font-size:24px;">🏁</div>`;
+                        new google.maps.marker.AdvancedMarkerElement({ position: path[path.length - 1], content: endDiv, map });
+
+                        // Stop points
+                        mapData.stopPoints?.forEach((sp: any, i: number) => {
+                          if (sp.polygon?.length > 2) {
+                            new google.maps.Polygon({
+                              paths: sp.polygon.map((c: number[]) => new google.maps.LatLng(c[1], c[0])),
+                              fillColor: '#fbbf24', fillOpacity: 0.3,
+                              strokeColor: '#f59e0b', strokeWeight: 2, map,
+                            });
+                          }
+                          const spDiv = document.createElement('div');
+                          spDiv.innerHTML = `<div style="font-size:20px;">🛑</div>`;
+                          const spMarker = new google.maps.marker.AdvancedMarkerElement({
+                            position: new google.maps.LatLng(sp.coordinates[1], sp.coordinates[0]),
+                            content: spDiv, map,
+                          });
+                          const infoWindow = new google.maps.InfoWindow({ content: `<div class="p-2"><strong>Stop Point ${i + 1}</strong><br/>${sp.name}</div>` });
+                          spMarker.addListener('click', () => infoWindow.open({ anchor: spMarker, map }));
+                        });
+
+                        // Fit bounds
+                        const bounds = new google.maps.LatLngBounds();
+                        bounds.extend(pos);
+                        path.forEach((p: google.maps.LatLng) => bounds.extend(p));
+                        mapData.stopPoints?.forEach((sp: any) => {
+                          bounds.extend(new google.maps.LatLng(sp.coordinates[1], sp.coordinates[0]));
+                          sp.polygon?.forEach((c: number[]) => bounds.extend(new google.maps.LatLng(c[1], c[0])));
+                        });
+                        map.fitBounds(bounds, 50);
                       }
-                      
-                      if (!document.querySelector('script[src*="mapbox-gl.js"]')) {
-                        document.head.appendChild(script)
-                      } else if (window.mapboxgl) {
-                        script.onload()
+
+                      // Driver info popup
+                      if (mapData.driverDetails) {
+                        const infoWindow = new google.maps.InfoWindow({
+                          content: `<div style="padding:12px"><div style="font-weight:bold;color:#1e40af;margin-bottom:8px">${mapData.driverDetails.fullName}</div><div style="font-size:13px;line-height:1.6"><div><b>Vehicle:</b> ${mapData.driverDetails.plate}</div><div><b>Speed:</b> ${mapData.driverDetails.speed} km/h</div><div><b>Company:</b> ${mapData.driverDetails.company || 'N/A'}</div><div style="color:#6b7280;margin-top:8px;font-size:11px">Updated: ${new Date(mapData.driverDetails.lastUpdate).toLocaleTimeString()}</div></div></div>`
+                        });
+                        infoWindow.open({ anchor: new google.maps.marker.AdvancedMarkerElement({ position: pos, map }), map });
                       }
-                    }
-                  }}
-                />
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>

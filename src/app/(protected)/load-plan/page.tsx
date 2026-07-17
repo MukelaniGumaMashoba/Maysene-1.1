@@ -472,7 +472,7 @@ export default function LoadPlanPage() {
       const driversResult = await driversResponse.json();
       const driversData = driversResult.drivers || [];
 
-      // Format drivers from drivers table
+      // API now returns only available drivers
       const formattedDrivers = (driversData || []).map((driver: any) => ({
         id: driver.id,
         name: `${driver.first_name} ${driver.surname}`.trim(),
@@ -481,10 +481,8 @@ export default function LoadPlanPage() {
         available: driver.available,
       }));
 
-      // Filter available drivers
-      const availableDriversList = formattedDrivers.filter(
-        (d: any) => d.available === true,
-      );
+      setDrivers(formattedDrivers);
+      setAvailableDrivers(formattedDrivers);
 
       // Helper function to parse JSON fields
       const parseJsonField = (field: any) => {
@@ -524,8 +522,6 @@ export default function LoadPlanPage() {
       setLoads(loadData);
       setClients(clientsData || []);
       setVehicles(vehiclesData || []);
-      setDrivers(formattedDrivers);
-      setAvailableDrivers(availableDriversList);
       setVehicleTrackingData(vehicleData);
       setCostCenters(costCentersData || []);
       setAvailableStopPoints([]);

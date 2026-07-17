@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { GoogleMap } from "@react-google-maps/api";
 import {
   Card,
   CardContent,
@@ -43,7 +44,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 
 
 // Driver Card Component with cached driver info
-function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setNoteText, setNoteOpen, setAvailableDrivers, setCurrentTripForChange, setChangeDriverOpen, driversCache, vehiclesCache, epsVehiclesCache, fetchEpsVehiclesWithCache }: any) {
+function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setNoteText, setNoteOpen, setAvailableDrivers, setCurrentTripForChange, setChangeDriverOpen, driversCache, vehiclesCache, epsVehicles }: any) {
   const [driverInfo, setDriverInfo] = useState<any>(null)
   const [vehicleInfo, setVehicleInfo] = useState<any>(null)
   const [loading, setLoading] = useState(false)
@@ -58,7 +59,6 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
       try {
         const assignment = assignments[0]
         
-        // Use cached driver info or fetch if not cached
         if (assignment.drivers?.[0]?.id) {
           const driverId = assignment.drivers[0].id
           let driver = driversCache.get(driverId)
@@ -78,10 +78,8 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
           
           setDriverInfo(driver)
           
-          // Use cached EPS vehicles or fetch if needed
-          if (driver) {
-            const vehicles = await fetchEpsVehiclesWithCache()
-            const vehicle = vehicles.find((v: any) => {
+          if (driver && epsVehicles.length > 0) {
+            const vehicle = epsVehicles.find((v: any) => {
               const vehicleDriverName = v.driver_name?.toLowerCase() || ''
               const searchName = `${driver.first_name} ${driver.surname}`.toLowerCase()
               return vehicleDriverName.includes(searchName) || searchName.includes(vehicleDriverName)
@@ -93,7 +91,6 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
           }
         }
         
-        // Use cached vehicle info or fetch if not cached
         if (assignment.vehicle?.id) {
           const vehicleId = assignment.vehicle.id
           let vehicle = vehiclesCache.get(vehicleId)
@@ -120,7 +117,7 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
     }
 
     fetchAssignmentInfo()
-  }, [trip.vehicleassignments, trip.vehicle_assignments, driversCache, vehiclesCache])
+  }, [trip.vehicleassignments, trip.vehicle_assignments, driversCache, vehiclesCache, epsVehicles])
 
   const driverName = driverInfo ? `${driverInfo.first_name} ${driverInfo.surname}`.trim() : 'Unassigned'
   const initials = driverName !== 'Unassigned' ? driverName.split(' ').map((s: string) => s[0]).slice(0,2).join('') : 'DR'
@@ -166,7 +163,7 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
         </div>
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-slate-900 truncate">
-            {vehicleLocation?.plate || vehicleInfo?.registration_number || 'Not assigned'}
+            {vehicleLocation?.registration || vehicleLocation?.plate || vehicleInfo?.registration_number || 'Not assigned'}
           </span>
           <span className={cn(
             "px-2 py-1 rounded-full text-xs font-semibold uppercase tracking-wide",
@@ -176,6 +173,7 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
           </span>
         </div>
         {vehicleLocation && (
+
           <div className="mt-1 text-xs text-slate-500">
             Speed: {vehicleLocation.speed} km/h | {vehicleLocation.address}
           </div>
@@ -308,17 +306,14 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
   const [lastFetch, setLastFetch] = useState<number>(0)
   const [driversCache, setDriversCache] = useState<Map<string, any>>(new Map())
   const [vehiclesCache, setVehiclesCache] = useState<Map<string, any>>(new Map())
-  const [epsVehiclesCache, setEpsVehiclesCache] = useState<any[]>([])
-  const [lastEpsFetch, setLastEpsFetch] = useState<number>(0)
+  const [epsVehicles, setEpsVehicles] = useState<any[]>([])
 
-  // Cache duration in milliseconds (5 minutes)
   const CACHE_DURATION = 5 * 60 * 1000
-  const EPS_CACHE_DURATION = 2 * 60 * 1000 // 2 minutes for EPS data
 
   const fetchTripsWithCache = async () => {
     const now = Date.now()
     if (now - lastFetch < CACHE_DURATION && trips.length > 0) {
-      return // Use cached data
+      return
     }
 
     try {
@@ -335,24 +330,18 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
     }
   }
 
-  const fetchEpsVehiclesWithCache = async () => {
-    const now = Date.now()
-    if (now - lastEpsFetch < EPS_CACHE_DURATION && epsVehiclesCache.length > 0) {
-      return epsVehiclesCache
+  useEffect(() => {
+    async function fetchEpsVehicles() {
+      try {
+        const response = await fetch('/api/vehicle/maysene')
+        const result = await response.json()
+        setEpsVehicles(Array.isArray(result) ? result : (result.data || []))
+      } catch (error) {
+        console.error('Error fetching EPS vehicles:', error)
+      }
     }
-
-    try {
-      const response = await fetch('http://64.227.138.235:3000/api/eps-vehicles')
-      const result = await response.json()
-      const vehicles = result.data || []
-      setEpsVehiclesCache(vehicles)
-      setLastEpsFetch(now)
-      return vehicles
-    } catch (error) {
-      console.error('Error fetching EPS vehicles:', error)
-      return epsVehiclesCache
-    }
-  }
+    fetchEpsVehicles()
+  }, [])
 
   useEffect(() => {
     fetchTripsWithCache()
@@ -478,8 +467,7 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
               setChangeDriverOpen={setChangeDriverOpen}
               driversCache={driversCache}
               vehiclesCache={vehiclesCache}
-              epsVehiclesCache={epsVehiclesCache}
-              fetchEpsVehiclesWithCache={fetchEpsVehiclesWithCache}
+              epsVehicles={epsVehicles}
             />
 
             {/* Trip Card - 70% */}
@@ -743,39 +731,22 @@ export default function Dashboard() {
   }, []);
 
   const handleViewMap = async (driverName: string, trip?: any) => {
-    if (trip?.vehicleLocation && trip.vehicleLocation.latitude && trip.vehicleLocation.longitude) {
+    const vl = trip?.vehicleLocation;
+    if (vl && vl.latitude && vl.longitude) {
       const vehicleData = {
-        ...trip.vehicleLocation,
+        ...vl,
         trip,
         routeCoordinates: trip.routeCoords,
         stopPoints: trip.stopPoints,
         driverDetails: {
           fullName: driverName,
-          plate: trip.vehicleLocation.plate,
-          speed: trip.vehicleLocation.speed,
-          mileage: trip.vehicleLocation.mileage,
-          address: trip.vehicleLocation.address,
-          geozone: trip.vehicleLocation.geozone,
-          company: trip.vehicleLocation.company,
-          lastUpdate: trip.vehicleLocation.loc_time
-        }
-      };
-      setMapData(vehicleData);
-      setMapOpen(true);
-    } else if (trip?.vehicleLocation) {
-      const vehicleData = {
-        ...trip.vehicleLocation,
-        latitude: trip.vehicleLocation.latitude,
-        longitude: trip.vehicleLocation.longitude,
-        driverDetails: {
-          fullName: driverName,
-          plate: trip.vehicleLocation.plate,
-          speed: trip.vehicleLocation.speed,
-          mileage: trip.vehicleLocation.mileage,
-          address: trip.vehicleLocation.address,
-          geozone: trip.vehicleLocation.geozone,
-          company: trip.vehicleLocation.company,
-          lastUpdate: trip.vehicleLocation.loc_time
+          plate: vl.registration || vl.plate,
+          speed: vl.speed,
+          mileage: vl.odometer_km || vl.mileage,
+          address: vl.address,
+          geozone: vl.geozone,
+          company: vl.company,
+          lastUpdate: vl.gps_time || vl.loc_time
         }
       };
       setMapData(vehicleData);
@@ -1206,186 +1177,67 @@ export default function Dashboard() {
                 )}
               </div>
               <div className="flex-1 min-h-0">
-                <div 
-                  id="driver-map" 
-                  className="w-full h-full min-h-[400px] rounded border"
-                  ref={(el) => {
-                    if (el && mapData) {
-                      el.innerHTML = ''
-                      
-                      const script = document.createElement('script')
-                      script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js'
-                      script.onload = () => {
-                        const link = document.createElement('link')
-                        link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css'
-                        link.rel = 'stylesheet'
-                        document.head.appendChild(link)
-                        
-                        if (window.mapboxgl) {
-                          window.mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
-                          const map = new window.mapboxgl.Map({
-                            container: el,
-                            style: 'mapbox://styles/mapbox/streets-v12',
-                            center: [parseFloat(mapData.longitude), parseFloat(mapData.latitude)],
-                            zoom: 15
-                          })
-                          
-                          map.on('load', () => {
-                            // Driver location marker
-                            const vehicleEl = document.createElement('div')
-                            vehicleEl.innerHTML = '🚛'
-                            vehicleEl.style.cssText = `
-                              font-size: 24px; width: 32px; height: 32px;
-                              display: flex; align-items: center; justify-content: center;
-                              background: #3b82f6; border: 3px solid #fff;
-                              border-radius: 50%; animation: pulse 2s infinite;
-                              box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                            `
-                            
-                            const style = document.createElement('style')
-                            style.textContent = `@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }`
-                            document.head.appendChild(style)
-                            
-                            const vehicleMarker = new window.mapboxgl.Marker(vehicleEl)
-                              .setLngLat([parseFloat(mapData.longitude), parseFloat(mapData.latitude)])
-                              .addTo(map)
-                            
-                            // Add route coordinates if available
-                            if (mapData.routeCoordinates) {
-                              map.addSource('planned-route', {
-                                type: 'geojson',
-                                data: {
-                                  type: 'Feature',
-                                  properties: {},
-                                  geometry: {
-                                    type: 'LineString',
-                                    coordinates: mapData.routeCoordinates
-                                  }
-                                }
-                              });
-                              
-                              // Main route line
-                              map.addLayer({
-                                id: 'planned-route-line',
-                                type: 'line',
-                                source: 'planned-route',
-                                layout: { 'line-join': 'round', 'line-cap': 'round' },
-                                paint: { 'line-color': '#ef4444', 'line-width': 6, 'line-opacity': 0.8 }
-                              });
-                              
-                              // Add start and end markers
-                              const startEl = document.createElement('div');
-                              startEl.innerHTML = '🚩';
-                              startEl.style.fontSize = '24px';
-                              new window.mapboxgl.Marker(startEl)
-                                .setLngLat(mapData.routeCoordinates[0])
-                                .addTo(map);
-                              
-                              const endEl = document.createElement('div');
-                              endEl.innerHTML = '🏁';
-                              endEl.style.fontSize = '24px';
-                              new window.mapboxgl.Marker(endEl)
-                                .setLngLat(mapData.routeCoordinates[mapData.routeCoordinates.length - 1])
-                                .addTo(map);
-                              
-                              // Add stop points if available
-                              if (mapData.stopPoints && mapData.stopPoints.length > 0) {
-                                mapData.stopPoints.forEach((stopPoint, index) => {
-                                  // Add polygon if coordinates available
-                                  if (stopPoint.polygon && stopPoint.polygon.length > 2) {
-                                    map.addSource(`stop-polygon-${index}`, {
-                                      type: 'geojson',
-                                      data: {
-                                        type: 'Feature',
-                                        properties: { name: stopPoint.name },
-                                        geometry: {
-                                          type: 'Polygon',
-                                          coordinates: [stopPoint.polygon]
-                                        }
-                                      }
-                                    });
-                                    
-                                    map.addLayer({
-                                      id: `stop-polygon-fill-${index}`,
-                                      type: 'fill',
-                                      source: `stop-polygon-${index}`,
-                                      paint: {
-                                        'fill-color': '#fbbf24',
-                                        'fill-opacity': 0.3
-                                      }
-                                    });
-                                    
-                                    map.addLayer({
-                                      id: `stop-polygon-outline-${index}`,
-                                      type: 'line',
-                                      source: `stop-polygon-${index}`,
-                                      paint: {
-                                        'line-color': '#f59e0b',
-                                        'line-width': 2
-                                      }
-                                    });
-                                  }
-                                  
-                                  // Add center marker
-                                  const stopEl = document.createElement('div');
-                                  stopEl.innerHTML = '🛑';
-                                  stopEl.style.fontSize = '20px';
-                                  
-                                  const marker = new window.mapboxgl.Marker(stopEl)
-                                    .setLngLat(stopPoint.coordinates)
-                                    .addTo(map);
-                                  
-                                  const popup = new window.mapboxgl.Popup({ offset: 25 })
-                                    .setHTML(`<div class="p-2"><strong>Stop Point ${index + 1}</strong><br/>${stopPoint.name}</div>`);
-                                  marker.setPopup(popup);
-                                });
-                              }
-                              
-                              // Fit map to show vehicle, route, and stop points
-                              const bounds = new window.mapboxgl.LngLatBounds();
-                              bounds.extend([parseFloat(mapData.longitude), parseFloat(mapData.latitude)]);
-                              mapData.routeCoordinates.forEach(coord => bounds.extend(coord));
-                              if (mapData.stopPoints) {
-                                mapData.stopPoints.forEach(stop => {
-                                  bounds.extend(stop.coordinates);
-                                  if (stop.polygon) {
-                                    stop.polygon.forEach(coord => bounds.extend(coord));
-                                  }
-                                });
-                              }
-                              map.fitBounds(bounds, { padding: 50 });
-                            }
-                            
-                            // Add popup with driver details
-                            if (mapData.driverDetails) {
-                              const popup = new window.mapboxgl.Popup({ offset: 25 })
-                                .setHTML(`
-                                  <div class="p-3">
-                                    <div class="font-bold text-blue-900 mb-2">${mapData.driverDetails.fullName}</div>
-                                    <div class="text-sm space-y-1">
-                                      <div><strong>Vehicle:</strong> ${mapData.driverDetails.plate}</div>
-                                      <div><strong>Speed:</strong> ${mapData.driverDetails.speed} km/h</div>
-                                      <div><strong>Company:</strong> ${mapData.driverDetails.company || 'N/A'}</div>
-                                      <div class="text-xs text-gray-600 mt-2">
-                                        Last updated: ${new Date(mapData.driverDetails.lastUpdate).toLocaleTimeString()}
-                                      </div>
-                                    </div>
-                                  </div>
-                                `)
-                              vehicleMarker.setPopup(popup)
-                            }
-                          })
-                        }
+                <div className="w-full h-full min-h-[400px] rounded border">
+                  <GoogleMap
+                    mapContainerStyle={{ width: '100%', height: '100%', minHeight: '400px' }}
+                    center={{ lat: parseFloat(mapData.latitude), lng: parseFloat(mapData.longitude) }}
+                    zoom={15}
+                    onLoad={(map) => {
+                      const pos = new google.maps.LatLng(parseFloat(mapData.latitude), parseFloat(mapData.longitude));
+
+                      const vehicleDiv = document.createElement('div');
+                      vehicleDiv.innerHTML = `<div style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:#3b82f6;border:3px solid #fff;border-radius:50%;box-shadow:0 4px 12px rgba(0,0,0,0.3);font-size:18px;">🚛</div>`;
+                      new google.maps.marker.AdvancedMarkerElement({ position: pos, content: vehicleDiv, map });
+
+                      if (mapData.routeCoordinates?.length) {
+                        const path = mapData.routeCoordinates.map((c: number[]) => new google.maps.LatLng(c[1], c[0]));
+                        new google.maps.Polyline({ path, geodesic: true, strokeColor: '#ef4444', strokeOpacity: 0.8, strokeWeight: 6, map });
+
+                        const startDiv = document.createElement('div');
+                        startDiv.innerHTML = `<div style="font-size:24px;">🚩</div>`;
+                        new google.maps.marker.AdvancedMarkerElement({ position: path[0], content: startDiv, map });
+
+                        const endDiv = document.createElement('div');
+                        endDiv.innerHTML = `<div style="font-size:24px;">🏁</div>`;
+                        new google.maps.marker.AdvancedMarkerElement({ position: path[path.length - 1], content: endDiv, map });
+
+                        mapData.stopPoints?.forEach((sp: any, i: number) => {
+                          if (sp.polygon?.length > 2) {
+                            new google.maps.Polygon({
+                              paths: sp.polygon.map((c: number[]) => new google.maps.LatLng(c[1], c[0])),
+                              fillColor: '#fbbf24', fillOpacity: 0.3,
+                              strokeColor: '#f59e0b', strokeWeight: 2, map,
+                            });
+                          }
+                          const spDiv = document.createElement('div');
+                          spDiv.innerHTML = `<div style="font-size:20px;">🛑</div>`;
+                          const spMarker = new google.maps.marker.AdvancedMarkerElement({
+                            position: new google.maps.LatLng(sp.coordinates[1], sp.coordinates[0]),
+                            content: spDiv, map,
+                          });
+                          const infoWindow = new google.maps.InfoWindow({ content: `<div class="p-2"><strong>Stop Point ${i + 1}</strong><br/>${sp.name}</div>` });
+                          spMarker.addListener('click', () => infoWindow.open({ anchor: spMarker, map }));
+                        });
+
+                        const bounds = new google.maps.LatLngBounds();
+                        bounds.extend(pos);
+                        path.forEach((p: google.maps.LatLng) => bounds.extend(p));
+                        mapData.stopPoints?.forEach((sp: any) => {
+                          bounds.extend(new google.maps.LatLng(sp.coordinates[1], sp.coordinates[0]));
+                          sp.polygon?.forEach((c: number[]) => bounds.extend(new google.maps.LatLng(c[1], c[0])));
+                        });
+                        map.fitBounds(bounds, 50);
                       }
-                      
-                      if (!document.querySelector('script[src*="mapbox-gl.js"]')) {
-                        document.head.appendChild(script)
-                      } else if (window.mapboxgl) {
-                        script.onload()
+
+                      if (mapData.driverDetails) {
+                        const infoWindow = new google.maps.InfoWindow({
+                          content: `<div style="padding:12px"><div style="font-weight:bold;color:#1e40af;margin-bottom:8px">${mapData.driverDetails.fullName}</div><div style="font-size:13px;line-height:1.6"><div><b>Vehicle:</b> ${mapData.driverDetails.plate}</div><div><b>Speed:</b> ${mapData.driverDetails.speed} km/h</div><div><b>Company:</b> ${mapData.driverDetails.company || 'N/A'}</div><div style="color:#6b7280;margin-top:8px;font-size:11px">Updated: ${new Date(mapData.driverDetails.lastUpdate).toLocaleTimeString()}</div></div></div>`
+                        });
+                        infoWindow.open({ anchor: new google.maps.marker.AdvancedMarkerElement({ position: pos, map }), map });
                       }
-                    }
-                  }}
-                />
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>
