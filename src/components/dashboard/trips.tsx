@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { GoogleMap } from "@react-google-maps/api";
+import { GoogleMap, useJsApiLoader } from "@react-google-maps/api";
 import {
   Card,
   CardContent,
@@ -301,6 +301,9 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
 
 // Enhanced routing components with proper waypoints
 function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNoteText, setNoteOpen, setAvailableDrivers, setCurrentTripForChange, setChangeDriverOpen, refreshTrigger, setRefreshTrigger, setPickupTimeOpen, setDropoffTimeOpen, setCurrentTripForTime, setTimeType, setSelectedTime }: any) {
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_TOKEN || '',
+  });
   const [trips, setTrips] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [lastFetch, setLastFetch] = useState<number>(0)
@@ -1178,6 +1181,7 @@ export default function Dashboard() {
               </div>
               <div className="flex-1 min-h-0">
                 <div className="w-full h-full min-h-[400px] rounded border">
+                  {isLoaded ? (
                   <GoogleMap
                     mapContainerStyle={{ width: '100%', height: '100%', minHeight: '400px' }}
                     center={{ lat: parseFloat(mapData.latitude), lng: parseFloat(mapData.longitude) }}
@@ -1185,21 +1189,26 @@ export default function Dashboard() {
                     onLoad={(map) => {
                       const pos = new google.maps.LatLng(parseFloat(mapData.latitude), parseFloat(mapData.longitude));
 
-                      const vehicleDiv = document.createElement('div');
-                      vehicleDiv.innerHTML = `<div style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:#3b82f6;border:3px solid #fff;border-radius:50%;box-shadow:0 4px 12px rgba(0,0,0,0.3);font-size:18px;">🚛</div>`;
-                      new google.maps.marker.AdvancedMarkerElement({ position: pos, content: vehicleDiv, map });
+                      const vehicleMarker = new google.maps.Marker({
+                        position: pos,
+                        map,
+                        icon: {
+                          path: google.maps.SymbolPath.CIRCLE,
+                          scale: 12,
+                          fillColor: '#3b82f6',
+                          fillOpacity: 1,
+                          strokeColor: '#ffffff',
+                          strokeWeight: 3,
+                        },
+                        label: { text: '🚛', fontSize: '16px' },
+                      });
 
                       if (mapData.routeCoordinates?.length) {
                         const path = mapData.routeCoordinates.map((c: number[]) => new google.maps.LatLng(c[1], c[0]));
                         new google.maps.Polyline({ path, geodesic: true, strokeColor: '#ef4444', strokeOpacity: 0.8, strokeWeight: 6, map });
 
-                        const startDiv = document.createElement('div');
-                        startDiv.innerHTML = `<div style="font-size:24px;">🚩</div>`;
-                        new google.maps.marker.AdvancedMarkerElement({ position: path[0], content: startDiv, map });
-
-                        const endDiv = document.createElement('div');
-                        endDiv.innerHTML = `<div style="font-size:24px;">🏁</div>`;
-                        new google.maps.marker.AdvancedMarkerElement({ position: path[path.length - 1], content: endDiv, map });
+                        new google.maps.Marker({ position: path[0], map, icon: { url: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png' } });
+                        new google.maps.Marker({ position: path[path.length - 1], map, icon: { url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png' } });
 
                         mapData.stopPoints?.forEach((sp: any, i: number) => {
                           if (sp.polygon?.length > 2) {
@@ -1209,11 +1218,10 @@ export default function Dashboard() {
                               strokeColor: '#f59e0b', strokeWeight: 2, map,
                             });
                           }
-                          const spDiv = document.createElement('div');
-                          spDiv.innerHTML = `<div style="font-size:20px;">🛑</div>`;
-                          const spMarker = new google.maps.marker.AdvancedMarkerElement({
+                          const spMarker = new google.maps.Marker({
                             position: new google.maps.LatLng(sp.coordinates[1], sp.coordinates[0]),
-                            content: spDiv, map,
+                            map,
+                            icon: { url: 'https://maps.google.com/mapfiles/ms/icons/yellow-dot.png' },
                           });
                           const infoWindow = new google.maps.InfoWindow({ content: `<div class="p-2"><strong>Stop Point ${i + 1}</strong><br/>${sp.name}</div>` });
                           spMarker.addListener('click', () => infoWindow.open({ anchor: spMarker, map }));
@@ -1233,10 +1241,13 @@ export default function Dashboard() {
                         const infoWindow = new google.maps.InfoWindow({
                           content: `<div style="padding:12px"><div style="font-weight:bold;color:#1e40af;margin-bottom:8px">${mapData.driverDetails.fullName}</div><div style="font-size:13px;line-height:1.6"><div><b>Vehicle:</b> ${mapData.driverDetails.plate}</div><div><b>Speed:</b> ${mapData.driverDetails.speed} km/h</div><div><b>Company:</b> ${mapData.driverDetails.company || 'N/A'}</div><div style="color:#6b7280;margin-top:8px;font-size:11px">Updated: ${new Date(mapData.driverDetails.lastUpdate).toLocaleTimeString()}</div></div></div>`
                         });
-                        infoWindow.open({ anchor: new google.maps.marker.AdvancedMarkerElement({ position: pos, map }), map });
+                        infoWindow.open({ anchor: vehicleMarker, map });
                       }
                     }}
                   />
+                  ) : (
+                    <div className="flex items-center justify-center h-[400px] text-gray-500">Loading map...</div>
+                  )}
                 </div>
               </div>
             </div>

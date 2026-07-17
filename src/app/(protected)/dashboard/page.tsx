@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { GoogleMap } from "@react-google-maps/api";
+import { GoogleMap, useJsApiLoader } from "@react-google-maps/api";
 import {
   Card,
   CardContent,
@@ -308,13 +308,11 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
         const supabase = createClient()
         const assignment = assignments[0]
         
-        // Switch to second driver if status is handover and second driver exists
         let driverToFetch = assignment.drivers?.[0]
         if (trip.status?.toLowerCase() === 'handover' && assignment.drivers?.[1]) {
           driverToFetch = assignment.drivers[1]
         }
         
-        // Fetch driver info by ID
         if (driverToFetch?.id) {
           const { data: driver } = await supabase
             .from('drivers')
@@ -322,29 +320,8 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
             .eq('id', driverToFetch.id)
             .single()
           setDriverInfo(driver)
-          
-          // Match vehicle from GPS data
-          if (driver && gpsData.length > 0) {
-            const vehicle = gpsData.find((v: any) => {
-              const reg = v.registration || v.plate || '';
-              if (vehicleInfo?.registration_number && reg) {
-                return reg.toLowerCase() === vehicleInfo.registration_number.toLowerCase()
-              }
-              if (v.driver_name && v.driver_name !== 'UNKNOWN') {
-                const cleanTrackingName = v.driver_name.replace(/\d+/g, '').replace(/\s+/g, ' ').trim().toLowerCase()
-                return cleanTrackingName.includes(driver.first_name.toLowerCase()) && 
-                       cleanTrackingName.includes(driver.surname.toLowerCase())
-              }
-              return false
-            })
-            
-            if (vehicle) {
-              setVehicleLocation(vehicle)
-            }
-          }
         }
         
-        // Fetch vehicle info by ID
         if (assignment.vehicle?.id) {
           const { data: vehicle } = await supabase
             .from('vehiclesc')
@@ -352,6 +329,17 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
             .eq('id', assignment.vehicle.id)
             .single()
           setVehicleInfo(vehicle)
+
+          if (vehicle && gpsData.length > 0) {
+            const reg = vehicle.registration_number?.toLowerCase() || ''
+            const matched = gpsData.find((v: any) => {
+              const gpsReg = (v.registration || v.plate || '').toLowerCase()
+              return gpsReg && reg && gpsReg === reg
+            })
+            if (matched) {
+              setVehicleLocation(matched)
+            }
+          }
         }
       } catch (err) {
         console.error('Error fetching assignment info:', err)
@@ -439,7 +427,7 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
         </div>
         {vehicleLocation && (
           <div className="mt-1 text-xs text-slate-500">
-            Speed: {vehicleLocation.speed} km/h | {vehicleLocation.address}
+            Speed: {vehicleLocation.speed} km/h
           </div>
         )}
       </div>
@@ -456,75 +444,12 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
           size="sm" 
           variant="outline" 
           className="h-7 text-xs border-slate-200 hover:border-slate-300 hover:bg-slate-50"
-          onClick={async () => {
-            const supabase = createClient();
-            let routeCoords = null;
-            let stopPoints: Array<{
-              name: string;
-              coordinates: [number, number];
-              polygon: [number, number][];
-            }> = [];
-            let trackingVehicle = null;
-            
-            // Get vehicle plate to match with tracking data
-            const vehiclePlate = vehicleInfo?.registration_number;
-            
-            if (vehiclePlate) {
-              trackingVehicle = gpsData.find((v: any) => {
-                const reg = v.registration || v.plate || '';
-                return reg.toLowerCase() === vehiclePlate.toLowerCase();
-              });
+          onClick={() => {
+            if (!vehicleLocation) {
+              alert('No GPS data available for this vehicle');
+              return;
             }
-            
-            if (trip.route) {
-              const { data: route, error } = await supabase
-                .from('routes')
-                .select('route_geometry, route_data')
-                .eq('id', trip.route)
-                .single();
-              
-              if (route) {
-                if (route?.route_geometry?.coordinates) {
-                  routeCoords = route.route_geometry.coordinates;
-                } else if (route?.route_data?.geometry?.coordinates) {
-                  routeCoords = route.route_data.geometry.coordinates;
-                }
-              }
-            }
-            
-            // Get selected stop points
-            const selectedStopPoints = trip.selected_stop_points || trip.selectedstoppoints || [];
-            if (selectedStopPoints.length > 0) {
-              const { data: stopPointsData } = await supabase
-                .from('stop_points')
-                .select('id, name, coordinates')
-                .in('id', selectedStopPoints);
-              
-              stopPoints = (stopPointsData || []).map(point => {
-                if (point.coordinates) {
-                  const coordPairs = point.coordinates.split(' ')
-                    .filter(coord => coord.trim())
-                    .map(coord => {
-                      const [lng, lat] = coord.split(',');
-                      return [parseFloat(lng), parseFloat(lat)];
-                    })
-                    .filter(pair => !isNaN(pair[0]) && !isNaN(pair[1]));
-                  
-                  if (coordPairs.length > 0) {
-                    const avgLng = coordPairs.reduce((sum, coord) => sum + coord[0], 0) / coordPairs.length;
-                    const avgLat = coordPairs.reduce((sum, coord) => sum + coord[1], 0) / coordPairs.length;
-                    return { 
-                      name: point.name, 
-                      coordinates: [avgLng, avgLat],
-                      polygon: coordPairs
-                    };
-                  }
-                }
-                return null;
-              }).filter(Boolean);
-            }
-            
-            handleViewMap(driverName, { ...trip, vehicleLocation: trackingVehicle, routeCoords, stopPoints });
+            handleViewMap(driverName, { ...trip, vehicleLocation });
           }}
         >
           <MapPin className="w-3 h-3" />Track
@@ -993,6 +918,10 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
 }
 
 export default function Dashboard() {
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_TOKEN || '',
+  });
+  const [mapEta, setMapEta] = useState<{ duration: string; distance: string } | null>(null);
   const [activeTab, setActiveTab] = useState<string>("routing");
   const [auditData, setAuditData] = useState<any[]>([]);
   const [auditLoading, setAuditLoading] = useState(true);
@@ -1073,6 +1002,30 @@ export default function Dashboard() {
       };
       setMapData(vehicleData);
       setMapOpen(true);
+      setMapEta(null);
+
+      // Calculate ETA using Google Distance Matrix
+      const destination = trip?.destination || trip?.dropoff_locations?.[0]?.location || trip?.dropofflocations?.[0]?.address;
+      if (destination && isLoaded) {
+        const service = new google.maps.DistanceMatrixService();
+        service.getDistanceMatrix(
+          {
+            origins: [{ lat: parseFloat(vl.latitude), lng: parseFloat(vl.longitude) }],
+            destinations: [destination],
+            travelMode: google.maps.TravelMode.DRIVING,
+            unitSystem: google.maps.UnitSystem.METRIC,
+          },
+          (response, status) => {
+            if (status === 'OK' && response?.rows?.[0]?.elements?.[0]?.duration) {
+              const element = response.rows[0].elements[0];
+              setMapEta({
+                duration: element.duration.text,
+                distance: element.distance.text,
+              });
+            }
+          }
+        );
+      }
     } else {
       alert(`No location data available for driver: ${driverName}`);
     }
@@ -1747,16 +1700,22 @@ export default function Dashboard() {
                         <span className="text-gray-600">Mileage:</span>
                         <span className="font-medium">{parseFloat(mapData.driverDetails.mileage || 0).toLocaleString()} km</span>
                       </div>
-                      <div className="text-xs text-gray-500">
-                        <div className="font-medium mb-1">Current Location:</div>
-                        <div>{mapData.driverDetails.address}</div>
-                      </div>
-                      {mapData.driverDetails.geozone && (
-                        <div className="text-xs text-gray-500">
-                          <div className="font-medium mb-1">Geozone:</div>
-                          <div>{mapData.driverDetails.geozone}</div>
-                        </div>
+                      {mapEta && (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">ETA:</span>
+                            <span className="font-medium text-green-700">{mapEta.duration}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Distance:</span>
+                            <span className="font-medium">{mapEta.distance}</span>
+                          </div>
+                        </>
                       )}
+                      <div className="text-xs text-gray-500">
+                        <div className="font-medium mb-1">Destination:</div>
+                        <div>{mapData.trip?.destination || 'N/A'}</div>
+                      </div>
                       <div className="text-xs text-gray-500">
                         <div className="font-medium mb-1">Last Update:</div>
                         <div>{new Date(mapData.driverDetails.lastUpdate).toLocaleString()}</div>
@@ -1767,6 +1726,7 @@ export default function Dashboard() {
               </div>
               <div className="flex-1 min-h-0">
                 <div className="w-full h-full min-h-[400px] rounded border">
+                  {isLoaded ? (
                   <GoogleMap
                     mapContainerStyle={{ width: '100%', height: '100%', minHeight: '400px' }}
                     center={{ lat: parseFloat(mapData.latitude), lng: parseFloat(mapData.longitude) }}
@@ -1774,25 +1734,51 @@ export default function Dashboard() {
                     onLoad={(map) => {
                       const pos = new google.maps.LatLng(parseFloat(mapData.latitude), parseFloat(mapData.longitude));
 
-                      // Vehicle marker (pulsing blue circle with truck icon)
-                      const vehicleDiv = document.createElement('div');
-                      vehicleDiv.innerHTML = `<div style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:#3b82f6;border:3px solid #fff;border-radius:50%;box-shadow:0 4px 12px rgba(0,0,0,0.3);font-size:18px;">🚛</div>`;
-                      new google.maps.marker.AdvancedMarkerElement({ position: pos, content: vehicleDiv, map });
+                      // Vehicle marker
+                      const vehicleMarker = new google.maps.Marker({
+                        position: pos,
+                        map,
+                        icon: {
+                          path: google.maps.SymbolPath.CIRCLE,
+                          scale: 12,
+                          fillColor: '#3b82f6',
+                          fillOpacity: 1,
+                          strokeColor: '#ffffff',
+                          strokeWeight: 3,
+                        },
+                        label: { text: '🚛', fontSize: '16px' },
+                      });
+
+                      // Destination marker
+                      const dest = mapData.trip?.destination;
+                      if (dest) {
+                        const geocoder = new google.maps.Geocoder();
+                        geocoder.geocode({ address: dest }, (results, status) => {
+                          if (status === 'OK' && results?.[0]) {
+                            new google.maps.Marker({
+                              position: results[0].geometry.location,
+                              map,
+                              icon: {
+                                path: google.maps.SymbolPath.CIRCLE,
+                                scale: 10,
+                                fillColor: '#ef4444',
+                                fillOpacity: 1,
+                                strokeColor: '#ffffff',
+                                strokeWeight: 2,
+                              },
+                              label: { text: '📍', fontSize: '16px' },
+                            });
+                          }
+                        });
+                      }
 
                       // Route polyline
                       if (mapData.routeCoordinates?.length) {
                         const path = mapData.routeCoordinates.map((c: number[]) => new google.maps.LatLng(c[1], c[0]));
                         new google.maps.Polyline({ path, geodesic: true, strokeColor: '#ef4444', strokeOpacity: 0.8, strokeWeight: 6, map });
 
-                        // Start marker
-                        const startDiv = document.createElement('div');
-                        startDiv.innerHTML = `<div style="font-size:24px;">🚩</div>`;
-                        new google.maps.marker.AdvancedMarkerElement({ position: path[0], content: startDiv, map });
-
-                        // End marker
-                        const endDiv = document.createElement('div');
-                        endDiv.innerHTML = `<div style="font-size:24px;">🏁</div>`;
-                        new google.maps.marker.AdvancedMarkerElement({ position: path[path.length - 1], content: endDiv, map });
+                        new google.maps.Marker({ position: path[0], map, icon: { url: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png' } });
+                        new google.maps.Marker({ position: path[path.length - 1], map, icon: { url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png' } });
 
                         // Stop points
                         mapData.stopPoints?.forEach((sp: any, i: number) => {
@@ -1803,17 +1789,15 @@ export default function Dashboard() {
                               strokeColor: '#f59e0b', strokeWeight: 2, map,
                             });
                           }
-                          const spDiv = document.createElement('div');
-                          spDiv.innerHTML = `<div style="font-size:20px;">🛑</div>`;
-                          const spMarker = new google.maps.marker.AdvancedMarkerElement({
+                          const spMarker = new google.maps.Marker({
                             position: new google.maps.LatLng(sp.coordinates[1], sp.coordinates[0]),
-                            content: spDiv, map,
+                            map,
+                            icon: { url: 'https://maps.google.com/mapfiles/ms/icons/yellow-dot.png' },
                           });
                           const infoWindow = new google.maps.InfoWindow({ content: `<div class="p-2"><strong>Stop Point ${i + 1}</strong><br/>${sp.name}</div>` });
                           spMarker.addListener('click', () => infoWindow.open({ anchor: spMarker, map }));
                         });
 
-                        // Fit bounds
                         const bounds = new google.maps.LatLngBounds();
                         bounds.extend(pos);
                         path.forEach((p: google.maps.LatLng) => bounds.extend(p));
@@ -1829,10 +1813,13 @@ export default function Dashboard() {
                         const infoWindow = new google.maps.InfoWindow({
                           content: `<div style="padding:12px"><div style="font-weight:bold;color:#1e40af;margin-bottom:8px">${mapData.driverDetails.fullName}</div><div style="font-size:13px;line-height:1.6"><div><b>Vehicle:</b> ${mapData.driverDetails.plate}</div><div><b>Speed:</b> ${mapData.driverDetails.speed} km/h</div><div><b>Company:</b> ${mapData.driverDetails.company || 'N/A'}</div><div style="color:#6b7280;margin-top:8px;font-size:11px">Updated: ${new Date(mapData.driverDetails.lastUpdate).toLocaleTimeString()}</div></div></div>`
                         });
-                        infoWindow.open({ anchor: new google.maps.marker.AdvancedMarkerElement({ position: pos, map }), map });
+                        infoWindow.open({ anchor: vehicleMarker, map });
                       }
                     }}
                   />
+                  ) : (
+                    <div className="flex items-center justify-center h-[400px] text-gray-500">Loading map...</div>
+                  )}
                 </div>
               </div>
             </div>
