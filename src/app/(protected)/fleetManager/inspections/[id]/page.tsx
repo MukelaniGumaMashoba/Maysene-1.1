@@ -61,8 +61,9 @@ export default function InspectionDetail() {
     const year = new Date().getFullYear();
     const jobid_workshop = 'JC-' + year + '-' + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
 
-    const { error } = await supabase.from('workshop_job').insert({
-      jobid_workshop : jobid_workshop,
+    // 1. Create the workshop_job
+    const { data: jobData, error: jobError } = await supabase.from('workshop_job').insert({
+      jobid_workshop: jobid_workshop,
       registration_no: inspection.vehicle?.registration_number || '',
       job_type: 'inspection-fault',
       description: `Inspection #${inspection.id} faults: ${faultyItems.join(', ')}`,
@@ -72,13 +73,41 @@ export default function InspectionDetail() {
       location: inspection.location || '',
       source: 'inspection',
       source_id: inspection.id,
-    });
+    }).select('id').single();
 
-    if (error) {
-      alert('Failed to send to admin: ' + error.message);
-    } else {
-      alert(`Job card ${jobid_workshop} sent to admin successfully!`);
+    if (jobError) {
+      alert('Failed to create job card: ' + jobError.message);
+      return;
     }
+
+    // 2. Create individual defect records for each faulty item
+    const defectiveItems = inspection.checklist?.flatMap((section: any) =>
+      (section.items || [])
+        .filter((item: any) => item.status === "Faulty")
+        .map((item: any) => ({
+          inspection_id: inspection.id,
+          workshop_job_id: jobData?.id || null,
+          vehicle_id: inspection.vehicle_id,
+          driver_id: inspection.driver_id,
+          defect_name: item.label,
+          defect_category: item.category || null,
+          defect_description: `${item.label} - flagged as Faulty during Inspection #${inspection.id}`,
+          defect_status: 'Logged',
+          priority: 'medium',
+          logged_at: new Date().toISOString(),
+        }))
+    ) || [];
+
+    if (defectiveItems.length > 0) {
+      const { error: defectError } = await supabase.from('defects').insert(defectiveItems);
+      if (defectError) {
+        console.error('Failed to create defect records:', defectError);
+        alert(`Job card created but failed to log defects: ${defectError.message}`);
+        return;
+      }
+    }
+
+    alert(`Job card ${jobid_workshop} and ${defectiveItems.length} defect(s) created successfully!`);
   };
 
   const handleDownloadPdf = () => {

@@ -253,7 +253,7 @@ export default function FleetJobsPage() {
     }
 
     const assignements = supabase
-      .channel("custom-all-channel")
+      .channel("workshop-job-changes")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "workshop_job" },
@@ -264,7 +264,7 @@ export default function FleetJobsPage() {
       .subscribe();
 
     const jobAssignments = supabase
-      .channel("custom-all-channel")
+      .channel("workshop-job-assignments-changes")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "workshop_job" },
@@ -296,7 +296,7 @@ export default function FleetJobsPage() {
 
     return () => {
       assignements.unsubscribe();
-      // jobAssignments.unsubscribe()
+      jobAssignments.unsubscribe();
     };
   }, []);
 

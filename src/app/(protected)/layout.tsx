@@ -431,9 +431,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
 
         {/* Page Content */}
         <main className="p-6 w-full">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <GlobalProvider>{children}</GlobalProvider>
-          </div>
+          <GlobalProvider>{children}</GlobalProvider>
         </main>
       </div>
     </div>

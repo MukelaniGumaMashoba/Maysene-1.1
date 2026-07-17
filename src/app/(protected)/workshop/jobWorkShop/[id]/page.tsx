@@ -225,7 +225,7 @@ export default function WorkshopJobDetailPage() {
       );
       setJob((prev) => (prev ? { ...prev, status } : null));
       setUpdating(false);
-      setTimeout(() => router.push("/jobWorkShop"), 1500);
+      setTimeout(() => router.push("/workshop/jobWorkShop"), 1500);
       return { success: true, data };
     }
   };
@@ -320,7 +320,7 @@ export default function WorkshopJobDetailPage() {
       {/* Header */}
       <div className="bg-white shadow-sm border-b px-6 py-4">
         <div className="flex items-center justify-between">
-          <Link href="/jobWorkShop">
+          <Link href="/workshop/jobWorkShop">
             <Button variant="ghost" className="flex items-center gap-2">
               <ArrowLeft className="h-4 w-4" /> Back to Jobs
             </Button>
@@ -756,7 +756,7 @@ export default function WorkshopJobDetailPage() {
                           setJob((prev) =>
                             prev ? { ...prev, status: "Completed" } : null
                           );
-                          setTimeout(() => router.push("/jobWorkShop"), 1500);
+                          setTimeout(() => router.push("/workshop/jobWorkShop"), 1500);
                         }}
                         disabled={job.status?.toLowerCase() === 'completed'}
                       >

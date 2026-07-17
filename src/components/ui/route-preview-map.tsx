@@ -1,9 +1,77 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, Route } from "lucide-react";
 import { normalizeLocationInput } from "@/lib/utils/location";
+
+const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_TOKEN;
+
+function decodePolyline(encoded: string): { lat: number; lng: number }[] {
+  const points: { lat: number; lng: number }[] = [];
+  let index = 0;
+  let lat = 0;
+  let lng = 0;
+
+  while (index < encoded.length) {
+    let b: number;
+    let shift = 0;
+    let result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    lat += result & 1 ? ~(result >> 1) : result >> 1;
+
+    shift = 0;
+    result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    lng += result & 1 ? ~(result >> 1) : result >> 1;
+
+    points.push({ lat: lat / 1e5, lng: lng / 1e5 });
+  }
+  return points;
+}
+
+function createGeofenceCircle(
+  center: { lat: number; lng: number },
+  radiusMeters = 200,
+): { lat: number; lng: number }[] {
+  const points = 32;
+  const coords: { lat: number; lng: number }[] = [];
+  for (let i = 0; i < points; i++) {
+    const angle = (i / points) * 2 * Math.PI;
+    const dx = (radiusMeters / 111320) * Math.cos(angle);
+    const dy =
+      (radiusMeters / (111320 * Math.cos((center.lat * Math.PI) / 180))) *
+      Math.sin(angle);
+    coords.push({ lat: center.lat + dy, lng: center.lng + dx });
+  }
+  coords.push(coords[0]);
+  return coords;
+}
+
+function createCirclePath(
+  center: { lat: number; lng: number },
+  radiusMeters: number,
+): { lat: number; lng: number }[] {
+  const points = 64;
+  const coords: { lat: number; lng: number }[] = [];
+  for (let i = 0; i <= points; i++) {
+    const angle = (i / points) * 2 * Math.PI;
+    const dx = (radiusMeters / 111320) * Math.cos(angle);
+    const dy =
+      (radiusMeters / (111320 * Math.cos((center.lat * Math.PI) / 180))) *
+      Math.sin(angle);
+    coords.push({ lat: center.lat + dy, lng: center.lng + dx });
+  }
+  return coords;
+}
 
 interface RoutePreviewMapProps {
   origin: unknown;
@@ -29,7 +97,13 @@ export function RoutePreviewMap({
   driverLocation,
 }: RoutePreviewMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<any>(null);
+  const mapInstanceRef = useRef<google.maps.Map | null>(null);
+  const markersRef = useRef<google.maps.Marker[]>([]);
+  const polylinesRef = useRef<google.maps.Polyline[]>([]);
+  const polygonsRef = useRef<google.maps.Polygon[]>([]);
+  const infoWindowsRef = useRef<google.maps.InfoWindow[]>([]);
+  const scriptRef = useRef<HTMLScriptElement | null>(null);
+
   const normalizedOrigin = useMemo(() => normalizeLocationInput(origin), [origin]);
   const normalizedDestination = useMemo(
     () => normalizeLocationInput(destination),
@@ -38,416 +112,495 @@ export function RoutePreviewMap({
   const originLabel = normalizedOrigin.label || "Origin";
   const destinationLabel = normalizedDestination.label || "Destination";
 
-  // Debug logging
-  useEffect(() => {
-    console.log("=== Route Preview Map Debug Info ===");
-    console.log("Raw origin data:", origin);
-    console.log("Normalized origin:", normalizedOrigin);
-    console.log("Raw destination data:", destination);
-    console.log("Normalized destination:", normalizedDestination);
-    console.log("Origin has point:", !!normalizedOrigin.point);
-    console.log("Destination has point:", !!normalizedDestination.point);
-    console.log("=====================================");
-  }, [origin, destination, normalizedOrigin, normalizedDestination]);
+  const cleanupMapObjects = useCallback(() => {
+    markersRef.current.forEach((m) => m.setMap(null));
+    markersRef.current = [];
+    polylinesRef.current.forEach((p) => p.setMap(null));
+    polylinesRef.current = [];
+    polygonsRef.current.forEach((p) => p.setMap(null));
+    polygonsRef.current = [];
+    infoWindowsRef.current.forEach((w) => w.close());
+    infoWindowsRef.current = [];
+  }, []);
+
+  const addMarker = useCallback(
+    (
+      position: { lat: number; lng: number },
+      color: string,
+      label: string,
+      title: string,
+    ) => {
+      if (!mapInstanceRef.current) return null;
+      const pin = new google.maps.Marker({
+        position,
+        map: mapInstanceRef.current,
+        title,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 10,
+          fillColor: color,
+          fillOpacity: 1,
+          strokeColor: "#ffffff",
+          strokeWeight: 2,
+        },
+        label: {
+          text: label,
+          color: "#fff",
+          fontSize: "11px",
+          fontWeight: "bold",
+        },
+      });
+      markersRef.current.push(pin);
+      return pin;
+    },
+    [],
+  );
+
+  const addInfoWindow = useCallback(
+    (position: { lat: number; lng: number }, content: string) => {
+      if (!mapInstanceRef.current) return;
+      const iw = new google.maps.InfoWindow({ content });
+      markersRef.current[markersRef.current.length - 1]?.addListener(
+        "click",
+        () => {
+          infoWindowsRef.current.forEach((w) => w.close());
+          iw.open(mapInstanceRef.current, markersRef.current[markersRef.current.length - 1]);
+        },
+      );
+      infoWindowsRef.current.push(iw);
+    },
+    [],
+  );
+
+  const getGoogleRoute = useCallback(
+    async (
+      originCoords: { lat: number; lng: number },
+      destCoords: { lat: number; lng: number },
+      waypoints: { lat: number; lng: number }[] = [],
+    ): Promise<{ lat: number; lng: number }[] | null> => {
+      return new Promise((resolve) => {
+        const directionsService = new google.maps.DirectionsService();
+        const request: google.maps.DirectionsRequest = {
+          origin: originCoords,
+          destination: destCoords,
+          travelMode: google.maps.TravelMode.DRIVING,
+          waypoints: waypoints.map((wp) => ({
+            location: wp,
+            stopover: true,
+          })),
+        };
+
+        directionsService.route(request, (result, status) => {
+          if (
+            status === google.maps.DirectionsStatus.OK &&
+            result?.routes?.[0]
+          ) {
+            const route = result.routes[0];
+            const points: { lat: number; lng: number }[] = [];
+            route.legs.forEach((leg) => {
+              leg.steps.forEach((step) => {
+                const decoded = decodePolyline(step.polyline.points);
+                points.push(...decoded);
+              });
+            });
+            resolve(points);
+          } else {
+            console.error("Directions request failed:", status);
+            resolve(null);
+          }
+        });
+      });
+    },
+    [],
+  );
+
+  const drawRoute = useCallback(
+    (points: { lat: number; lng: number }[], color: string, width: number, dashed = false) => {
+      if (!mapInstanceRef.current || points.length === 0) return;
+      const polyline = new google.maps.Polyline({
+        path: points,
+        geodesic: true,
+        strokeColor: color,
+        strokeOpacity: dashed ? 0 : 1.0,
+        strokeWeight: width,
+        map: mapInstanceRef.current,
+        icons: dashed
+          ? [
+              {
+                icon: {
+                  path: google.maps.SymbolPath.CLOSED_POLYGON,
+                  scale: 0,
+                },
+                offset: "0",
+                repeat: "10px",
+              },
+            ]
+          : undefined,
+      });
+
+      if (dashed) {
+        polyline.setOptions({
+          strokeOpacity: 0,
+          icons: [
+            {
+              icon: {
+                path: "M 0,-1 0,1",
+                strokeOpacity: 1,
+                strokeWeight: width,
+                strokeColor: color,
+                scale: 1,
+              },
+              offset: "0",
+              repeat: "10px",
+            },
+          ],
+        });
+      }
+
+      polylinesRef.current.push(polyline);
+    },
+    [],
+  );
+
+  const drawPolygon = useCallback(
+    (
+      points: { lat: number; lng: number }[],
+      fillColor: string,
+      strokeColor: string,
+      fillOpacity: number,
+    ) => {
+      if (!mapInstanceRef.current || points.length === 0) return;
+      const polygon = new google.maps.Polygon({
+        paths: points,
+        fillColor,
+        fillOpacity,
+        strokeColor,
+        strokeWeight: 2,
+        map: mapInstanceRef.current,
+      });
+      polygonsRef.current.push(polygon);
+    },
+    [],
+  );
+
+  const fitBounds = useCallback(
+    (points: { lat: number; lng: number }[]) => {
+      if (!mapInstanceRef.current || points.length === 0) return;
+      const bounds = new google.maps.LatLngBounds();
+      points.forEach((p) => bounds.extend(p));
+      mapInstanceRef.current.fitBounds(bounds, { padding: 50 });
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!origin || !destination || !mapContainer.current) return;
 
-    const initializeMap = async () => {
-      const mapboxgl = (await import("mapbox-gl")).default;
-      mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
-
-      if (map.current) return;
-
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current!,
-        style: "mapbox://styles/mapbox/streets-v12",
-        center: [28.0473, -26.2041],
-        zoom: 6,
-      });
-
-      map.current.on("load", () => {
-        updateRoute();
-      });
-    };
-
-    const updateRoute = async () => {
-      if (!map.current || !map.current.isStyleLoaded()) return;
-
-      try {
-        // Use coordinates from database first, skip geocoding
-        const originCoords = normalizedOrigin.point;
-        const destCoords = normalizedDestination.point;
-
-        console.log("Route Preview - Using DB coordinates:", {
-          origin: originCoords,
-          destination: destCoords,
-        });
-
-        const mapboxgl = (await import("mapbox-gl")).default;
-
-        if (!originCoords || !destCoords) {
-          console.warn("Route Preview - Missing coordinates:", {
-            origin: !originCoords,
-            destination: !destCoords,
-            originLabel: normalizedOrigin.label,
-            destinationLabel: normalizedDestination.label,
-            originRaw: origin,
-            destinationRaw: destination,
+    const loadGoogleMaps = (): Promise<void> => {
+      return new Promise((resolve) => {
+        if (window.google?.maps) {
+          resolve();
+          return;
+        }
+        const existingScript = document.querySelector(
+          `script[src*="maps.googleapis.com"]`,
+        );
+        if (existingScript) {
+          existingScript.addEventListener("load", () => resolve(), {
+            once: true,
           });
           return;
         }
+        const script = document.createElement("script");
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
+        script.async = true;
+        script.defer = true;
+        script.onload = () => resolve();
+        script.onerror = () => {
+          console.error("Failed to load Google Maps script");
+          resolve();
+        };
+        document.head.appendChild(script);
+        scriptRef.current = script;
+      });
+    };
 
-        // Add driver location marker if available
-        if (driverLocation) {
-          new (await import("mapbox-gl")).default.Marker({ color: "blue" })
-            .setLngLat([driverLocation.lng, driverLocation.lat])
-            .setPopup(
-              new (await import("mapbox-gl")).default.Popup().setText(
-                `Driver: ${driverLocation.name}`,
-              ),
-            )
-            .addTo(map.current);
+    const initializeMap = async () => {
+      await loadGoogleMaps();
 
-          // Get route from driver to loading location
-          const driverToLoadingRoute = await getRoute(
-            { lat: driverLocation.lat, lng: driverLocation.lng },
-            originCoords,
-          );
+      if (!window.google?.maps || !mapContainer.current) return;
+      if (mapInstanceRef.current) return;
 
-          if (driverToLoadingRoute && map.current.isStyleLoaded()) {
-            if (map.current.getSource("driver-route")) {
-              map.current.removeLayer("driver-route");
-              map.current.removeSource("driver-route");
-            }
+      const map = new google.maps.Map(mapContainer.current, {
+        center: { lat: -26.2041, lng: 28.0473 },
+        zoom: 6,
+        mapTypeControl: true,
+        streetViewControl: false,
+        fullscreenControl: true,
+      });
 
-            map.current.addSource("driver-route", {
-              type: "geojson",
-              data: {
-                type: "Feature",
-                properties: {},
-                geometry: driverToLoadingRoute,
-              },
-            });
+      mapInstanceRef.current = map;
+      await updateRoute(map);
+    };
 
-            map.current.addLayer({
-              id: "driver-route",
-              type: "line",
-              source: "driver-route",
-              layout: {
-                "line-join": "round",
-                "line-cap": "round",
-              },
-              paint: {
-                "line-color": "#1e40af",
-                "line-width": 3,
-                "line-dasharray": [2, 2],
-              },
-            });
-          }
-        }
+    const updateRoute = async (map: google.maps.Map) => {
+      cleanupMapObjects();
 
-        // Add markers
-        new (await import("mapbox-gl")).default.Marker({ color: "green" })
-          .setLngLat([originCoords.lng, originCoords.lat])
-          // .setPopup(
-          //   new (await import("mapbox-gl")).default.Popup().setText(origin),
-          // )
-          .setPopup(new mapboxgl.Popup().setText(originLabel || "Origin"))
-          .addTo(map.current);
+      const originCoords = normalizedOrigin.point;
+      const destCoords = normalizedDestination.point;
 
-        new (await import("mapbox-gl")).default.Marker({ color: "red" })
-          .setLngLat([destCoords.lng, destCoords.lat])
-          // .setPopup(
-          //   new (await import("mapbox-gl")).default.Popup().setText(
-          //     destination,
-          //   ),
-          // )
-          .setPopup(
-            new mapboxgl.Popup().setText(destinationLabel || "Destination"),
-          )
-          .addTo(map.current);
-
-        // Add stop point markers
-        if (stopPoints && stopPoints.length > 0) {
-          const mapboxgl = (await import("mapbox-gl")).default;
-          stopPoints.forEach((stopPoint, index) => {
-            const coords = stopPoint.coordinates;
-            const avgLng =
-              coords.reduce(
-                (sum: number, coord: number[]) => sum + coord[0],
-                0,
-              ) / coords.length;
-            const avgLat =
-              coords.reduce(
-                (sum: number, coord: number[]) => sum + coord[1],
-                0,
-              ) / coords.length;
-
-            // Calculate radius from coordinate bounds
-            const lngs = coords.map((coord) => coord[0]);
-            const lats = coords.map((coord) => coord[1]);
-            const maxLng = Math.max(...lngs);
-            const minLng = Math.min(...lngs);
-            const maxLat = Math.max(...lats);
-            const minLat = Math.min(...lats);
-            const radiusKm =
-              Math.max(
-                (maxLng - minLng) * 111.32 * Math.cos((avgLat * Math.PI) / 180),
-                (maxLat - minLat) * 110.54,
-              ) / 2;
-            const radiusMeters = radiusKm * 1000;
-
-            // Add circle for stop point radius
-            const circleId = `stop-circle-${stopPoint.id}`;
-            if (map.current.getSource(circleId)) {
-              map.current.removeLayer(circleId);
-              map.current.removeSource(circleId);
-            }
-
-            map.current.addSource(circleId, {
-              type: "geojson",
-              data: {
-                type: "Feature",
-                geometry: {
-                  type: "Point",
-                  coordinates: [avgLng, avgLat],
-                },
-              },
-            });
-
-            map.current.addLayer({
-              id: circleId,
-              type: "circle",
-              source: circleId,
-              paint: {
-                "circle-radius": {
-                  stops: [
-                    [0, 0],
-                    [20, radiusMeters / 10],
-                  ],
-                  base: 2,
-                },
-                "circle-color": "#87CEEB",
-                "circle-opacity": 0.3,
-                "circle-stroke-color": "#4682B4",
-                "circle-stroke-width": 2,
-              },
-            });
-
-            new mapboxgl.Marker({ color: "orange" })
-              .setLngLat([avgLng, avgLat])
-              .setPopup(
-                new mapboxgl.Popup().setText(
-                  `Stop ${index + 1}: ${stopPoint.name}`,
-                ),
-              )
-              .addTo(map.current);
-          });
-        }
-
-        // 🔥 GEOFENCE: Loading + Drop-off
-        const geofences = [
-          {
-            id: "loading-zone",
-            name: "Loading Location",
-            center: originCoords,
-            polygon: normalizedOrigin.polygon,
-            color: "#22c55e",
-          },
-          {
-            id: "dropoff-zone",
-            name: "Drop-off Location",
-            center: destCoords,
-            polygon: normalizedDestination.polygon,
-            color: "#ef4444",
-          },
-        ];
-
-        for (const zone of geofences) {
-          const polygon = zone.polygon || createGeofenceCircle(zone.center, 200);
-
-          if (map.current.getSource(zone.id)) {
-            if (map.current.getLayer(zone.id)) {
-              map.current.removeLayer(zone.id);
-            }
-            if (map.current.getLayer(`${zone.id}-border`)) {
-              map.current.removeLayer(`${zone.id}-border`);
-            }
-            map.current.removeSource(zone.id);
-          }
-
-          map.current.addSource(zone.id, {
-            type: "geojson",
-            data: {
-              type: "Feature",
-              properties: { name: zone.name },
-              geometry: {
-                type: "Polygon",
-                coordinates: [polygon],
-              },
-            },
-          });
-
-          map.current.addLayer({
-            id: zone.id,
-            type: "fill",
-            source: zone.id,
-            paint: {
-              "fill-color": zone.color,
-              "fill-opacity": 0.2,
-            },
-          });
-
-          map.current.addLayer({
-            id: `${zone.id}-border`,
-            type: "line",
-            source: zone.id,
-            paint: {
-              "line-color": zone.color,
-              "line-width": 2,
-            },
-          });
-        }
-
-        // Always get optimized route from loading to dropoff with stop points
-        const mainRoute =
-          routeData?.geometry ||
-          (await getRoute(originCoords, destCoords, stopPoints));
-
-        if (mainRoute && map.current.isStyleLoaded()) {
-          // Remove existing route
-          if (map.current.getSource("main-route")) {
-            map.current.removeLayer("main-route");
-            map.current.removeSource("main-route");
-          }
-
-          map.current.addSource("main-route", {
-            type: "geojson",
-            data: {
-              type: "Feature",
-              properties: {},
-              geometry: mainRoute,
-            },
-          });
-
-          map.current.addLayer({
-            id: "main-route",
-            type: "line",
-            source: "main-route",
-            layout: {
-              "line-join": "round",
-              "line-cap": "round",
-            },
-            paint: {
-              "line-color": "#10b981",
-              "line-width": 5,
-            },
-          });
-
-          // Fit map to all elements
-          const coordinates = mainRoute.coordinates;
-          const bounds = coordinates.reduce(
-            (bounds: any, coord: any) => {
-              return bounds.extend(coord);
-            },
-            new (await import("mapbox-gl")).default.LngLatBounds(
-              coordinates[0],
-              coordinates[0],
-            ),
-          );
-
-          // Include driver location in bounds if available
-          if (driverLocation) {
-            bounds.extend([driverLocation.lng, driverLocation.lat]);
-          }
-
-          map.current.fitBounds(bounds, { padding: 50 });
-        }
-
-        // Add stop points if available
-        console.log("Stop points to render:", stopPoints);
-        if (stopPoints && stopPoints.length > 0) {
-          stopPoints.forEach((stopPoint, index) => {
-            console.log("Processing stop point:", stopPoint);
-            if (stopPoint.coordinates && stopPoint.coordinates.length > 0) {
-              // Add stop point zones as polygons
-              const sourceId = `stop-point-${stopPoint.id}`;
-              const layerId = `stop-point-layer-${stopPoint.id}`;
-
-              // Remove existing layers
-              if (map.current.getLayer(`${layerId}-border`)) {
-                map.current.removeLayer(`${layerId}-border`);
-              }
-              if (map.current.getLayer(layerId)) {
-                map.current.removeLayer(layerId);
-              }
-              if (map.current.getSource(sourceId)) {
-                map.current.removeSource(sourceId);
-              }
-
-              console.log(
-                "Adding polygon with coordinates:",
-                stopPoint.coordinates,
-              );
-              if (!map.current.isStyleLoaded()) return;
-              map.current.addSource(sourceId, {
-                type: "geojson",
-                data: {
-                  type: "Feature",
-                  properties: {
-                    name: stopPoint.name,
-                  },
-                  geometry: {
-                    type: "Polygon",
-                    coordinates: [stopPoint.coordinates],
-                  },
-                },
-              });
-
-              map.current.addLayer({
-                id: layerId,
-                type: "fill",
-                source: sourceId,
-                paint: {
-                  "fill-color": `hsl(${(index * 60) % 360}, 70%, 50%)`,
-                  "fill-opacity": 0.4,
-                },
-              });
-
-              // Add border
-              map.current.addLayer({
-                id: `${layerId}-border`,
-                type: "line",
-                source: sourceId,
-                paint: {
-                  "line-color": `hsl(${(index * 60) % 360}, 70%, 40%)`,
-                  "line-width": 2,
-                },
-              });
-
-              // Add popup on click
-              map.current.on("click", layerId, async (e: any) => {
-                const mapboxgl = (await import("mapbox-gl")).default;
-                new mapboxgl.Popup()
-                  .setLngLat(e.lngLat)
-                  .setHTML(`<strong>${stopPoint.name}</strong>`)
-                  .addTo(map.current);
-              });
-            }
-          });
-        }
-      } catch (error) {
-        console.error("Error updating route:", error);
+      if (!originCoords || !destCoords) {
+        console.warn("Route Preview - Missing coordinates");
+        return;
       }
+
+      const allPoints: { lat: number; lng: number }[] = [originCoords, destCoords];
+
+      // Driver location marker + route
+      if (driverLocation) {
+        const driverPin = new google.maps.Marker({
+          position: driverLocation,
+          map,
+          title: `Driver: ${driverLocation.name}`,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 10,
+            fillColor: "#3b82f6",
+            fillOpacity: 1,
+            strokeColor: "#ffffff",
+            strokeWeight: 2,
+          },
+          label: {
+            text: "D",
+            color: "#fff",
+            fontSize: "11px",
+            fontWeight: "bold",
+          },
+        });
+        markersRef.current.push(driverPin);
+        allPoints.push(driverLocation);
+
+        const driverIw = new google.maps.InfoWindow({
+          content: `<div style="padding:4px"><strong>Driver: ${driverLocation.name}</strong></div>`,
+        });
+        driverPin.addListener("click", () => {
+          infoWindowsRef.current.forEach((w) => w.close());
+          driverIw.open(map, driverPin);
+        });
+        infoWindowsRef.current.push(driverIw);
+
+        const driverRoute = await getGoogleRoute(
+          driverLocation,
+          originCoords,
+        );
+        if (driverRoute) {
+          drawRoute(driverRoute, "#1e40af", 3, true);
+        }
+      }
+
+      // Origin marker
+      const originPin = new google.maps.Marker({
+        position: originCoords,
+        map,
+        title: originLabel,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 10,
+          fillColor: "#22c55e",
+          fillOpacity: 1,
+          strokeColor: "#ffffff",
+          strokeWeight: 2,
+        },
+        label: {
+          text: "O",
+          color: "#fff",
+          fontSize: "11px",
+          fontWeight: "bold",
+        },
+      });
+      markersRef.current.push(originPin);
+      const originIw = new google.maps.InfoWindow({
+        content: `<div style="padding:4px"><strong>${originLabel}</strong></div>`,
+      });
+      originPin.addListener("click", () => {
+        infoWindowsRef.current.forEach((w) => w.close());
+        originIw.open(map, originPin);
+      });
+      infoWindowsRef.current.push(originIw);
+
+      // Destination marker
+      const destPin = new google.maps.Marker({
+        position: destCoords,
+        map,
+        title: destinationLabel,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 10,
+          fillColor: "#ef4444",
+          fillOpacity: 1,
+          strokeColor: "#ffffff",
+          strokeWeight: 2,
+        },
+        label: {
+          text: "D",
+          color: "#fff",
+          fontSize: "11px",
+          fontWeight: "bold",
+        },
+      });
+      markersRef.current.push(destPin);
+      const destIw = new google.maps.InfoWindow({
+        content: `<div style="padding:4px"><strong>${destinationLabel}</strong></div>`,
+      });
+      destPin.addListener("click", () => {
+        infoWindowsRef.current.forEach((w) => w.close());
+        destIw.open(map, destPin);
+      });
+      infoWindowsRef.current.push(destIw);
+
+      // Stop point markers + circles + polygons
+      const waypointCoords: { lat: number; lng: number }[] = [];
+      if (stopPoints && stopPoints.length > 0) {
+        stopPoints.forEach((stopPoint, index) => {
+          const coords = stopPoint.coordinates;
+          if (!coords || coords.length === 0) return;
+
+          const avgLng =
+            coords.reduce((sum: number, c: number[]) => sum + c[0], 0) /
+            coords.length;
+          const avgLat =
+            coords.reduce((sum: number, c: number[]) => sum + c[1], 0) /
+            coords.length;
+
+          waypointCoords.push({ lat: avgLat, lng: avgLng });
+          allPoints.push({ lat: avgLat, lng: avgLng });
+
+          // Stop point marker
+          const hue = (index * 60) % 360;
+          const color = `hsl(${hue}, 70%, 50%)`;
+          const spPin = new google.maps.Marker({
+            position: { lat: avgLat, lng: avgLng },
+            map,
+            title: `Stop ${index + 1}: ${stopPoint.name}`,
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 10,
+              fillColor: color,
+              fillOpacity: 1,
+              strokeColor: "#ffffff",
+              strokeWeight: 2,
+            },
+            label: {
+              text: String(index + 1),
+              color: "#fff",
+              fontSize: "11px",
+              fontWeight: "bold",
+            },
+          });
+          markersRef.current.push(spPin);
+          const spIw = new google.maps.InfoWindow({
+            content: `<div style="padding:4px"><strong>Stop ${index + 1}: ${stopPoint.name}</strong></div>`,
+          });
+          spPin.addListener("click", () => {
+            infoWindowsRef.current.forEach((w) => w.close());
+            spIw.open(map, spPin);
+          });
+          infoWindowsRef.current.push(spIw);
+
+          // Circle for stop point radius
+          const lngs = coords.map((c) => c[0]);
+          const lats = coords.map((c) => c[1]);
+          const radiusKm =
+            Math.max(
+              (Math.max(...lngs) - Math.min(...lngs)) *
+                111.32 *
+                Math.cos((avgLat * Math.PI) / 180),
+              (Math.max(...lats) - Math.min(...lats)) * 110.54,
+            ) / 2;
+          const circlePath = createCirclePath(
+            { lat: avgLat, lng: avgLng },
+            radiusKm * 1000,
+          );
+          drawPolygon(
+            circlePath,
+            `hsla(${hue}, 70%, 70%, 0.3)`,
+            `hsl(${hue}, 70%, 50%)`,
+            0.3,
+          );
+
+          // Stop point polygon if available
+          if (coords.length >= 3) {
+            const polyPoints = coords.map((c) => ({ lat: c[1], lng: c[0] }));
+            drawPolygon(
+              polyPoints,
+              `hsla(${hue}, 70%, 50%, 0.4)`,
+              `hsl(${hue}, 70%, 40%)`,
+              0.4,
+            );
+          }
+        });
+      }
+
+      // Geofence polygons
+      const geofences = [
+        {
+          name: "Loading Location",
+          center: originCoords,
+          polygon: normalizedOrigin.polygon,
+          fillColor: "#22c55e",
+          strokeColor: "#16a34a",
+        },
+        {
+          name: "Drop-off Location",
+          center: destCoords,
+          polygon: normalizedDestination.polygon,
+          fillColor: "#ef4444",
+          strokeColor: "#dc2626",
+        },
+      ];
+
+      for (const zone of geofences) {
+        const polygon = zone.polygon || createGeofenceCircle(zone.center, 200);
+        const polyPoints = polygon.map((p: number[]) => ({
+          lat: p[1],
+          lng: p[0],
+        }));
+        drawPolygon(polyPoints, zone.fillColor, zone.strokeColor, 0.2);
+      }
+
+      // Main route
+      if (routeData?.geometry?.coordinates) {
+        // GeoJSON from server (Mapbox format: [[lng, lat], ...])
+        const routePoints = routeData.geometry.coordinates.map(
+          (c: number[]) => ({ lat: c[1], lng: c[0] }),
+        );
+        drawRoute(routePoints, "#10b981", 5);
+        routePoints.forEach((p) => allPoints.push(p));
+      } else {
+        const mainRoute = await getGoogleRoute(
+          originCoords,
+          destCoords,
+          waypointCoords,
+        );
+        if (mainRoute) {
+          drawRoute(mainRoute, "#10b981", 5);
+          mainRoute.forEach((p) => allPoints.push(p));
+        }
+      }
+
+      if (driverLocation) {
+        allPoints.push(driverLocation);
+      }
+
+      fitBounds(allPoints);
     };
 
     initializeMap();
 
     return () => {
-      if (map.current) {
-        map.current.remove();
-        map.current = null;
+      cleanupMapObjects();
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current = null;
       }
     };
   }, [
@@ -458,140 +611,16 @@ export function RoutePreviewMap({
     routeData,
     stopPoints,
     driverLocation,
+    normalizedOrigin,
+    normalizedDestination,
+    cleanupMapObjects,
+    addMarker,
+    addInfoWindow,
+    getGoogleRoute,
+    drawRoute,
+    drawPolygon,
+    fitBounds,
   ]);
-
-  const createGeofenceCircle = (
-    center: { lat: number; lng: number },
-    radiusMeters = 200,
-  ) => {
-    const points = 32;
-    const coords: number[][] = [];
-
-    for (let i = 0; i < points; i++) {
-      const angle = (i / points) * (2 * Math.PI);
-
-      const dx = (radiusMeters / 111320) * Math.cos(angle);
-      const dy =
-        (radiusMeters / (111320 * Math.cos((center.lat * Math.PI) / 180))) *
-        Math.sin(angle);
-
-      coords.push([
-        center.lng + dx, // ✅ lng first
-        center.lat + dy,
-      ]);
-    }
-
-    coords.push(coords[0]); // close polygon
-
-    return coords;
-  };
-
-  // const getRoute = async (
-  //   origin: any,
-  //   destination: any,
-  //   stopPoints: any[] = [],
-  // ) => {
-  //   try {
-  //     // Build coordinates string: origin -> waypoints -> destination
-  //     let coordinates = `${origin.lng},${origin.lat}`;
-
-  //     // Add stop points as waypoints for optimization
-  //     if (stopPoints && stopPoints.length > 0) {
-  //       const waypoints = stopPoints.map((point) => {
-  //         const coords = point.coordinates;
-  //         const avgLng =
-  //           coords.reduce((sum: number, coord: number[]) => sum + coord[0], 0) /
-  //           coords.length;
-  //         const avgLat =
-  //           coords.reduce((sum: number, coord: number[]) => sum + coord[1], 0) /
-  //           coords.length;
-  //         return `${avgLng},${avgLat}`;
-  //       });
-
-  //       coordinates += `;${waypoints.join(";")}`;
-  //     }
-
-  //     coordinates += `;${destination.lng},${destination.lat}`;
-
-  //     // Use optimized routing with waypoint optimization
-  //     const url =
-  //       stopPoints.length > 0
-  //         ? `https://api.mapbox.com/optimized-trips/v1/mapbox/driving/${coordinates}?geometries=geojson&access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`
-  //         : `https://api.mapbox.com/directions/v5/mapbox/driving/${coordinates}?geometries=geojson&access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`;
-
-  //     const response = await fetch(url);
-  //     const data = await response.json();
-
-  //     // Handle both optimized trips and regular directions response
-  //     return data.trips?.[0]?.geometry || data.routes?.[0]?.geometry;
-  //   } catch (error) {
-  //     console.error("Route error:", error);
-  //     return null;
-  //   }
-  // };
-
-  const getRoute = async (
-    origin: { lat: number; lng: number },
-    destination: { lat: number; lng: number },
-    stopPoints: any[] = [],
-  ) => {
-    try {
-      // ✅ Always use [lng, lat] order for Mapbox
-      let coordinates = `${origin.lng},${origin.lat}`;
-
-      // ✅ Add stop points as waypoints (using centroid of polygon)
-      if (stopPoints && stopPoints.length > 0) {
-        const waypoints = stopPoints
-          .map((point) => {
-            const coords = point.coordinates;
-
-            // 🔥 Ensure polygon is valid
-            if (!coords || coords.length === 0) return null;
-
-            const avgLng =
-              coords.reduce((sum: number, c: number[]) => sum + c[0], 0) /
-              coords.length;
-
-            const avgLat =
-              coords.reduce((sum: number, c: number[]) => sum + c[1], 0) /
-              coords.length;
-
-            return `${avgLng},${avgLat}`;
-          })
-          .filter(Boolean);
-
-        if (waypoints.length > 0) {
-          coordinates += `;${waypoints.join(";")}`;
-        }
-      }
-
-      // ✅ Add destination
-      coordinates += `;${destination.lng},${destination.lat}`;
-
-      // 🔥 Choose correct API
-      const useOptimized = stopPoints && stopPoints.length > 0;
-
-      const url = useOptimized
-        ? `https://api.mapbox.com/optimized-trips/v1/mapbox/driving/${coordinates}?geometries=geojson&overview=full&access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`
-        : `https://api.mapbox.com/directions/v5/mapbox/driving/${coordinates}?geometries=geojson&overview=full&access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`;
-
-      const response = await fetch(url);
-      const data = await response.json();
-
-      // 🔥 Debug (IMPORTANT for your presentation)
-      console.log("ROUTE API RESPONSE:", data);
-
-      // ✅ Handle both APIs
-      if (useOptimized) {
-        return data.trips?.[0]?.geometry || null;
-      } else {
-        return data.routes?.[0]?.geometry || null;
-      }
-    } catch (error) {
-      console.error("Route error:", error);
-      return null;
-    }
-  };
 
   if (!origin || !destination) {
     return (
@@ -621,7 +650,7 @@ export function RoutePreviewMap({
           style={{ minHeight: "384px" }}
         />
         <div className="mt-4 space-y-3">
-          <div className="flex items-center gap-4 text-sm text-gray-600">
+          <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 bg-green-500 rounded-full"></div>
               <span>Loading: {originLabel || "Not set"}</span>
@@ -735,7 +764,7 @@ export function RoutePreviewMap({
                     {(routeData.route?.provinces || routeData.provinces)
                       .length > 1 && (
                       <div className="text-xs text-orange-600">
-                        ⚠️ Inter-provincial route (+15 min break)
+                        Inter-provincial route (+15 min break)
                       </div>
                     )}
                   </div>

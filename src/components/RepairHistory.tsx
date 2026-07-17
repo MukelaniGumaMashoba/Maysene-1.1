@@ -223,8 +223,8 @@ export default function RepairHistory({ vehicleId }: { vehicleId: string }) {
               <TableRow
                 key={repair.id}
                 onClick={() => {
-                  console.log(`Navigating to /jobWorkShop/${repair.id}`);
-                  redirect(`/jobWorkShop/${repair.id}`);
+                  console.log(`Navigating to /workshop/jobWorkShop/${repair.id}`);
+                  redirect(`/workshop/jobWorkShop/${repair.id}`);
                 }}
                 style={{ cursor: "pointer" }}
               >

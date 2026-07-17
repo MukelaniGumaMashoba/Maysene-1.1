@@ -258,9 +258,9 @@ function TripTimeInfo({ trip }: any) {
                 <span className="font-semibold text-slate-900">
                   {new Date(dropoffTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} {new Date(dropoffTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                 </span>
-              </div>
-            )}
           </div>
+        )}
+      </div>
         </div>
       )}
       {/* ETA Section (30%) */}
@@ -1067,6 +1067,8 @@ export default function Dashboard() {
   const [unauthorizedStopNote, setUnauthorizedStopNote] = useState('');
   const [photosModalOpen, setPhotosModalOpen] = useState(false);
   const [currentTripPhotos, setCurrentTripPhotos] = useState<any>(null);
+  const [vehicleAvailability, setVehicleAvailability] = useState<any[]>([]);
+  const [driverAvailability, setDriverAvailability] = useState<any[]>([]);
   const [loadingPhotos, setLoadingPhotos] = useState(false);
 
   // Get user role from cookies
@@ -1159,11 +1161,18 @@ export default function Dashboard() {
     }
   }, [activeTab])
 
+  useEffect(() => {
+    if (activeTab !== 'availability') return;
+    const supabase = createClient();
+    supabase.from('vehiclesc').select('id, registration_number, make, model, vehicle_type, vehicle_available, vehicle_not_available_reason, status').then(({ data }) => setVehicleAvailability(data || []));
+    supabase.from('drivers').select('id, first_name, surname, license_number, license_expiry_date, available, status, cell_number').then(({ data }) => setDriverAvailability(data || []));
+  }, [activeTab]);
+
   return (
     <>
       <div className="flex-1 space-y-4 p-4 pt-6">
         {/* Top Tabs Navigation */}
-        {/* <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between">
           <Tabs
             value={activeTab}
             onValueChange={(v) => setActiveTab(v)}
@@ -1177,20 +1186,14 @@ export default function Dashboard() {
                 Routing
               </TabsTrigger>
               <TabsTrigger
-                value="financials"
+                value="availability"
                 className="px-4 py-2 text-sm font-medium rounded-full data-[state=active]:bg-primary data-[state=active]:text-white hover:brightness-95"
               >
-                Financials
-              </TabsTrigger>
-              <TabsTrigger
-                value="audit"
-                className="px-4 py-2 text-sm font-medium rounded-full data-[state=active]:bg-primary data-[state=active]:text-white hover:brightness-95"
-              >
-                Audit
+                Availability
               </TabsTrigger>
             </TabsList>
           </Tabs>
-        </div> */}
+        </div>
 
         {/* Conditionally render the main views */}
         {activeTab === "routing" && (
@@ -1433,6 +1436,132 @@ export default function Dashboard() {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        )}
+
+        {activeTab === "availability" && (
+          <div className="space-y-4">
+            <div className="mb-4">
+              <h2 className="text-3xl font-bold tracking-tight">Fleet Metrics</h2>
+              <p className="text-muted-foreground">Vehicle and driver availability overview</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="bg-gradient-to-br from-emerald-500 to-emerald-700 text-white border-0">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-emerald-100">Available Vehicles</CardTitle>
+                  <Truck className="h-5 w-5 text-emerald-200" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-4xl font-bold"><SlidingNumber from={0} to={vehicleAvailability.filter(v => v.vehicle_available !== false).length} duration={1.5} className="text-white" digitHeight={40} /></div>
+                  <p className="text-xs text-emerald-200 mt-1">Ready for dispatch</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-blue-500 to-blue-700 text-white border-0">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-blue-100">Drivers Available</CardTitle>
+                  <Users className="h-5 w-5 text-blue-200" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-4xl font-bold"><SlidingNumber from={0} to={driverAvailability.filter(d => d.available !== false).length} duration={1.5} className="text-white" digitHeight={40} /></div>
+                  <p className="text-xs text-blue-200 mt-1">Ready for dispatch</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-amber-500 to-orange-600 text-white border-0">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-amber-100">Drivers on Trip</CardTitle>
+                  <MapPin className="h-5 w-5 text-amber-200" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-4xl font-bold"><SlidingNumber from={0} to={driverAvailability.filter(d => d.available === false).length} duration={1.5} className="text-white" digitHeight={40} /></div>
+                  <p className="text-xs text-amber-200 mt-1">Currently dispatched</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Vehicle Availability</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-auto max-h-[400px]">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Vehicle ID</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Reason</TableHead>
+                          <TableHead>Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {vehicleAvailability.map((vehicle) => (
+                          <TableRow key={vehicle.id}>
+                            <TableCell className="font-medium">{vehicle.registration_number || vehicle.vehicle_number || "-"}</TableCell>
+                            <TableCell>{vehicle.vehicle_type || vehicle.type || "-"}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">{vehicle.vehicle_not_available_reason || "-"}</TableCell>
+                            <TableCell>
+                              <span className={cn(
+                                "px-2 py-1 rounded-full text-xs font-medium",
+                                vehicle.vehicle_available !== false ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                              )}>
+                                {vehicle.vehicle_available !== false ? "Available" : "Unavailable"}
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {vehicleAvailability.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center text-muted-foreground py-4">No vehicles found</TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Driver Status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-auto max-h-[400px]">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Driver Name</TableHead>
+                          <TableHead>Phone</TableHead>
+                          <TableHead>Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {driverAvailability.map((driver) => (
+                          <TableRow key={driver.id}>
+                            <TableCell className="font-medium">{driver.first_name} {driver.surname}</TableCell>
+                            <TableCell>{driver.cell_number || "-"}</TableCell>
+                            <TableCell>
+                              <span className={cn(
+                                "px-2 py-1 rounded-full text-xs font-medium",
+                                driver.available !== false ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"
+                              )}>
+                                {driver.available !== false ? "Available" : "On Trip"}
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {driverAvailability.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={3} className="text-center text-muted-foreground py-4">No drivers found</TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         )}
       </div>

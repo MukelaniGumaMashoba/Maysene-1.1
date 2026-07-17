@@ -28,7 +28,8 @@ const roles = [
       "/fuel",
       "/audit",
       "/settings",
-      "/userManagement"],
+      "/userManagement",
+      "/workshop/jobWorkShop"],
   },
   {
     name: 'customer',

@@ -452,7 +452,7 @@ export default function LoadPlanPage() {
             "id, name, client_id, address, contact_person, phone, pickup_locations, dropoff_locations, commodity, IsLoading, coordinates, coords",
           )
           .eq("status", "Active"),
-        supabase.from("vehiclesc").select("*"),
+        supabase.from("vehiclesc").select("*").or("vehicle_available.is.null,vehicle_available.eq.true"),
         supabase.from("cost_centers").select("*"),
         fetch("/api/vehicles"),
         fetch("/api/maysene-drivers"),
@@ -822,14 +822,6 @@ export default function LoadPlanPage() {
       }
 
       try {
-        const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-        if (!mapboxToken) {
-          console.log("No Mapbox token available");
-          return;
-        }
-
-        console.log("Calculating distance between:", loadingLocation, "and", dropOffPoint);
-
         const originPoint = normalizedLoadingLocationData.point;
         const destPoint = normalizedDropOffPointData.point;
 
@@ -847,19 +839,63 @@ export default function LoadPlanPage() {
 
         console.log("Origin coords:", originCoords, "Dest coords:", destCoords);
 
-        const response = await fetch(
-          `https://api.mapbox.com/directions/v5/mapbox/driving/${originCoords.lng},${originCoords.lat};${destCoords.lng},${destCoords.lat}?access_token=${mapboxToken}&geometries=geojson`,
-        );
-        const data = await response.json();
-        console.log("Mapbox response:", data);
+        // Ensure Google Maps is loaded
+        const loadGoogleMaps = (): Promise<void> =>
+          new Promise((resolve) => {
+            if (window.google?.maps) {
+              resolve();
+              return;
+            }
+            const existingScript = document.querySelector(
+              `script[src*="maps.googleapis.com"]`,
+            );
+            if (existingScript) {
+              const check = setInterval(() => {
+                if (window.google?.maps) {
+                  clearInterval(check);
+                  resolve();
+                }
+              }, 100);
+              return;
+            }
+            const script = document.createElement("script");
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_TOKEN}&libraries=places`;
+            script.async = true;
+            script.defer = true;
+            script.onload = () => resolve();
+            script.onerror = () => resolve();
+            document.head.appendChild(script);
+          });
 
-        if (data.routes?.[0]?.distance) {
-          const distanceKm = Math.round(data.routes[0].distance / 1000);
-          console.log("Distance calculated:", distanceKm, "km");
-          setEstimatedDistance(distanceKm);
-        } else {
-          console.log("No route found in response");
+        await loadGoogleMaps();
+
+        if (!window.google?.maps) {
+          console.log("Google Maps failed to load");
+          return;
         }
+
+        const distanceService = new google.maps.DistanceMatrixService();
+        distanceService.getDistanceMatrix(
+          {
+            origins: [{ lat: originCoords.lat, lng: originCoords.lng }],
+            destinations: [{ lat: destCoords.lat, lng: destCoords.lng }],
+            travelMode: google.maps.TravelMode.DRIVING,
+            unitSystem: google.maps.UnitSystem.METRIC,
+          },
+          (response, status) => {
+            if (
+              status === google.maps.DistanceMatrixStatus.OK &&
+              response?.rows?.[0]?.elements?.[0]?.distance
+            ) {
+              const distanceMeters = response.rows[0].elements[0].distance.value;
+              const distanceKm = Math.round(distanceMeters / 1000);
+              console.log("Distance calculated:", distanceKm, "km");
+              setEstimatedDistance(distanceKm);
+            } else {
+              console.log("Distance matrix request failed:", status);
+            }
+          },
+        );
       } catch (error) {
         console.error("Error calculating distance:", error);
       }
@@ -1462,6 +1498,22 @@ export default function LoadPlanPage() {
       const { error } = await supabase.from("trips").insert([tripData]);
       if (error) throw error;
 
+      // Mark assigned vehicle as unavailable
+      if (selectedVehicleId) {
+        try {
+          await fetch(`/api/vehicles/${selectedVehicleId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              vehicle_available: false,
+              vehicle_not_available_reason: "Assigned to Load",
+            }),
+          });
+        } catch (err) {
+          console.error("Error updating vehicle availability:", err);
+        }
+      }
+
       // Mark assigned drivers as unavailable
       // const assignedDriverIds = driverAssignments
       //   .map((d) => d.id)
@@ -1988,8 +2040,7 @@ export default function LoadPlanPage() {
                           <SelectValue placeholder="Select horse (vehicle)" />
                         </SelectTrigger>
                         <SelectContent>
-                          {/* {vehicles.filter(vehicle => vehicle.vehicle_type === 'vehicle').map((vehicle) => ( */}
-                          {vehicles.map((vehicle) => (
+                          {vehicles.filter(v => v.vehicle_available !== false).map((vehicle) => (
                             <SelectItem
                               key={vehicle.id}
                               value={vehicle.id.toString()}

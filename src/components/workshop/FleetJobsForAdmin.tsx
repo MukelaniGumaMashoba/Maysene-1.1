@@ -150,7 +150,7 @@ export default function FleetJobsForAdmin({ supabase, onJobUpdated }: Props) {
           </CardContent>
 
           <CardFooter className="flex justify-end gap-3 border-t pt-4">
-            <Link href={`/jobWorkShop/${job.id}`}>
+            <Link href={`/workshop/jobWorkShop/${job.id}`}>
               <Button variant="outline" size="sm">
                 <Eye className="h-4 w-4 mr-2" />
                 View & Process
