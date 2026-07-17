@@ -128,6 +128,12 @@ export default function WorkshopJobDetailPage() {
   const [isChangeRequestOpen, setIsChangeRequestOpen] = useState(false);
   const [canEditApproved, setCanEditApproved] = useState(false);
   const [changeReason, setChangeReason] = useState("");
+  const [completionNotes, setCompletionNotes] = useState("");
+  const [isClosing, setIsClosing] = useState(false);
+  const [technicianList, setTechnicianList] = useState<any[]>([]);
+  const [isAssigningTech, setIsAssigningTech] = useState(false);
+  const [jobNotes, setJobNotes] = useState("");
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
 
   useEffect(() => {
     const fetchJobAndVehicle = async () => {
@@ -198,6 +204,16 @@ export default function WorkshopJobDetailPage() {
         setConsumables(consumablesList);
       }
 
+      // Fetch available technicians
+      const { data: techList } = await supabase
+        .from("technicians_maysene")
+        .select("id, name, phone, email")
+        .order("name");
+      if (techList) setTechnicianList(techList);
+
+      // Initialize notes from job
+      setJobNotes(jobData?.notes || "");
+
       setIsLoading(false);
     };
     if (params.id) fetchJobAndVehicle();
@@ -228,6 +244,81 @@ export default function WorkshopJobDetailPage() {
       setTimeout(() => router.push("/workshop/jobWorkShop"), 1500);
       return { success: true, data };
     }
+  };
+
+  const handleAssignTechnician = async (techId: string) => {
+    if (!techId || !job) return;
+    setIsAssigningTech(true);
+
+    // Remove existing assignment first
+    await supabase.from("workshop_assignments").delete().eq("job_id", job.id);
+
+    // Insert new assignment
+    const { error } = await supabase.from("workshop_assignments").insert({
+      job_id: job.id,
+      tech_id: Number(techId),
+      vehicle_id: job.registration_no || "",
+      driver_id: "",
+    });
+
+    if (error) {
+      toast.error("Failed to assign technician");
+      console.error(error);
+    } else {
+      toast.success("Technician assigned successfully");
+      // Fetch the assigned technician info
+      const { data: techInfo } = await supabase
+        .from("technicians_maysene")
+        .select("id, name, phone, email")
+        .eq("id", Number(techId))
+        .single();
+      if (techInfo) setTechnician(techInfo);
+    }
+    setIsAssigningTech(false);
+  };
+
+  const handleCloseJob = async () => {
+    if (!job) return;
+    setIsClosing(true);
+    const { error } = await supabase
+      .from("workshop_job")
+      .update({
+        status: "Completed",
+        updated_at: new Date().toISOString(),
+        completed_at: new Date().toISOString(),
+        completion_notes: completionNotes || null,
+      })
+      .eq("id", job.id);
+
+    if (error) {
+      toast.error("Failed to close job");
+      console.error(error);
+    } else {
+      toast.success("Job closed successfully");
+      setJob((prev) => prev ? { ...prev, status: "Completed" } : null);
+      setTimeout(() => router.push("/workshop/jobWorkShop"), 1500);
+    }
+    setIsClosing(false);
+  };
+
+  const handleSaveNotes = async () => {
+    if (!job) return;
+    setIsSavingNotes(true);
+    const { error } = await supabase
+      .from("workshop_job")
+      .update({
+        notes: jobNotes,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", job.id);
+
+    if (error) {
+      toast.error("Failed to save notes");
+    } else {
+      toast.success("Notes saved");
+      setJob((prev) => prev ? { ...prev, notes: jobNotes } : null);
+    }
+    setIsSavingNotes(false);
   };
 
   const getStatusColor = (status: string) => {
@@ -602,14 +693,36 @@ export default function WorkshopJobDetailPage() {
                     <p className="text-sm text-gray-600">Email</p>
                     <p className="font-semibold">{technician?.email}</p>
                   </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setTechnician(null)}
+                    className="w-full"
+                  >
+                    Change Technician
+                  </Button>
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <User className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-600">No technician assigned</p>
-                  <p className="text-sm text-gray-500">
-                    Technician will be assigned after parts are assigned
-                  </p>
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-600">Select a technician for this job:</p>
+                  <select
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    onChange={(e) => handleAssignTechnician(e.target.value)}
+                    disabled={isAssigningTech}
+                    defaultValue=""
+                  >
+                    <option value="" disabled>
+                      {isAssigningTech ? "Assigning..." : "Choose a technician"}
+                    </option>
+                    {technicianList.map((tech) => (
+                      <option key={tech.id} value={tech.id}>
+                        {tech.name} — {tech.phone}
+                      </option>
+                    ))}
+                  </select>
+                  {technicianList.length === 0 && (
+                    <p className="text-xs text-gray-500">No technicians available</p>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -714,8 +827,30 @@ export default function WorkshopJobDetailPage() {
                 </div>
               </div>
 
+              {/* Notes Section */}
+              {job.status?.toLowerCase() !== "completed" && (
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
+                  <Label className="text-sm font-semibold text-gray-700">Job Notes</Label>
+                  <Textarea
+                    value={jobNotes}
+                    onChange={(e) => setJobNotes(e.target.value)}
+                    placeholder="Add notes about this job..."
+                    rows={3}
+                    className="mt-2"
+                  />
+                  <Button
+                    size="sm"
+                    className="mt-2 bg-gray-600 hover:bg-gray-700 text-white"
+                    onClick={handleSaveNotes}
+                    disabled={isSavingNotes}
+                  >
+                    {isSavingNotes ? "Saving..." : "Save Notes"}
+                  </Button>
+                </div>
+              )}
+
               {/* Action Buttons */}
-              <div className="space-y-3">
+              <div className="space-y-3 mt-4">
                 {job.status?.toLowerCase() !== "completed" && (
                   <Button
                     className="w-full bg-orange-500 hover:bg-orange-600 text-white"
@@ -736,38 +871,27 @@ export default function WorkshopJobDetailPage() {
                   {updating ? "Processing..." : "Reject Job"}
                 </Button>
 
-                {/* <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full border-gray-300"
-                        onClick={async () => {
-                          await supabase
-                            .from("workshop_job")
-                            .update({
-                              status: "Completed",
-                              updated_at: new Date().toISOString(),
-                              completed_at: new Date().toISOString(),
-                            })
-                            .eq("id", job.id);
-
-                          toast.success("Job closed successfully");
-                          setJob((prev) =>
-                            prev ? { ...prev, status: "Completed" } : null
-                          );
-                          setTimeout(() => router.push("/workshop/jobWorkShop"), 1500);
-                        }}
-                        disabled={job.status?.toLowerCase() === 'completed'}
-                      >
-                        Close/Complete
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>This for completed job to be closed!</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider> */}
+                {/* Close/Complete Button */}
+                {job.status?.toLowerCase() !== "completed" && (
+                  <div className="border-t pt-3">
+                    <Label className="text-sm font-semibold text-gray-700">Completion Notes (optional)</Label>
+                    <Textarea
+                      value={completionNotes}
+                      onChange={(e) => setCompletionNotes(e.target.value)}
+                      placeholder="What was done to complete this job..."
+                      rows={2}
+                      className="mt-2"
+                    />
+                    <Button
+                      variant="outline"
+                      className="w-full border-green-500 text-green-700 hover:bg-green-50 mt-2"
+                      onClick={handleCloseJob}
+                      disabled={isClosing}
+                    >
+                      {isClosing ? "Closing..." : "Close/Complete Job"}
+                    </Button>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
