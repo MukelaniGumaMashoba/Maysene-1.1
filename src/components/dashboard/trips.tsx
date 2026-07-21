@@ -247,9 +247,7 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
           size="sm" 
           variant="outline" 
           className="h-7 text-xs border-slate-200 hover:border-slate-300 hover:bg-slate-50"
-          disabled={userRole === "fleet manager"}
           onClick={() => {
-            if (userRole === "fleet manager") return;
             setCurrentTripForNote(trip);
             setNoteText(trip.status_notes || '');
             setNoteOpen(true);
@@ -261,9 +259,7 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
           size="sm" 
           variant="outline" 
           className="h-7 text-xs border-slate-200 hover:border-slate-300 hover:bg-slate-50"
-          disabled={userRole === "fleet manager"}
           onClick={async () => {
-            if (userRole === "fleet manager") return;
             const supabase = createClient();
             const { data: drivers } = await supabase.from('drivers').select('*').neq("deleted", true);
             setAvailableDrivers(drivers || []);
@@ -277,9 +273,7 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
           size="sm" 
           variant="destructive" 
           className="h-7 text-xs"
-          disabled={userRole === "fleet manager"}
           onClick={async () => {
-            if (userRole === "fleet manager") return;
             if (!confirm('Are you sure you want to delete this trip?')) return;
             try {
               const supabase = createClient();
@@ -310,6 +304,7 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
   const [driversCache, setDriversCache] = useState<Map<string, any>>(new Map())
   const [vehiclesCache, setVehiclesCache] = useState<Map<string, any>>(new Map())
   const [epsVehicles, setEpsVehicles] = useState<any[]>([])
+  const [tripETAs, setTripETAs] = useState<Record<string, { duration: string; distance: string }>>({})
 
   const CACHE_DURATION = 5 * 60 * 1000
 
@@ -374,6 +369,77 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
   }, [refreshTrigger])
 
   const tripsList = trips.filter(trip => !['delivered', 'offloading'].includes(trip.status?.toLowerCase()))
+
+  // Calculate ETAs for active trips using vehicle GPS location → dropoff
+  useEffect(() => {
+    if (!isLoaded || !window.google?.maps || tripsList.length === 0 || epsVehicles.length === 0) return
+
+    const directionsService = new google.maps.DirectionsService()
+
+    const calculateETAs = async () => {
+      const newETAs: Record<string, { duration: string; distance: string }> = {}
+
+      for (const trip of tripsList) {
+        const assignments = trip.vehicleassignments || trip.vehicle_assignments || []
+        if (!assignments.length) continue
+
+        const vehicleName = assignments[0]?.vehicle?.name || ''
+        if (!vehicleName) continue
+
+        const gpsVehicle = epsVehicles.find((v: any) => {
+          const gpsReg = (v.registration || v.plate || '').toLowerCase().replace(/\s/g, '')
+          const tripReg = vehicleName.toLowerCase().replace(/\s/g, '')
+          return gpsReg === tripReg || gpsReg.includes(tripReg) || tripReg.includes(gpsReg)
+        })
+
+        if (!gpsVehicle?.latitude || !gpsVehicle?.longitude) continue
+
+        const parseJson = (val: any) => {
+          if (!val) return null;
+          if (typeof val === 'object') return val;
+          try { return JSON.parse(val); } catch { return null; }
+        }
+        const dropoffLocs = parseJson(trip.dropofflocations) || parseJson(trip.dropoff_locations) || []
+        const destAddress = trip.destination || dropoffLocs[0]?.address || dropoffLocs[0]?.location
+        if (!destAddress) continue
+
+        try {
+          const result = await new Promise<google.maps.DirectionsResult | null>((resolve) => {
+            directionsService.route(
+              {
+                origin: { lat: parseFloat(gpsVehicle.latitude), lng: parseFloat(gpsVehicle.longitude) },
+                destination: destAddress,
+                travelMode: google.maps.TravelMode.DRIVING,
+              },
+              (result, status) => {
+                if (status === google.maps.DirectionsStatus.OK && result) {
+                  resolve(result)
+                } else {
+                  resolve(null)
+                }
+              }
+            )
+          })
+
+          if (result?.routes?.[0]?.legs?.[0]) {
+            const leg = result.routes[0].legs[0]
+            newETAs[trip.id] = {
+              duration: leg.duration?.text || '',
+              distance: leg.distance?.text || '',
+            }
+          }
+        } catch {
+          // skip
+        }
+      }
+
+      setTripETAs(newETAs)
+    }
+
+    calculateETAs()
+    const interval = setInterval(calculateETAs, 60000)
+    return () => clearInterval(interval)
+  }, [isLoaded, tripsList, epsVehicles])
 
   const TRIP_STATUSES = [
     'Pending',
@@ -453,7 +519,17 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
 
         const clientDetails = typeof trip.clientdetails === 'string' ? JSON.parse(trip.clientdetails) : trip.clientdetails
         const title = clientDetails?.name || trip.selectedClient || trip.clientDetails?.name || `Trip ${trip.trip_id || trip.id}`
+        const parseJson = (val: any) => {
+          if (!val) return null;
+          if (typeof val === 'object') return val;
+          try { return JSON.parse(val); } catch { return null; }
+        };
+        const dropoffLocs = parseJson(trip.dropofflocations) || parseJson(trip.dropoff_locations) || []
+        const pickupLocs = parseJson(trip.pickuplocations) || parseJson(trip.pickup_locations) || []
+        const dropoffAddress = trip.destination || dropoffLocs[0]?.address || dropoffLocs[0]?.location || ''
+        const pickupAddress = trip.origin || pickupLocs[0]?.address || pickupLocs[0]?.location || ''
         const isOffCourse = false // Simplified for demo
+        const tripETA = tripETAs[trip.id]
 
         return (
           <div key={trip.id || trip.trip_id} className="flex gap-4">
@@ -520,16 +596,32 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
                       <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
                       <span className="text-xs font-medium text-slate-600 uppercase">Pickup</span>
                     </div>
-                    <p className="text-xs font-medium text-slate-900 truncate">{trip.origin || 'Not specified'}</p>
+                    <p className="text-xs font-medium text-slate-900 truncate">{pickupAddress || 'Not specified'}</p>
                   </div>
                   <div className="bg-slate-50 rounded p-2">
                     <div className="flex items-center gap-1 mb-1">
                       <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
                       <span className="text-xs font-medium text-slate-600 uppercase">Drop-off</span>
                     </div>
-                    <p className="text-xs font-medium text-slate-900 truncate">{trip.destination || 'Not specified'}</p>
+                    <p className="text-xs font-medium text-slate-900 truncate">{dropoffAddress || 'Not specified'}</p>
                   </div>
                 </div>
+
+                {/* ETA from vehicle to dropoff */}
+                {tripETA && (
+                  <div className="bg-blue-50 rounded p-2 mb-3 border border-blue-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-blue-600" />
+                        <span className="text-xs font-semibold text-blue-800">ETA to Drop-off</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-sm font-bold text-blue-900">{tripETA.duration}</span>
+                        <span className="text-xs text-blue-600 ml-2">({tripETA.distance})</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Enhanced Timeline */}
                 <div className="mb-3">

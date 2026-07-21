@@ -61,6 +61,52 @@ import CompletedJobsReport from "@/components/workshop/CompletedJobsReport";
 import JobCardPrinter from "@/components/ui-personal/job-card-printer";
 import FleetJobsForAdmin from "@/components/workshop/FleetJobsForAdmin";
 
+function UnavailableDropdown({ vehicleId, onSuccess }: { vehicleId: number; onSuccess: () => void }) {
+  const [open, setOpen] = useState(false);
+  const supabase = createClient() as any;
+  const reasons = ['Repairs', 'Servicing', 'Breakdown'];
+
+  const handleSelect = async (reason: string) => {
+    const { error } = await supabase
+      .from('vehiclesc')
+      .update({ vehicle_available: false, vehicle_not_available_reason: reason })
+      .eq('id', vehicleId);
+    if (!error) {
+      setOpen(false);
+      onSuccess();
+    }
+  };
+
+  return (
+    <div className="relative inline-block text-left">
+      <Button
+        size="sm"
+        variant="outline"
+        className="h-7 text-xs border-red-200 text-red-700 hover:bg-red-50"
+        onClick={() => setOpen(!open)}
+      >
+        Make Unavailable
+      </Button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 mt-1 z-20 w-40 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+            {reasons.map((reason) => (
+              <button
+                key={reason}
+                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                onClick={() => handleSelect(reason)}
+              >
+                {reason}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 interface Job {
   id: number;
   job_id: string;
@@ -244,6 +290,15 @@ export default function FleetJobsPage() {
 
   useEffect(() => {
     fetchWorkshops();
+
+    const fetchFleetVehicles = async () => {
+      const { data, error } = await supabase
+        .from('vehiclesc')
+        .select('id, registration_number, fleet_number, vehicle_available, vehicle_not_available_reason')
+        .order('registration_number', { ascending: true });
+      if (!error && data) setFleetVehicles(data);
+    };
+    fetchFleetVehicles();
 
     // Check vehicle when registration number changes
     if (createJobForm.registration_number) {
@@ -697,6 +752,8 @@ export default function FleetJobsPage() {
   const [isPrintOpen, setIsPrintOpen] = useState(false);
   const [selectedJobForPrint, setSelectedJobForPrint] = useState<WorkshopJob | null>(null);
   const [jobsWithParts, setJobsWithParts] = useState<Set<number>>(new Set());
+  const [fleetVehicles, setFleetVehicles] = useState<any[]>([]);
+  const [vehicleSearch, setVehicleSearch] = useState('');
   const normalizedSearch = searchWorkshop?.toLowerCase() || "";
 
   const availableWorkshops = useMemo(() => {
@@ -793,7 +850,7 @@ export default function FleetJobsPage() {
 
       <Tabs defaultValue="workshopJobs" className="space-y-6">
         <TabsList className="bg-white shadow rounded-lg border flex flex-wrap">
-          {["workshopJobs", "fleetJobs", "changes", "kanban", "analytics", "rejected", "completed"].map((tab) => (
+          {["workshopJobs", "fleetJobs", "vehicles", "changes", "kanban", "analytics", "rejected", "completed"].map((tab) => (
             <TabsTrigger
               key={tab}
               value={tab}
@@ -803,6 +860,8 @@ export default function FleetJobsPage() {
                 ? "Workshop Jobs"
                 : tab === "fleetJobs"
                   ? "Fleet Jobs"
+                : tab === "vehicles"
+                  ? "Vehicles"
                 : tab === "changes"
                   ? "Changes"
                 : tab === "kanban"
@@ -1033,6 +1092,117 @@ export default function FleetJobsPage() {
               if (data) setWorkshopsJob(data as unknown as WorkshopJob[]);
             });
           }} />
+        </TabsContent>
+
+        <TabsContent value="vehicles" className="space-y-6 p-6 bg-gray-50 min-h-screen">
+          <div className="flex items-center justify-between border-b border-gray-300 pb-3">
+            <h2 className="text-2xl font-semibold text-gray-800">Fleet Vehicles</h2>
+            <Truck className="h-5 w-5 text-gray-500" />
+          </div>
+
+          <div className="relative max-w-sm">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by registration or fleet number..."
+              value={vehicleSearch}
+              onChange={(e) => setVehicleSearch(e.target.value)}
+              className="pl-8"
+            />
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-100 border-b border-gray-200">
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">Registration</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">Fleet Number</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">Reason</th>
+                  <th className="text-right px-4 py-3 font-medium text-gray-600">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {fleetVehicles
+                  .filter((v) => {
+                    if (!vehicleSearch) return true;
+                    const q = vehicleSearch.toLowerCase();
+                    return (
+                      (v.registration_number || '').toLowerCase().includes(q) ||
+                      (v.fleet_number || '').toLowerCase().includes(q)
+                    );
+                  })
+                  .map((vehicle) => (
+                    <tr key={vehicle.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 font-medium text-gray-900">{vehicle.registration_number || '-'}</td>
+                      <td className="px-4 py-3 text-gray-700">{vehicle.fleet_number || '-'}</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                          vehicle.vehicle_available !== false
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {vehicle.vehicle_available !== false ? 'Available' : 'Unavailable'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">
+                        {vehicle.vehicle_available === false && vehicle.vehicle_not_available_reason && vehicle.vehicle_not_available_reason !== '--'
+                          ? vehicle.vehicle_not_available_reason
+                          : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        {vehicle.vehicle_available !== false ? (
+                          <UnavailableDropdown
+                            vehicleId={vehicle.id}
+                            onSuccess={async () => {
+                              const { data } = await supabase
+                                .from('vehiclesc')
+                                .select('id, registration_number, fleet_number, vehicle_available, vehicle_not_available_reason')
+                                .order('registration_number', { ascending: true });
+                              if (data) setFleetVehicles(data);
+                            }}
+                          />
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                            onClick={async () => {
+                              const { error } = await supabase
+                                .from('vehiclesc')
+                                .update({ vehicle_available: true, vehicle_not_available_reason: '--' })
+                                .eq('id', vehicle.id);
+                              if (!error) {
+                                setFleetVehicles((prev) =>
+                                  prev.map((v) =>
+                                    v.id === vehicle.id
+                                      ? { ...v, vehicle_available: true, vehicle_not_available_reason: '--' }
+                                      : v
+                                  )
+                                );
+                              }
+                            }}
+                          >
+                            Make Available
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                {fleetVehicles.filter((v) => {
+                  if (!vehicleSearch) return true;
+                  const q = vehicleSearch.toLowerCase();
+                  return (
+                    (v.registration_number || '').toLowerCase().includes(q) ||
+                    (v.fleet_number || '').toLowerCase().includes(q)
+                  );
+                }).length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-8 text-center text-gray-500">No vehicles found</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </TabsContent>
         <TabsContent value="changes" className="space-y-6 p-6 bg-gray-50 min-h-screen">
           <div className="flex flex-col space-y-4">

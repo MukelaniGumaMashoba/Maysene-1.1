@@ -439,7 +439,6 @@ export default function LoadPlanPage() {
         { data: clientsData, error: clientsError },
         { data: vehiclesData, error: vehiclesError },
         { data: costCentersData, error: costCentersError },
-        trackingResponse,
         driversResponse,
       ] = await Promise.all([
         supabase
@@ -454,7 +453,6 @@ export default function LoadPlanPage() {
           .eq("status", "Active"),
         supabase.from("vehiclesc").select("*").or("vehicle_available.is.null,vehicle_available.eq.true"),
         supabase.from("cost_centers").select("*"),
-        fetch("/api/vehicles"),
         fetch("/api/maysene-drivers"),
       ]);
 
@@ -464,10 +462,6 @@ export default function LoadPlanPage() {
         vehiclesError,
         costCentersError,
       });
-
-      const trackingData = await trackingResponse.json();
-      const vehicleData =
-        trackingData?.result?.data || trackingData?.data || trackingData || [];
 
       const driversResult = await driversResponse.json();
       const driversData = driversResult.drivers || [];
@@ -522,7 +516,6 @@ export default function LoadPlanPage() {
       setLoads(loadData);
       setClients(clientsData || []);
       setVehicles(vehiclesData || []);
-      setVehicleTrackingData(vehicleData);
       setCostCenters(costCentersData || []);
       setAvailableStopPoints([]);
     } catch (err) {
@@ -1505,31 +1498,30 @@ export default function LoadPlanPage() {
               vehicle_not_available_reason: "Assigned to Load",
             }),
           });
+          setVehicles((prev) =>
+            prev.map((v) =>
+              v.id.toString() === selectedVehicleId
+                ? { ...v, vehicle_available: false, vehicle_not_available_reason: "Assigned to Load" }
+                : v
+            )
+          );
         } catch (err) {
           console.error("Error updating vehicle availability:", err);
         }
       }
 
       // Mark assigned drivers as unavailable
-      // const assignedDriverIds = driverAssignments
-      //   .map((d) => d.id)
-      //   .filter((id) => id);
+      const assignedDriverIds = driverAssignments
+        .map((d) => d.id)
+        .filter((id) => id);
 
-      // if (assignedDriverIds.length > 0) {
-      //   try {
-      //     await markDriversUnavailable(assignedDriverIds);
-      //     showToast(
-      //       `${assignedDriverIds.length} driver(s) marked as unavailable`,
-      //       "success"
-      //     );
-      //   } catch (error) {
-      //     console.error("Error updating driver availability:", error);
-      //     showToast(
-      //       "Load created successfully, but failed to update driver availability",
-      //       "warning"
-      //     );
-      //   }
-      // }
+      if (assignedDriverIds.length > 0) {
+        try {
+          await markDriversUnavailable(assignedDriverIds);
+        } catch (error) {
+          console.error("Error updating driver availability:", error);
+        }
+      }
 
       // Reset form
       setClient("");

@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server'
 // *****************************
 export async function PUT(request, { params }) {
   const supabase = await createClient()
-  const { id } = params
+  const { id } = await params
   if (!id) return NextResponse.json({ error: 'Missing vehicle ID' }, { status: 400 })
 
   const body = await request.json()
@@ -33,7 +33,7 @@ export async function PUT(request, { params }) {
 // *****************************
 export async function DELETE(request, { params }) {
   const supabase = await createClient()
-  const { id } = params
+  const { id } = await params
   if (!id) return NextResponse.json({ error: 'Missing vehicle ID' }, { status: 400 })
 
   try {

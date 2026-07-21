@@ -14,6 +14,9 @@ interface RouteResponse {
   duration: number;
   geometry: any;
   eta: string;
+  provinces: string[];
+  breakTime: number;
+  totalDurationWithBreaks: number;
   warnings?: string[];
   restrictions?: string[];
   tollgates?: any[];
@@ -106,11 +109,22 @@ export class TruckRouteOptimizer {
       const tollgates = this.detectTollgates(route);
       const roadConditions = await this.getRoadConditions(route);
 
+      // Calculate provinces from route geometry
+      const provinces = this.detectProvinces(route.geometry);
+
+      // Calculate break time based on driving duration (SA regulations)
+      const durationMinutes = Math.round(route.duration / 60);
+      const breakTime = this.calculateBreakTime(durationMinutes);
+      const totalDurationWithBreaks = durationMinutes + breakTime;
+
       return {
         distance: Math.round(route.distance / 1000 * 10) / 10,
-        duration: Math.round(route.duration / 60),
+        duration: durationMinutes,
         geometry: route.geometry,
         eta: eta.toISOString(),
+        provinces,
+        breakTime,
+        totalDurationWithBreaks,
         warnings: routeType === 'truck' ? 
           ['Truck route - avoids ferries'] : 
           ['Standard route - CHECK: Bridge heights and ferry restrictions'],
@@ -123,6 +137,47 @@ export class TruckRouteOptimizer {
       console.error('Route optimization error:', error);
       throw error;
     }
+  }
+
+  private detectProvinces(geometry: any): string[] {
+    const provinces: Set<string> = new Set();
+
+    if (!geometry?.coordinates) return [];
+
+    // SA province bounding boxes (approximate)
+    const provinceBoxes: { name: string; minLat: number; maxLat: number; minLng: number; maxLng: number }[] = [
+      { name: 'Western Cape', minLat: -34.5, maxLat: -31, minLng: 17.5, maxLng: 20.5 },
+      { name: 'Eastern Cape', minLat: -34, maxLat: -30, minLng: 25, maxLng: 30.5 },
+      { name: 'Northern Cape', minLat: -32.5, maxLat: -26.5, minLng: 16.5, maxLng: 22 },
+      { name: 'Free State', minLat: -31, maxLat: -26.5, minLng: 24.5, maxLng: 29.5 },
+      { name: 'KwaZulu-Natal', minLat: -31, maxLat: -26, minLng: 29, maxLng: 33 },
+      { name: 'North West', minLat: -27.5, maxLat: -24.5, minLng: 24.5, maxLng: 28.5 },
+      { name: 'Gauteng', minLat: -26.7, maxLat: -25, minLng: 27.5, maxLng: 29.7 },
+      { name: 'Mpumalanga', minLat: -27.5, maxLat: -24.5, minLng: 28.5, maxLng: 32.5 },
+      { name: 'Limpopo', minLat: -25, maxLat: -22, minLng: 26.5, maxLng: 32.5 },
+    ];
+
+    // Sample every Nth coordinate to avoid excessive checks
+    const coords = geometry.coordinates;
+    const step = Math.max(1, Math.floor(coords.length / 50));
+
+    for (let i = 0; i < coords.length; i += step) {
+      const [lng, lat] = coords[i];
+      for (const box of provinceBoxes) {
+        if (lat >= box.minLat && lat <= box.maxLat && lng >= box.minLng && lng <= box.maxLng) {
+          provinces.add(box.name);
+        }
+      }
+    }
+
+    return Array.from(provinces);
+  }
+
+  private calculateBreakTime(durationMinutes: number): number {
+    // SA regulations: 15 min break after 2 hrs, 30 min after 4 hrs
+    if (durationMinutes > 240) return 45;
+    if (durationMinutes > 120) return 15;
+    return 0;
   }
 
   private async detectTruckRestrictions(route: any): Promise<string[]> {
