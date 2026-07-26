@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useCallback } from "react";
+import React, { useEffect, useMemo, useRef, useCallback, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, Route } from "lucide-react";
 import { normalizeLocationInput } from "@/lib/utils/location";
@@ -104,6 +104,12 @@ export function RoutePreviewMap({
   const infoWindowsRef = useRef<google.maps.InfoWindow[]>([]);
   const scriptRef = useRef<HTMLScriptElement | null>(null);
 
+  const [googleRouteInfo, setGoogleRouteInfo] = useState<{
+    distance: string;
+    duration: string;
+    eta: string;
+  } | null>(null);
+
   const normalizedOrigin = useMemo(() => normalizeLocationInput(origin), [origin]);
   const normalizedDestination = useMemo(
     () => normalizeLocationInput(destination),
@@ -197,15 +203,27 @@ export function RoutePreviewMap({
           ) {
             const route = result.routes[0];
             const points: { lat: number; lng: number }[] = [];
+            let totalDistanceMeters = 0;
+            let totalDurationSeconds = 0;
             route.legs.forEach((leg) => {
+              totalDistanceMeters += leg.distance?.value || 0;
+              totalDurationSeconds += leg.duration?.value || 0;
               leg.steps.forEach((step) => {
                 const decoded = decodePolyline(step.polyline.points);
                 points.push(...decoded);
               });
             });
+            const distanceKm = (totalDistanceMeters / 1000).toFixed(1);
+            const hours = Math.floor(totalDurationSeconds / 3600);
+            const minutes = Math.round((totalDurationSeconds % 3600) / 60);
+            const durationMin = Math.round(totalDurationSeconds / 60);
+            const durationText = hours > 0 ? `${hours} hr ${minutes} min` : `${minutes} min`;
+            const eta = new Date(Date.now() + totalDurationSeconds * 1000).toISOString();
+            setGoogleRouteInfo({ distance: `${distanceKm} km`, duration: `${durationMin} min`, eta });
             resolve(points);
           } else {
             console.error("Directions request failed:", status);
+            setGoogleRouteInfo(null);
             resolve(null);
           }
         });
@@ -329,22 +347,24 @@ export function RoutePreviewMap({
       await loadGoogleMaps();
 
       if (!window.google?.maps || !mapContainer.current) return;
-      if (mapInstanceRef.current) return;
 
-      const map = new google.maps.Map(mapContainer.current, {
-        center: { lat: -26.2041, lng: 28.0473 },
-        zoom: 6,
-        mapTypeControl: true,
-        streetViewControl: false,
-        fullscreenControl: true,
-      });
+      if (!mapInstanceRef.current) {
+        const map = new google.maps.Map(mapContainer.current, {
+          center: { lat: -26.2041, lng: 28.0473 },
+          zoom: 6,
+          mapTypeControl: true,
+          streetViewControl: false,
+          fullscreenControl: true,
+        });
+        mapInstanceRef.current = map;
+      }
 
-      mapInstanceRef.current = map;
-      await updateRoute(map);
+      await updateRoute(mapInstanceRef.current);
     };
 
     const updateRoute = async (map: google.maps.Map) => {
       cleanupMapObjects();
+      setGoogleRouteInfo(null);
 
       const originCoords = normalizedOrigin.point;
       const destCoords = normalizedDestination.point;
@@ -465,10 +485,10 @@ export function RoutePreviewMap({
           const coords = stopPoint.coordinates;
           if (!coords || coords.length === 0) return;
 
-          const avgLng =
+          const avgLat =
             coords.reduce((sum: number, c: number[]) => sum + c[0], 0) /
             coords.length;
-          const avgLat =
+          const avgLng =
             coords.reduce((sum: number, c: number[]) => sum + c[1], 0) /
             coords.length;
 
@@ -508,8 +528,8 @@ export function RoutePreviewMap({
           infoWindowsRef.current.push(spIw);
 
           // Circle for stop point radius
-          const lngs = coords.map((c) => c[0]);
-          const lats = coords.map((c) => c[1]);
+          const lats = coords.map((c) => c[0]);
+          const lngs = coords.map((c) => c[1]);
           const radiusKm =
             Math.max(
               (Math.max(...lngs) - Math.min(...lngs)) *
@@ -530,7 +550,7 @@ export function RoutePreviewMap({
 
           // Stop point polygon if available
           if (coords.length >= 3) {
-            const polyPoints = coords.map((c) => ({ lat: c[1], lng: c[0] }));
+            const polyPoints = coords.map((c) => ({ lat: c[0], lng: c[1] }));
             drawPolygon(
               polyPoints,
               `hsla(${hue}, 70%, 50%, 0.4)`,
@@ -699,89 +719,51 @@ export function RoutePreviewMap({
             </div>
           )}
 
-          {routeData && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 text-sm">
+          {(routeData || googleRouteInfo) && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 text-sm">
               <div className="space-y-3">
                 <h4 className="font-medium text-gray-700">Route Details</h4>
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Distance:</span>
                     <span className="font-medium">
-                      {routeData.route?.distance ||
-                        routeData.distance ||
-                        "Calculating..."}{" "}
-                      km
+                      {routeData?.route?.distance || routeData?.distance || googleRouteInfo?.distance || "Calculating..."}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Driving Time:</span>
                     <span className="font-medium">
-                      {routeData.route?.duration ||
-                        routeData.duration ||
-                        "Calculating..."}{" "}
-                      min
+                      {routeData?.route?.duration || routeData?.duration || googleRouteInfo?.duration || "Calculating..."}
                     </span>
                   </div>
-                  {(routeData.route?.breakTime || routeData.breakTime || 0) >
+                  {(routeData?.route?.breakTime || routeData?.breakTime || 0) >
                     0 && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">Break Time:</span>
                       <span className="font-medium text-orange-600">
-                        {routeData.route?.breakTime || routeData.breakTime} min
+                        {routeData?.route?.breakTime || routeData?.breakTime} min
                       </span>
                     </div>
                   )}
                   <div className="flex justify-between border-t pt-2">
                     <span className="text-gray-600">Total Time:</span>
                     <span className="font-semibold">
-                      {routeData.route?.totalDurationWithBreaks ||
-                        routeData.totalDurationWithBreaks ||
-                        "Calculating..."}{" "}
-                      min
+                      {routeData?.route?.totalDurationWithBreaks ||
+                        routeData?.totalDurationWithBreaks ||
+                        googleRouteInfo?.duration ||
+                        "Calculating..."}
                     </span>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-3">
-                <h4 className="font-medium text-gray-700">Provinces</h4>
-                {(routeData.route?.provinces || routeData.provinces) &&
-                (routeData.route?.provinces || routeData.provinces).length >
-                  0 ? (
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap gap-1">
-                      {(routeData.route?.provinces || routeData.provinces).map(
-                        (province: string, index: number) => (
-                          <span
-                            key={index}
-                            className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded"
-                          >
-                            {province}
-                          </span>
-                        ),
-                      )}
-                    </div>
-                    {(routeData.route?.provinces || routeData.provinces)
-                      .length > 1 && (
-                      <div className="text-xs text-orange-600">
-                        Inter-provincial route (+15 min break)
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-gray-500 text-xs">
-                    Analyzing provinces...
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-3">
                 <h4 className="font-medium text-gray-700">ETA</h4>
                 <div className="text-sm">
-                  {routeData.route?.eta || routeData.eta ? (
+                  {routeData?.route?.eta || routeData?.eta || googleRouteInfo?.eta ? (
                     <div className="font-medium">
                       {new Date(
-                        routeData.route?.eta || routeData.eta,
+                        routeData?.route?.eta || routeData?.eta || googleRouteInfo?.eta || "",
                       ).toLocaleString()}
                     </div>
                   ) : (

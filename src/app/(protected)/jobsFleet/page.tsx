@@ -817,6 +817,11 @@ export default function FleetJobsPage() {
                           <Badge className={getStatusColor(job.status)}>
                             {job.status}
                           </Badge>
+                          {job.service === "inspection-fault" && (
+                            <Badge variant="outline" className="text-xs border-blue-300 text-blue-700">
+                              From Inspection
+                            </Badge>
+                          )}
                           {job.clientType === "external" && (
                             <Badge variant="outline">External</Badge>
                           )}
@@ -1073,6 +1078,14 @@ export default function FleetJobsPage() {
                               location={job.location}
                               jobType={job.service}
                               priority={job.priority}
+                              inspectionId={(() => {
+                                try {
+                                  const parsed = JSON.parse(job.notes || '{}');
+                                  return parsed.inspection_id;
+                                } catch {
+                                  return undefined;
+                                }
+                              })()}
                               onSuccess={getJobs}
                             />
                           </div>

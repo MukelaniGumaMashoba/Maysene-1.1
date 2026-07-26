@@ -19,8 +19,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Truck, Car, FileText, TruckElectricIcon } from "lucide-react";
+import { Plus, Truck, Car, FileText, TruckElectricIcon, RotateCcw } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -165,6 +166,8 @@ export default function Vehicles() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingVehicleId, setEditingVehicleId] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState("active");
+  const [deletedVehicles, setDeletedVehicles] = useState<VehicleFormValues[]>([]);
   // const [equipmentData, setEquipmentData] = useState<any[]>([]);
   const [isEquipmentSheetOpen, setIsEquipmentSheetOpen] = useState(false);
   // const [equipmentVehicleReg, setEquipmentVehicleReg] = useState("");
@@ -210,8 +213,8 @@ export default function Vehicles() {
     toast.info(`Uploading: ${selectedFile.name}`);
   };
 
-  // Filter vehicles based on search
-  const filteredVehicles = vehicles.filter((vehicle) => {
+  // Filter vehicles based on search and active tab
+  const filteredVehicles = (activeTab === "active" ? vehicles : deletedVehicles).filter((vehicle) => {
     const searchLower = search.toLowerCase();
     return (
       (vehicle.make || '').toLowerCase().includes(searchLower) ||
@@ -245,6 +248,7 @@ export default function Vehicles() {
     const { data: vehicles, error } = await supabase
       .from("vehiclesc")
       .select("*")
+      .neq("vehicle_deleted", true);
     if (error) {
       console.error("the error is", error.name, error.message);
     } else {
@@ -252,22 +256,35 @@ export default function Vehicles() {
       setVehicles(vehicles || []);
     }
   };
-  useEffect(() => {
-    const vehiclesc = supabase
-      .channel("schema-db-changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "vehiclesc" },
-        (payload) => {
-          console.log("Change received!", payload);
-        }
-      )
-      .subscribe();
-    fetchVehicles();
 
-    return () => {
-      vehiclesc.unsubscribe;
-    };
+  const fetchDeletedVehicles = async () => {
+    const { data, error } = await supabase
+      .from("vehiclesc")
+      .select("*")
+      .eq("vehicle_deleted", true);
+    if (!error) {
+      // @ts-expect-error
+      setDeletedVehicles(data || []);
+    }
+  };
+
+  const handleRestoreVehicle = async (vehicleId: number) => {
+    const { error } = await supabase
+      .from("vehiclesc")
+      .update({ vehicle_deleted: false })
+      .eq("id", vehicleId);
+    if (error) {
+      toast.error("Failed to restore vehicle");
+    } else {
+      toast.success("Vehicle restored");
+      fetchVehicles();
+      fetchDeletedVehicles();
+    }
+  };
+
+  useEffect(() => {
+    fetchVehicles();
+    fetchDeletedVehicles();
   }, []);
 
   const form = useForm<VehicleFormValues>({
@@ -1057,109 +1074,170 @@ export default function Vehicles() {
       )}
 
       {/* Vehicle List */}
-      {vehicles.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Fleet Overview</CardTitle>
-            <div className="mt-2">
-              <Input
-                placeholder="Search by make, model, registration, or type..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="max-w-sm"
-              />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="border border-slate-200 rounded-lg overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-slate-50 border-b border-slate-200">
-                    <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Registration</TableHead>
-                    <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Make/Model</TableHead>
-                    <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Type</TableHead>
-                    <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Year</TableHead>
-                    <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Fuel</TableHead>
-                    <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Priority</TableHead>
-                    <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Driver</TableHead>
-                    <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredVehicles.map((vehicle, index) => (
-                    <TableRow
-                      key={vehicle.id}
-                      className="h-12 hover:bg-slate-50 border-b border-slate-100 transition-colors"
-                    >
-                      <TableCell className="px-3 py-2 text-sm font-medium text-slate-900">{vehicle.registration_number || '-'}</TableCell>
-                      <TableCell className="px-3 py-2 text-sm text-slate-700">
-                        <div className="flex flex-col">
-                          <span className="font-medium">{vehicle.make || '-'}</span>
-                          <span className="text-xs text-slate-500">{vehicle.model || '-'}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="px-3 py-2 text-sm text-slate-700">
-                        <div className="flex items-center gap-1">
-                          {getVehicleTypeIcon(vehicle.vehicle_type)}
-                          <span className="capitalize text-xs">{vehicle.vehicle_type || '-'}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="px-3 py-2 text-sm text-slate-700">{vehicle.manufactured_year || '-'}</TableCell>
-                      <TableCell className="px-3 py-2 text-sm text-slate-700">
-                        <span className="capitalize text-xs">{vehicle.fuel_type || '-'}</span>
-                      </TableCell>
-                      <TableCell className="px-3 py-2 text-sm">
-                        {getPriorityBadge(vehicle.vehicle_priority)}
-                      </TableCell>
-                      <TableCell className="px-3 py-2 text-sm text-slate-700">
-                        {drivers.find(driver => driver.id === vehicle.driver_id) ? (
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs">
-                              {drivers.find(driver => driver.id === vehicle.driver_id)?.first_name} {drivers.find(driver => driver.id === vehicle.driver_id)?.surname}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-slate-400">Unassigned</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="px-3 py-2">
-                        <div className="flex gap-1">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            className="h-7 px-2 text-xs"
-                            onClick={() => {
-                              setSelectedVehicle(vehicle);
-                              setIsSheetOpen(true);
-                            }}
-                          >
-                            View
-                          </Button>
-                          {/* <Button 
-                            variant="outline" 
-                            size="sm"
-                            className="h-7 px-2 text-xs"
-                            onClick={async () => {
-                              setEquipmentVehicleReg(vehicle.registration_number || '');
-                              await fetchEquipmentData(vehicle.registration_number || '');
-                              setIsEquipmentSheetOpen(true);
-                            }}
-                          >
-                            Equipment
-                          </Button> */}
-                          <Link href={`/vehicles/${vehicle.id}`}>
-                            <Button variant="default" size="sm" className="h-7 px-2 text-xs bg-slate-700 hover:bg-slate-800">Details</Button>
-                          </Link>
-                        </div>
-                      </TableCell>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="active">Active Vehicles</TabsTrigger>
+          <TabsTrigger value="deleted">Deleted Vehicles</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="active">
+          <Card>
+            <CardHeader>
+              <CardTitle>Fleet Overview</CardTitle>
+              <div className="mt-2">
+                <Input
+                  placeholder="Search by make, model, registration, or type..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="max-w-sm"
+                />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="border border-slate-200 rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50 border-b border-slate-200">
+                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Registration</TableHead>
+                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Make/Model</TableHead>
+                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Type</TableHead>
+                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Year</TableHead>
+                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Fuel</TableHead>
+                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Priority</TableHead>
+                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Driver</TableHead>
+                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                  </TableHeader>
+                  <TableBody>
+                    {filteredVehicles.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-8 text-gray-500">No vehicles found</TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredVehicles.map((vehicle, index) => (
+                        <TableRow
+                          key={vehicle.id}
+                          className="h-12 hover:bg-slate-50 border-b border-slate-100 transition-colors"
+                        >
+                          <TableCell className="px-3 py-2 text-sm font-medium text-slate-900">{vehicle.registration_number || '-'}</TableCell>
+                          <TableCell className="px-3 py-2 text-sm text-slate-700">
+                            <div className="flex flex-col">
+                              <span className="font-medium">{vehicle.make || '-'}</span>
+                              <span className="text-xs text-slate-500">{vehicle.model || '-'}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="px-3 py-2 text-sm text-slate-700">
+                            <div className="flex items-center gap-1">
+                              {getVehicleTypeIcon(vehicle.vehicle_type)}
+                              <span className="capitalize text-xs">{vehicle.vehicle_type || '-'}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="px-3 py-2 text-sm text-slate-700">{vehicle.manufactured_year || '-'}</TableCell>
+                          <TableCell className="px-3 py-2 text-sm text-slate-700">
+                            <span className="capitalize text-xs">{vehicle.fuel_type || '-'}</span>
+                          </TableCell>
+                          <TableCell className="px-3 py-2 text-sm">
+                            {getPriorityBadge(vehicle.vehicle_priority)}
+                          </TableCell>
+                          <TableCell className="px-3 py-2 text-sm text-slate-700">
+                            {drivers.find(driver => driver.id === vehicle.driver_id) ? (
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs">
+                                  {drivers.find(driver => driver.id === vehicle.driver_id)?.first_name} {drivers.find(driver => driver.id === vehicle.driver_id)?.surname}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-slate-400">Unassigned</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="px-3 py-2">
+                            <div className="flex gap-1">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                className="h-7 px-2 text-xs"
+                                onClick={() => {
+                                  setSelectedVehicle(vehicle);
+                                  setIsSheetOpen(true);
+                                }}
+                              >
+                                View
+                              </Button>
+                              <Link href={`/vehicles/${vehicle.id}`}>
+                                <Button variant="default" size="sm" className="h-7 px-2 text-xs bg-slate-700 hover:bg-slate-800">Details</Button>
+                              </Link>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="deleted">
+          <Card>
+            <CardHeader>
+              <CardTitle>Deleted Vehicles</CardTitle>
+              <div className="mt-2">
+                <Input
+                  placeholder="Search deleted vehicles..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="max-w-sm"
+                />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="border border-slate-200 rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50 border-b border-slate-200">
+                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Registration</TableHead>
+                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Make/Model</TableHead>
+                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Type</TableHead>
+                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Year</TableHead>
+                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {deletedVehicles.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-gray-500">No deleted vehicles</TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredVehicles.map((vehicle) => (
+                        <TableRow key={vehicle.id} className="h-12 hover:bg-slate-50 border-b border-slate-100 transition-colors">
+                          <TableCell className="px-3 py-2 text-sm font-medium text-slate-900">{vehicle.registration_number || '-'}</TableCell>
+                          <TableCell className="px-3 py-2 text-sm text-slate-700">
+                            <span className="font-medium">{vehicle.make || '-'}</span> <span className="text-xs text-slate-500">{vehicle.model || '-'}</span>
+                          </TableCell>
+                          <TableCell className="px-3 py-2 text-sm text-slate-700 capitalize text-xs">{vehicle.vehicle_type || '-'}</TableCell>
+                          <TableCell className="px-3 py-2 text-sm text-slate-700">{vehicle.manufactured_year || '-'}</TableCell>
+                          <TableCell className="px-3 py-2">
+                            <Button
+                              size="sm"
+                              variant="default"
+                              className="bg-green-600 hover:bg-green-700"
+                              onClick={() => vehicle.id && handleRestoreVehicle(vehicle.id as number)}
+                            >
+                              <RotateCcw className="w-4 h-4 mr-1" />
+                              Restore
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Vehicle Details Sheet */}
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>

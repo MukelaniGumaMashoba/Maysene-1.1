@@ -34,6 +34,7 @@ import {
   PlusSquare,
   Wrench,
   User2,
+  Search,
 } from "lucide-react";
 import { getDashboardStats } from "@/lib/stats/dashboard";
 import { createClient } from "@/lib/supabase/client";
@@ -243,7 +244,7 @@ function TripTimeInfo({ trip, gpsData }: any) {
 
 
 // Driver Card Component with fetched driver info
-function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setNoteText, setNoteOpen, setAvailableDrivers, setCurrentTripForChange, setChangeDriverOpen, gpsData }: any) {
+function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setNoteText, setNoteOpen, setAvailableDrivers, setCurrentTripForChange, setChangeDriverOpen, gpsData, setRefreshTrigger }: any) {
   const [driverInfo, setDriverInfo] = useState<any>(null)
   const [vehicleInfo, setVehicleInfo] = useState<any>(null)
   const [loading, setLoading] = useState(false)
@@ -419,9 +420,7 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
           size="sm" 
           variant="outline" 
           className="h-7 text-xs border-slate-200 hover:border-slate-300 hover:bg-slate-50"
-          disabled={userRole === "fleet manager"}
           onClick={() => {
-            if (userRole === "fleet manager") return;
             setCurrentTripForNote(trip);
             setNoteText(trip.status_notes || '');
             setNoteOpen(true);
@@ -433,9 +432,7 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
           size="sm" 
           variant="outline" 
           className="h-7 text-xs border-slate-200 hover:border-slate-300 hover:bg-slate-50"
-          disabled={userRole === "fleet manager"}
           onClick={async () => {
-            if (userRole === "fleet manager") return;
             const supabase = createClient();
             const { data: drivers } = await supabase.from('drivers').select('*').neq("deleted", true);
             setAvailableDrivers(drivers || []);
@@ -449,18 +446,17 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
           size="sm" 
           variant="destructive" 
           className="h-7 text-xs"
-          disabled={userRole === "fleet manager"}
           onClick={async () => {
-            if (userRole === "fleet manager") return;
-            if (!confirm('Are you sure you want to delete this trip?')) return;
+            if (!confirm('Are you sure you want to cancel this trip?')) return;
             try {
               const supabase = createClient();
-              const { error } = await supabase.from('trips').delete().eq('id', trip.id);
+              const { error } = await supabase.from('trips').update({ status: 'cancelled' }).eq('id', trip.id);
               if (error) throw error;
-              alert('Trip deleted successfully');
+              alert('Trip cancelled');
+              setRefreshTrigger(prev => prev + 1);
             } catch (err) {
-              console.error('Failed to delete trip:', err);
-              alert('Failed to delete trip');
+              console.error('Failed to cancel trip:', err);
+              alert('Failed to cancel trip');
             }
           }}
         >
@@ -475,6 +471,7 @@ function DriverCard({ trip, userRole, handleViewMap, setCurrentTripForNote, setN
 function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNoteText, setNoteOpen, setAvailableDrivers, setCurrentTripForChange, setChangeDriverOpen, refreshTrigger, setRefreshTrigger, setPickupTimeOpen, setDropoffTimeOpen, setCurrentTripForTime, setTimeType, setSelectedTime, currentUnauthorizedTrip, setCurrentUnauthorizedTrip, setUnauthorizedStopModalOpen, loadingPhotos, setLoadingPhotos, setCurrentTripPhotos, setPhotosModalOpen, gpsData }: any) {
   const [trips, setTrips] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
     async function fetchTrips() {
@@ -521,6 +518,33 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
   // Sort trips to put unauthorized stops at the top
   const tripsList = trips
     .filter(trip => !['delivered', 'offloading'].includes(trip.status?.toLowerCase()))
+    .filter(trip => {
+      if (!searchTerm.trim()) return true;
+      const term = searchTerm.toLowerCase();
+      
+      // Search by driver name
+      const assignments = trip.vehicleassignments || trip.vehicle_assignments || [];
+      for (const a of assignments) {
+        for (const d of (a.drivers || [])) {
+          const driverName = [d.first_name, d.surname, d.name].filter(Boolean).join(' ').toLowerCase();
+          if (driverName.includes(term)) return true;
+        }
+        // Search by vehicle plate
+        const vehicleName = (a.vehicle?.name || '').toLowerCase();
+        if (vehicleName.includes(term)) return true;
+      }
+      
+      // Search by client name
+      const clientDetails = typeof trip.clientdetails === 'string' ? (() => { try { return JSON.parse(trip.clientdetails); } catch { return null; } })() : trip.clientdetails;
+      const clientName = (clientDetails?.name || '').toLowerCase();
+      if (clientName.includes(term)) return true;
+      
+      // Search by trip ID
+      const tripId = (trip.trip_id || '').toLowerCase();
+      if (tripId.includes(term)) return true;
+      
+      return false;
+    })
     .sort((a, b) => {
       // First sort by unauthorized stops (descending)
       const aUnauthorized = a.unauthorized_stops_count || 0
@@ -609,7 +633,7 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
     return <div className="text-center py-8">Loading trips...</div>
   }
 
-  if (tripsList.length === 0) {
+  if (tripsList.length === 0 && !searchTerm) {
     return (
       <div className="space-y-4">
         <div className="text-center py-8 text-muted-foreground">
@@ -621,6 +645,32 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
 
   return (
     <div className="space-y-6">
+      {/* Search Bar */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <input
+          type="text"
+          placeholder="Search by driver, vehicle, or client..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-200 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-slate-400"
+        />
+        {searchTerm && (
+          <button
+            onClick={() => setSearchTerm('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
+      {searchTerm && tripsList.length === 0 && (
+        <div className="text-center py-8 text-muted-foreground">
+          No trips match &quot;{searchTerm}&quot;
+        </div>
+      )}
+
       {tripsList.map((trip: any) => {
         const waypoints = getWaypointsWithStops(trip)
         const progress = getTripProgress(trip.status)
@@ -644,6 +694,7 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
               setCurrentTripForChange={setCurrentTripForChange}
               setChangeDriverOpen={setChangeDriverOpen}
               gpsData={gpsData}
+              setRefreshTrigger={setRefreshTrigger}
             />
 
             {/* Trip Card - 70% */}
@@ -1475,7 +1526,7 @@ export default function Dashboard() {
                         const currentAssignments = currentTripForChange.vehicleassignments || currentTripForChange.vehicle_assignments || [];
                         const updatedAssignments = currentAssignments.map(assignment => ({
                           ...assignment,
-                          drivers: [{ id: driver.id, name: `${driver.first_name} ${driver.surname}` }]
+                          drivers: [{ id: driver.id, name: `${driver.first_name} ${driver.surname}`, surname: driver.surname, first_name: driver.first_name }]
                         }));
                         
                         const { error } = await supabase
@@ -1507,6 +1558,62 @@ export default function Dashboard() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Note Modal */}
+      {noteOpen && currentTripForNote && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-semibold">Trip Note</h3>
+              <Button variant="ghost" size="sm" onClick={() => {
+                setNoteOpen(false);
+                setCurrentTripForNote(null);
+              }}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="p-4 space-y-4">
+              <div>
+                <p className="text-sm text-gray-600 mb-2">Trip: {currentTripForNote.trip_id || currentTripForNote.id}</p>
+                <textarea
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  placeholder="Enter note..."
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => {
+                  setNoteOpen(false);
+                  setCurrentTripForNote(null);
+                }}>
+                  Cancel
+                </Button>
+                <Button onClick={async () => {
+                  try {
+                    const supabase = createClient();
+                    const { error } = await supabase
+                      .from('trips')
+                      .update({ status_notes: noteText })
+                      .eq('id', currentTripForNote.id);
+                    if (error) throw error;
+                    alert('Note saved');
+                    setNoteOpen(false);
+                    setCurrentTripForNote(null);
+                    setRefreshTrigger(prev => prev + 1);
+                  } catch (err) {
+                    console.error('Failed to save note:', err);
+                    alert('Failed to save note');
+                  }
+                }}>
+                  Save Note
+                </Button>
               </div>
             </div>
           </div>

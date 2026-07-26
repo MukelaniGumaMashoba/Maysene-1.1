@@ -20,12 +20,12 @@ export function StopPointDropdown({
   const filteredStopPoints = useMemo(() => {
     const validStopPoints = stopPoints.filter(point => point?.id != null)
 
-    if (!searchTerm) return validStopPoints.slice(0, 50) // Limit initial results
+    if (!searchTerm) return validStopPoints
     
     return validStopPoints.filter(point => 
       point.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       point.name2?.toLowerCase().includes(searchTerm.toLowerCase())
-    ).slice(0, 20) // Limit search results
+    )
   }, [stopPoints, searchTerm])
 
   const getStopPointId = (point) => point?.id != null ? String(point.id) : null

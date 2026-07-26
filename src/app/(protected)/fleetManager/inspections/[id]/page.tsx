@@ -58,35 +58,31 @@ export default function InspectionDetail() {
   ) || [];
 
   const handleSendToAdmin = async () => {
-    const year = new Date().getFullYear();
-    const jobid_workshop = 'JC-' + year + '-' + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-
-    // 1. Create the workshop_job
-    const { data: jobData, error: jobError } = await supabase.from('workshop_job').insert({
-      jobid_workshop: jobid_workshop,
-      registration_no: inspection.vehicle?.registration_number || '',
-      job_type: 'inspection-fault',
+    // 1. Create a fleet job (job_assignments) with Breakdown Request status
+    const { data: jobData, error: jobError } = await supabase.from('job_assignments').insert({
       description: `Inspection #${inspection.id} faults: ${faultyItems.join(', ')}`,
-      status: 'Awaiting Approval',
+      status: 'Breakdown Request',
       priority: 'medium',
-      client_name: inspection.driver ? `${inspection.driver.first_name} ${inspection.driver.surname}` : '',
+      breakdown_req: true,
+      inspected: true,
+      service: 'inspection-fault',
+      vehicle_id: inspection.vehicle_id,
+      driver_id: inspection.driver_id,
       location: inspection.location || '',
-      source: 'inspection',
-      source_id: inspection.id,
+      notes: JSON.stringify({ inspection_id: inspection.id }),
     }).select('id').single();
 
     if (jobError) {
-      alert('Failed to create job card: ' + jobError.message);
+      alert('Failed to create job request: ' + jobError.message);
       return;
     }
 
-    // 2. Create individual defect records for each faulty item
+    // 2. Create individual defect records for each faulty item (linked to inspection, not yet to workshop_job)
     const defectiveItems = inspection.checklist?.flatMap((section: any) =>
       (section.items || [])
         .filter((item: any) => item.status === "Faulty")
         .map((item: any) => ({
           inspection_id: inspection.id,
-          workshop_job_id: jobData?.id || null,
           vehicle_id: inspection.vehicle_id,
           driver_id: inspection.driver_id,
           defect_name: item.label,
@@ -102,12 +98,12 @@ export default function InspectionDetail() {
       const { error: defectError } = await supabase.from('defects').insert(defectiveItems);
       if (defectError) {
         console.error('Failed to create defect records:', defectError);
-        alert(`Job card created but failed to log defects: ${defectError.message}`);
+        alert(`Job request created but failed to log defects: ${defectError.message}`);
         return;
       }
     }
 
-    alert(`Job card ${jobid_workshop} and ${defectiveItems.length} defect(s) created successfully!`);
+    alert(`Job request created! ${defectiveItems.length} defect(s) logged. Fleet manager will review and send to workshop.`);
   };
 
   const handleDownloadPdf = () => {
@@ -166,7 +162,7 @@ export default function InspectionDetail() {
             onClick={handleSendToAdmin}
             className="mb-6 ml-2 bg-red-600 text-white hover:bg-red-700"
           >
-            ⚠️ Send Faults to Admin (Create Job Card)
+⚠️ Create Inspection Job Request
           </Button>
         )}
 

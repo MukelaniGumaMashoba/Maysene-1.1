@@ -59,6 +59,77 @@ interface Vehicle {
   workshop_id: string | null;
 }
 
+function EditableField({
+  label,
+  name,
+  value,
+  editing,
+  editData,
+  onInputChange,
+  type = "text",
+  options,
+  multiline = false,
+  disabled = false,
+}: {
+  label: string;
+  name: keyof Vehicle;
+  value: any;
+  editing: boolean;
+  editData: Vehicle | null;
+  onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
+  type?: string;
+  options?: string[];
+  multiline?: boolean;
+  disabled?: boolean;
+}) {
+  const displayValue =
+    value === null || value === undefined || value === "" ? "N/A" : value;
+
+  return (
+    <div>
+      <p className="text-gray-500 text-sm">{label}</p>
+      {editing ? (
+        options ? (
+          <select
+            name={name}
+            value={editData?.[name]?.toString() ?? ""}
+            onChange={onInputChange}
+            className="border rounded px-2 py-1 w-full"
+            disabled={disabled}
+          >
+            <option value="">Select</option>
+            {options.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+        ) : multiline ? (
+          <textarea
+            name={name}
+            value={editData?.[name]?.toString() ?? ""}
+            onChange={onInputChange}
+            className="border rounded px-2 py-1 w-full"
+            disabled={disabled}
+            rows={4}
+          />
+        ) : (
+          <input
+            name={name}
+            type={type}
+            value={editData?.[name]?.toString() ?? ""}
+            onChange={onInputChange}
+            className="border rounded px-2 py-1 w-full"
+            disabled={disabled}
+          />
+        )
+      ) : (
+        <p className="font-semibold">{displayValue}</p>
+      )}
+    </div>
+  );
+}
+
 export default function VehicleDetailsPage() {
   const params = useParams();
   const router = useRouter();
@@ -99,7 +170,7 @@ export default function VehicleDetailsPage() {
 
     const { error } = await supabase
       .from("vehiclesc")
-      .delete()
+      .update({ vehicle_deleted: true })
       .eq("id", vehicle.id);
 
     setDeleting(false);
@@ -194,70 +265,6 @@ export default function VehicleDetailsPage() {
   }
 
   // Helper for rendering either input or value
-  function EditableField({
-    label,
-    name,
-    value,
-    type = "text",
-    options,
-    multiline = false,
-    disabled = false,
-  }: {
-    label: string;
-    name: keyof Vehicle;
-    value: any;
-    type?: string;
-    options?: string[];
-    multiline?: boolean;
-    disabled?: boolean;
-  }) {
-    const displayValue =
-      value === null || value === undefined || value === "" ? "N/A" : value;
-
-    return (
-      <div>
-        <p className="text-gray-500 text-sm">{label}</p>
-        {editing ? (
-          options ? (
-            <select
-              name={name}
-              value={editData?.[name]?.toString() ?? ""}
-              onChange={handleInputChange}
-              className="border rounded px-2 py-1 w-full"
-              disabled={disabled}
-            >
-              <option value="">Select</option>
-              {options.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
-          ) : multiline ? (
-            <textarea
-              name={name}
-              value={editData?.[name]?.toString() ?? ""}
-              onChange={handleInputChange}
-              className="border rounded px-2 py-1 w-full"
-              disabled={disabled}
-              rows={4}
-            />
-          ) : (
-            <input
-              name={name}
-              type={type}
-              value={editData?.[name]?.toString() ?? ""}
-              onChange={handleInputChange}
-              className="border rounded px-2 py-1 w-full"
-              disabled={disabled}
-            />
-          )
-        ) : (
-          <p className="font-semibold">{displayValue}</p>
-        )}
-      </div>
-    );
-  }
 
   return (
     <motion.div
@@ -359,21 +366,33 @@ export default function VehicleDetailsPage() {
                   label="Registration Number"
                   name="registration_number"
                   value={vehicle.registration_number}
+                  editing={editing}
+                  editData={editData}
+                  onInputChange={handleInputChange}
                 />
                 <EditableField
                   label="VIN"
                   name="vin_number"
                   value={vehicle.vin_number ?? "N/A"}
+                  editing={editing}
+                  editData={editData}
+                  onInputChange={handleInputChange}
                 />
                 <EditableField
                   label="Engine Number"
                   name="engine_number"
                   value={vehicle.engine_number ?? "N/A"}
+                  editing={editing}
+                  editData={editData}
+                  onInputChange={handleInputChange}
                 />
                 <EditableField
                   label="Colour"
                   name="colour"
                   value={vehicle.colour}
+                  editing={editing}
+                  editData={editData}
+                  onInputChange={handleInputChange}
                 />
               </div>
             </motion.div>
@@ -391,66 +410,102 @@ export default function VehicleDetailsPage() {
                 label="Manufactured Year"
                 name="manufactured_year"
                 value={vehicle.manufactured_year}
+                editing={editing}
+                editData={editData}
+                onInputChange={handleInputChange}
               />
               <EditableField
                 label="Vehicle Type"
                 name="vehicle_type"
                 value={vehicle.vehicle_type}
+                editing={editing}
+                editData={editData}
+                onInputChange={handleInputChange}
               />
               <EditableField
                 label="Fuel Type"
                 name="fuel_type"
                 value={vehicle.fuel_type}
+                editing={editing}
+                editData={editData}
+                onInputChange={handleInputChange}
               />
               <EditableField
                 label="Transmission"
                 name="transmission_type"
                 value={vehicle.transmission_type}
+                editing={editing}
+                editData={editData}
+                onInputChange={handleInputChange}
               />
               <EditableField
                 label="Service Intervals"
                 name="service_intervals"
                 value={vehicle.service_intervals}
+                editing={editing}
+                editData={editData}
+                onInputChange={handleInputChange}
               />
               <EditableField
                 label="Priority"
                 name="vehicle_priority"
-                value={<Badge>{vehicle.vehicle_priority}</Badge>}
+                value={vehicle.vehicle_priority}
+                editing={editing}
+                editData={editData}
+                onInputChange={handleInputChange}
               />
               <EditableField
                 label="Purchase Price"
                 name="purchase_price"
                 value={`R ${vehicle.purchase_price ?? "N/A"}`}
                 type="number"
+                editing={editing}
+                editData={editData}
+                onInputChange={handleInputChange}
               />
               <EditableField
                 label="Retail Price"
                 name="retail_price"
                 value={`R ${vehicle.retail_price ?? "N/A"}`}
                 type="number"
+                editing={editing}
+                editData={editData}
+                onInputChange={handleInputChange}
               />
               <EditableField
                 label="Tank Capacity"
                 name="tank_capacity"
                 value={`${vehicle.tank_capacity ?? "N/A"} L`}
                 type="number"
+                editing={editing}
+                editData={editData}
+                onInputChange={handleInputChange}
               />
               <EditableField
                 label="Take On KM"
                 name="take_on_kilometers"
                 value={`${vehicle.take_on_kilometers}`}
                 type="number"
+                editing={editing}
+                editData={editData}
+                onInputChange={handleInputChange}
               />
               <EditableField
                 label="Boarding Hours"
                 name="boarding_km_hours"
                 value={vehicle.boarding_km_hours ?? "N/A"}
                 type="number"
+                editing={editing}
+                editData={editData}
+                onInputChange={handleInputChange}
               />
               <EditableField
                 label="Cost Centres"
                 name="cost_centres"
                 value={vehicle.cost_centres ?? "N/A"}
+                editing={editing}
+                editData={editData}
+                onInputChange={handleInputChange}
               />
             </motion.div>
 
@@ -468,18 +523,27 @@ export default function VehicleDetailsPage() {
                 name="registration_date"
                 value={vehicle.registration_date ?? "N/A"}
                 type="date"
+                editing={editing}
+                editData={editData}
+                onInputChange={handleInputChange}
               />
               <EditableField
                 label="License Expiry"
                 name="license_expiry_date"
                 value={vehicle.license_expiry_date ?? "N/A"}
                 type="date"
+                editing={editing}
+                editData={editData}
+                onInputChange={handleInputChange}
               />
               <EditableField
                 label="Expected Boarding Date"
                 name="expected_boarding_date"
                 value={vehicle.expected_boarding_date ?? "N/A"}
                 type="date"
+                editing={editing}
+                editData={editData}
+                onInputChange={handleInputChange}
               />
             </motion.div>
           </CardContent>

@@ -21,7 +21,6 @@ import {
   Wrench,
   Route,
   Construction,
-  StepForward,
   ClipboardList,
   Package,
   ArrowRightLeft,
@@ -38,7 +37,6 @@ const roleNavigation = {
   "fleet manager": [
     { name: "Dashboard", href: "/dashboard", Icon: <ChartBar /> },
     { name: "Load Plan", href: "/load-plan", Icon: <Route /> },
-    { name: "Statistics", href: "/statistics", Icon: <StepForward /> },
     { name: "Jobs", href: "/jobsFleet", Icon: <Briefcase /> },
     { name: "Workshop Jobs", href: "/workshop/jobWorkShop", Icon: <Wrench /> },
     {

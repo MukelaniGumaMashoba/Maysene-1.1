@@ -14,7 +14,24 @@ import { Button } from "@/components/ui/button";
 import InspectionTemplatesPage from "@/components/pages/InspectionTemplates";
 import getExt from "@/hooks/timeHook";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Pencil } from "lucide-react";
+import { Search, Pencil, Plus } from "lucide-react";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 type InspectionItem = {
   label: string;
@@ -78,12 +95,27 @@ export default function InspectionsPage() {
   const [customEnd, setCustomEnd] = useState<string>("");
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [defectSearchQuery, setDefectSearchQuery] = useState("");
+  const [showAddDefect, setShowAddDefect] = useState(false);
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [driversList, setDriversList] = useState<any[]>([]);
+  const [defectForm, setDefectForm] = useState({
+    defect_name: "",
+    defect_category: "",
+    defect_description: "",
+    priority: "medium",
+    vehicle_id: "",
+    driver_id: "",
+    notes: "",
+  });
+  const [isSubmittingDefect, setIsSubmittingDefect] = useState(false);
 
   const supabase = createClient();
 
   useEffect(() => {
     fetchInspections();
     fetchDefects();
+    fetchVehicles();
+    fetchDrivers();
   }, []);
 
   const fetchInspections = async () => {
@@ -115,6 +147,56 @@ export default function InspectionsPage() {
       .order("created_at", { ascending: false });
 
     if (!error && data) setDefects(data as unknown as Defect[]);
+  };
+
+  const fetchVehicles = async () => {
+    const { data } = await supabase
+      .from("vehiclesc")
+      .select("id, registration_number, make, model, fleet_number")
+      .eq("vehicle_deleted", false)
+      .order("registration_number");
+    if (data) setVehicles(data);
+  };
+
+  const fetchDrivers = async () => {
+    const { data } = await supabase
+      .from("drivers")
+      .select("id, first_name, surname")
+      .eq("deleted", false)
+      .order("first_name");
+    if (data) setDriversList(data);
+  };
+
+  const handleAddDefect = async () => {
+    if (!defectForm.defect_name.trim()) {
+      toast.error("Defect name is required");
+      return;
+    }
+    if (!defectForm.vehicle_id) {
+      toast.error("Vehicle is required");
+      return;
+    }
+    setIsSubmittingDefect(true);
+    const { error } = await supabase.from("defects").insert({
+      defect_name: defectForm.defect_name,
+      defect_category: defectForm.defect_category || null,
+      defect_description: defectForm.defect_description || null,
+      defect_status: "Logged",
+      priority: defectForm.priority,
+      vehicle_id: Number(defectForm.vehicle_id),
+      driver_id: defectForm.driver_id ? Number(defectForm.driver_id) : null,
+      notes: defectForm.notes || null,
+    });
+    setIsSubmittingDefect(false);
+    if (error) {
+      console.error(error);
+      toast.error("Failed to add defect");
+    } else {
+      toast.success("Defect added successfully");
+      setShowAddDefect(false);
+      setDefectForm({ defect_name: "", defect_category: "", defect_description: "", priority: "medium", vehicle_id: "", driver_id: "", notes: "" });
+      fetchDefects();
+    }
   };
 
   const startOfDay = (d: Date) => {
@@ -215,9 +297,10 @@ export default function InspectionsPage() {
     <div className="p-6 space-y-6">
       <div className="max-w-7xl space-y-4">
         <Tabs defaultValue="inspections" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="inspections">Inspections ({inspections.length})</TabsTrigger>
             <TabsTrigger value="defects">Defects ({totalDefects})</TabsTrigger>
+            <TabsTrigger value="add-defect">Add Defect</TabsTrigger>
           </TabsList>
 
           {/* ==================== INSPECTIONS TAB ==================== */}
@@ -499,6 +582,141 @@ export default function InspectionsPage() {
                   )}
                 </tbody>
               </table>
+            </div>
+          </TabsContent>
+
+          {/* ==================== ADD DEFECT TAB ==================== */}
+          <TabsContent value="add-defect" className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Log New Defect</h3>
+              <p className="text-sm text-gray-500">Manually add a defect for a vehicle. Vehicle is required, driver is optional.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Defect Details</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Defect Name *</Label>
+                    <Input
+                      placeholder="e.g. Worn brake pads"
+                      value={defectForm.defect_name}
+                      onChange={(e) => setDefectForm({ ...defectForm, defect_name: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Category</Label>
+                    <Select
+                      value={defectForm.defect_category}
+                      onValueChange={(val) => setDefectForm({ ...defectForm, defect_category: val })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Mechanical">Mechanical</SelectItem>
+                        <SelectItem value="Electrical">Electrical</SelectItem>
+                        <SelectItem value="Body">Body</SelectItem>
+                        <SelectItem value="Tyre">Tyre</SelectItem>
+                        <SelectItem value="Brake">Brake</SelectItem>
+                        <SelectItem value="Engine">Engine</SelectItem>
+                        <SelectItem value="Transmission">Transmission</SelectItem>
+                        <SelectItem value="Suspension">Suspension</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Priority</Label>
+                    <Select
+                      value={defectForm.priority}
+                      onValueChange={(val) => setDefectForm({ ...defectForm, priority: val })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                        <SelectItem value="critical">Critical</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Description</Label>
+                    <Textarea
+                      placeholder="Describe the defect..."
+                      value={defectForm.defect_description}
+                      onChange={(e) => setDefectForm({ ...defectForm, defect_description: e.target.value })}
+                      rows={3}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Vehicle & Driver</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Vehicle *</Label>
+                    <Select
+                      value={defectForm.vehicle_id}
+                      onValueChange={(val) => setDefectForm({ ...defectForm, vehicle_id: val })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select vehicle" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {vehicles.map((v) => (
+                          <SelectItem key={v.id} value={String(v.id)}>
+                            {v.registration_number} – {v.make} {v.model}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Driver (optional)</Label>
+                    <Select
+                      value={defectForm.driver_id}
+                      onValueChange={(val) => setDefectForm({ ...defectForm, driver_id: val })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select driver" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {driversList.map((d) => (
+                          <SelectItem key={d.id} value={String(d.id)}>
+                            {d.first_name} {d.surname}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Notes</Label>
+                    <Textarea
+                      placeholder="Additional notes..."
+                      value={defectForm.notes}
+                      onChange={(e) => setDefectForm({ ...defectForm, notes: e.target.value })}
+                      rows={3}
+                    />
+                  </div>
+                  <Button
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    onClick={handleAddDefect}
+                    disabled={isSubmittingDefect}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    {isSubmittingDefect ? "Adding..." : "Add Defect"}
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
         </Tabs>

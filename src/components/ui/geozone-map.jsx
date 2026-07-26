@@ -21,6 +21,7 @@ export default function GeozoneMap({
   const mapInstanceRef = useRef(null)
   const polygonRef = useRef(null)
   const markersRef = useRef([])
+  const searchPinRef = useRef(null)
   const scriptRef = useRef(null)
   const onPolygonChangeRef = useRef(onPolygonChange)
   const isPanningRef = useRef(false)
@@ -56,6 +57,10 @@ export default function GeozoneMap({
       if (m && m.setMap) m.setMap(null)
     })
     markersRef.current = []
+    if (searchPinRef.current) {
+      searchPinRef.current.setMap(null)
+      searchPinRef.current = null
+    }
   }
 
   useEffect(() => {
@@ -103,12 +108,8 @@ export default function GeozoneMap({
           fontWeight: 'bold',
         },
         icon: {
-          path: window.google.maps.SymbolPath.CIRCLE,
-          scale: 12,
-          fillColor: '#3B82F6',
-          fillOpacity: 1,
-          strokeColor: '#ffffff',
-          strokeWeight: 2,
+          url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png',
+          scaledSize: new window.google.maps.Size(28, 28),
         },
         draggable: true,
       })
@@ -193,6 +194,34 @@ export default function GeozoneMap({
       isPanningRef.current = true
       mapInstanceRef.current.panTo(center)
       mapInstanceRef.current.setZoom(16)
+
+      // Remove previous search pin
+      if (searchPinRef.current) {
+        searchPinRef.current.setMap(null)
+        searchPinRef.current = null
+      }
+
+      // Drop a location pin at the searched address
+      if (window.google?.maps) {
+        const pin = new window.google.maps.Marker({
+          position: center,
+          map: mapInstanceRef.current,
+          title: 'Searched location',
+          icon: {
+            url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+            scaledSize: new window.google.maps.Size(32, 32),
+          },
+          animation: window.google.maps.Animation.DROP,
+        })
+        searchPinRef.current = pin
+
+        const infoWindow = new window.google.maps.InfoWindow({
+          content: `<div style="padding:4px;font-size:13px"><strong>Searched Location</strong></div>`,
+        })
+        pin.addListener('click', () => {
+          infoWindow.open(mapInstanceRef.current, pin)
+        })
+      }
 
       const listener = window.google?.maps?.event?.addListenerOnce(
         mapInstanceRef.current,

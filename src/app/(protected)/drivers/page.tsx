@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, RotateCcw } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Sheet,
   SheetContent,
@@ -85,6 +86,8 @@ export default function Drivers() {
   const [editingDriverId, setEditingDriverId] = useState<number | null>(null);
 
   const [historyModal, setJobHistory] = useState(false);
+  const [activeTab, setActiveTab] = useState("active");
+  const [deletedDrivers, setDeletedDrivers] = useState<Driver[]>([]);
 
   const emptyForm: Driver = {
     first_name: "",
@@ -111,6 +114,7 @@ export default function Drivers() {
 
   useEffect(() => {
     fetchDrivers();
+    fetchDeletedDrivers();
   }, []);
 
   const fetchDrivers = async () => {
@@ -130,6 +134,37 @@ export default function Drivers() {
       setDrivers([]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchDeletedDrivers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("drivers")
+        .select("*")
+        .eq("deleted", true)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setDeletedDrivers((data ?? []) as Driver[]);
+    } catch (err) {
+      console.error("fetchDeletedDrivers error", err);
+      toast.error("Failed to fetch deleted drivers");
+    }
+  };
+
+  const handleRestoreDriver = async (driverId: number) => {
+    try {
+      const { error } = await supabase
+        .from("drivers")
+        .update({ deleted: false })
+        .eq("id", driverId);
+      if (error) throw error;
+      toast.success("Driver restored");
+      fetchDrivers();
+      fetchDeletedDrivers();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to restore driver");
     }
   };
 
@@ -818,179 +853,290 @@ export default function Drivers() {
         </Card>
       </div>
 
-      {/* Search and Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Search drivers..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant={licenseFilter === "all" ? "default" : "outline"}
-                onClick={() => setLicenseFilter("all")}
-              >
-                All
-              </Button>
-              <Button
-                variant={licenseFilter === "sa" ? "default" : "outline"}
-                onClick={() => setLicenseFilter("sa")}
-              >
-                SA Issued
-              </Button>
-              <Button
-                variant={licenseFilter === "foreign" ? "default" : "outline"}
-                onClick={() => setLicenseFilter("foreign")}
-              >
-                Foreign
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="active">Active Drivers</TabsTrigger>
+          <TabsTrigger value="deleted">Deleted Drivers</TabsTrigger>
+        </TabsList>
 
-      {/* Drivers Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Driver Database</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-gray-50">
-                  <TableHead className="font-semibold">Driver Name</TableHead>
-                  <TableHead className="font-semibold">Contact</TableHead>
-                  <TableHead className="font-semibold">
-                    License Status
-                  </TableHead>
-                  <TableHead className="font-semibold">
-                    License Details
-                  </TableHead>
-                  <TableHead className="font-semibold">PDP Status</TableHead>
-                  <TableHead className="font-semibold">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
-                      <div className="flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                        <span className="ml-2">Loading drivers...</span>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : drivers.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="text-center py-8 text-gray-500"
-                    >
-                      No drivers found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredDrivers.map((driver) => (
-                    <TableRow
-                      key={driver.id}
-                      className="hover:bg-gray-50 transition-colors"
-                    >
-                      <TableCell>
-                        <div>
-                          <p className="font-medium text-gray-900">
-                            {driver.first_name} {driver.surname}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                           {getPIDBadge(driver.sa_issued)} {driver.id_or_passport_number}
-                          </p>
-                        </div>
-                      </TableCell>
+        <TabsContent value="active">
+          {/* Search and Filters */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    type="text"
+                    placeholder="Search drivers..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant={licenseFilter === "all" ? "default" : "outline"}
+                    onClick={() => setLicenseFilter("all")}
+                  >
+                    All
+                  </Button>
+                  <Button
+                    variant={licenseFilter === "sa" ? "default" : "outline"}
+                    onClick={() => setLicenseFilter("sa")}
+                  >
+                    SA Issued
+                  </Button>
+                  <Button
+                    variant={licenseFilter === "foreign" ? "default" : "outline"}
+                    onClick={() => setLicenseFilter("foreign")}
+                  >
+                    Foreign
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-                      <TableCell>
-                        <div>
-                          <p className="text-gray-900">
-                            {driver.email_address || "No email"}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {driver.cell_number || "No phone"}
-                          </p>
-                        </div>
-                      </TableCell>
-
-                      <TableCell>
-                        <div className="space-y-1">
-                          {getStatusBadge(driver.sa_issued)}
-                          <p className="text-sm text-gray-600">
-                            {driver.license_number || "No license"}
-                          </p>
-                        </div>
-                      </TableCell>
-
-                      <TableCell>
-                        <div className="space-y-1">
-                          <p className="text-sm text-gray-900">
-                            Code: {driver.license_code || "Not set"}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            Expires: {formatDate(driver.license_expiry_date)}
-                          </p>
-                        </div>
-                      </TableCell>
-
-                      <TableCell>
-                        <div className="space-y-1">
-                          {getPDPStatusBadge(
-                            driver.professional_driving_permit
-                          )}
-                          <p className="text-sm text-gray-600">
-                            Expires: {formatDate(driver.pdp_expiry_date)}
-                          </p>
-                        </div>
-                      </TableCell>
-
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleViewDriver(driver)}
-                          >
-                            View
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => startEditDriver(driver)}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() =>
-                              driver.id && handleDeleteDriver(driver.id)
-                            }
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      </TableCell>
+          {/* Drivers Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Driver Database</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50">
+                      <TableHead className="font-semibold">Driver Name</TableHead>
+                      <TableHead className="font-semibold">Contact</TableHead>
+                      <TableHead className="font-semibold">
+                        License Status
+                      </TableHead>
+                      <TableHead className="font-semibold">
+                        License Details
+                      </TableHead>
+                      <TableHead className="font-semibold">PDP Status</TableHead>
+                      <TableHead className="font-semibold">Actions</TableHead>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {isLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8">
+                          <div className="flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                            <span className="ml-2">Loading drivers...</span>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : drivers.length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={6}
+                          className="text-center py-8 text-gray-500"
+                        >
+                          No drivers found
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredDrivers.map((driver) => (
+                        <TableRow
+                          key={driver.id}
+                          className="hover:bg-gray-50 transition-colors"
+                        >
+                          <TableCell>
+                            <div>
+                              <p className="font-medium text-gray-900">
+                                {driver.first_name} {driver.surname}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                               {getPIDBadge(driver.sa_issued)} {driver.id_or_passport_number}
+                              </p>
+                            </div>
+                          </TableCell>
+
+                          <TableCell>
+                            <div>
+                              <p className="text-gray-900">
+                                {driver.email_address || "No email"}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                {driver.cell_number || "No phone"}
+                              </p>
+                            </div>
+                          </TableCell>
+
+                          <TableCell>
+                            <div className="space-y-1">
+                              {getStatusBadge(driver.sa_issued)}
+                              <p className="text-sm text-gray-600">
+                                {driver.license_number || "No license"}
+                              </p>
+                            </div>
+                          </TableCell>
+
+                          <TableCell>
+                            <div className="space-y-1">
+                              <p className="text-sm text-gray-900">
+                                Code: {driver.license_code || "Not set"}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                Expires: {formatDate(driver.license_expiry_date)}
+                              </p>
+                            </div>
+                          </TableCell>
+
+                          <TableCell>
+                            <div className="space-y-1">
+                              {getPDPStatusBadge(
+                                driver.professional_driving_permit
+                              )}
+                              <p className="text-sm text-gray-600">
+                                Expires: {formatDate(driver.pdp_expiry_date)}
+                              </p>
+                            </div>
+                          </TableCell>
+
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleViewDriver(driver)}
+                              >
+                                View
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => startEditDriver(driver)}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() =>
+                                  driver.id && handleDeleteDriver(driver.id)
+                                }
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="deleted">
+          <Card>
+            <CardHeader>
+              <CardTitle>Deleted Drivers</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50">
+                      <TableHead className="font-semibold">Driver Name</TableHead>
+                      <TableHead className="font-semibold">Contact</TableHead>
+                      <TableHead className="font-semibold">License Status</TableHead>
+                      <TableHead className="font-semibold">License Details</TableHead>
+                      <TableHead className="font-semibold">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {deletedDrivers.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                          No deleted drivers
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      deletedDrivers.map((driver) => (
+                        <TableRow key={driver.id} className="hover:bg-gray-50 transition-colors">
+                          <TableCell>
+                            <div>
+                              <p className="font-medium text-gray-900">
+                                {driver.first_name} {driver.surname}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                {getPIDBadge(driver.sa_issued)} {driver.id_or_passport_number}
+                              </p>
+                            </div>
+                          </TableCell>
+
+                          <TableCell>
+                            <div>
+                              <p className="text-gray-900">
+                                {driver.email_address || "No email"}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                {driver.cell_number || "No phone"}
+                              </p>
+                            </div>
+                          </TableCell>
+
+                          <TableCell>
+                            <div className="space-y-1">
+                              {getStatusBadge(driver.sa_issued)}
+                              <p className="text-sm text-gray-600">
+                                {driver.license_number || "No license"}
+                              </p>
+                            </div>
+                          </TableCell>
+
+                          <TableCell>
+                            <div className="space-y-1">
+                              <p className="text-sm text-gray-900">
+                                Code: {driver.license_code || "Not set"}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                Expires: {formatDate(driver.license_expiry_date)}
+                              </p>
+                            </div>
+                          </TableCell>
+
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleViewDriver(driver)}
+                              >
+                                View
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="default"
+                                className="bg-green-600 hover:bg-green-700"
+                                onClick={() =>
+                                  driver.id && handleRestoreDriver(driver.id)
+                                }
+                              >
+                                <RotateCcw className="w-4 h-4 mr-1" />
+                                Restore
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Driver Details Sheet */}
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>

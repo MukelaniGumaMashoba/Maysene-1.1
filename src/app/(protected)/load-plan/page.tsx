@@ -187,6 +187,7 @@ export default function LoadPlanPage() {
   const [optimizedRoute, setOptimizedRoute] = useState<any>(null);
   const [showRouteModal, setShowRouteModal] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
+  const [routeEtaDistance, setRouteEtaDistance] = useState<{ duration: string; distance: string; eta: string; totalDurationWithBreaks: string } | null>(null);
 
   type DriverAssignment = {
     id: string;
@@ -288,12 +289,12 @@ export default function LoadPlanPage() {
   const [selectedVehicle, setSelectedVehicle] = useState("");
   const [fuelPricePerLiter, setFuelPricePerLiter] = useState("21.55");
   const [estimatedDistance, setEstimatedDistance] = useState(0);
+  const [estimatedDuration, setEstimatedDuration] = useState("");
   const [approximateFuelCost, setApproximateFuelCost] = useState(0);
   const [approximatedCPK, setApproximatedCPK] = useState(0);
   const [approximatedVehicleCost, setApproximatedVehicleCost] = useState(0);
   const [approximatedDriverCost, setApproximatedDriverCost] = useState(0);
   const [totalVehicleCost, setTotalVehicleCost] = useState(0);
-  const [goodsInTransitPremium, setGoodsInTransitPremium] = useState("");
   const [tripType, setTripType] = useState("local");
   const [stopPoints, setStopPoints] = useState<any[]>([]);
   const [availableStopPoints, setAvailableStopPoints] = useState<any[]>([]);
@@ -726,6 +727,7 @@ export default function LoadPlanPage() {
     const previewRoute = async () => {
       if (!loadingLocation || !dropOffPoint) {
         setOptimizedRoute(null);
+        setRouteEtaDistance(null);
         return;
       }
 
@@ -740,10 +742,10 @@ export default function LoadPlanPage() {
         const waypoints = selectedStopPoints.map((point) => {
           // Calculate centroid of polygon for waypoint
           const coords = point?.coordinates || null;
-          const avgLng =
+          const avgLat =
             coords.reduce((sum: number, coord: number[]) => sum + coord[0], 0) /
             coords.length;
-          const avgLat =
+          const avgLng =
             coords.reduce((sum: number, coord: number[]) => sum + coord[1], 0) /
             coords.length;
           return `${avgLng},${avgLat}`;
@@ -764,6 +766,18 @@ export default function LoadPlanPage() {
         if (response.ok) {
           const routeData = await response.json();
           setOptimizedRoute(routeData);
+          
+          const route = routeData?.route;
+          if (route) {
+            setRouteEtaDistance({
+              duration: route.duration || '',
+              distance: route.distance || '',
+              eta: route.eta || '',
+              totalDurationWithBreaks: route.totalDurationWithBreaks || '',
+            });
+          } else {
+            setRouteEtaDistance(null);
+          }
         }
       } catch (error) {
         console.error("Route preview failed:", error);
@@ -798,15 +812,12 @@ export default function LoadPlanPage() {
     }
   }, [loadingLocation, getSortedDriversByDistance, drivers]);
 
-  // Calculate estimated distance when locations change
+  // Calculate estimated distance and duration when locations change (uses Google Directions for accurate driving route)
   useEffect(() => {
     const calculateRouteDistance = async () => {
       if (!loadingLocation || !dropOffPoint) {
-        console.log("Missing locations for distance calc:", {
-          loadingLocation,
-          dropOffPoint,
-        });
         setEstimatedDistance(0);
+        setEstimatedDuration("");
         return;
       }
 
@@ -814,21 +825,12 @@ export default function LoadPlanPage() {
         const originPoint = normalizedLoadingLocationData.point;
         const destPoint = normalizedDropOffPointData.point;
 
-        const originCoords = originPoint;
-        const destCoords = destPoint;
-
-        if (!originCoords || !destCoords) {
-          console.log("Could not resolve locations from DB coordinates", {
-            origin: normalizedLoadingLocationData,
-            destination: normalizedDropOffPointData,
-          });
+        if (!originPoint || !destPoint) {
           setEstimatedDistance(0);
+          setEstimatedDuration("");
           return;
         }
 
-        console.log("Origin coords:", originCoords, "Dest coords:", destCoords);
-
-        // Ensure Google Maps is loaded
         const loadGoogleMaps = (): Promise<void> =>
           new Promise((resolve) => {
             if (window.google?.maps) {
@@ -858,30 +860,50 @@ export default function LoadPlanPage() {
 
         await loadGoogleMaps();
 
-        if (!window.google?.maps) {
-          console.log("Google Maps failed to load");
-          return;
-        }
+        if (!window.google?.maps) return;
 
-        const distanceService = new google.maps.DistanceMatrixService();
-        distanceService.getDistanceMatrix(
+        const selectedStopPoints = getSelectedStopPointsData();
+        const waypoints = selectedStopPoints.map((point) => {
+          const coords = point?.coordinates || [];
+          const avgLat =
+            coords.reduce((sum: number, coord: number[]) => sum + coord[0], 0) /
+            coords.length;
+          const avgLng =
+            coords.reduce((sum: number, coord: number[]) => sum + coord[1], 0) /
+            coords.length;
+          return {
+            location: { lat: avgLat, lng: avgLng },
+            stopover: true,
+          };
+        });
+
+        const directionsService = new google.maps.DirectionsService();
+        directionsService.route(
           {
-            origins: [{ lat: originCoords.lat, lng: originCoords.lng }],
-            destinations: [{ lat: destCoords.lat, lng: destCoords.lng }],
+            origin: { lat: originPoint.lat, lng: originPoint.lng },
+            destination: { lat: destPoint.lat, lng: destPoint.lng },
+            waypoints,
             travelMode: google.maps.TravelMode.DRIVING,
             unitSystem: google.maps.UnitSystem.METRIC,
           },
           (response, status) => {
             if (
-              status === google.maps.DistanceMatrixStatus.OK &&
-              response?.rows?.[0]?.elements?.[0]?.distance
+              status === google.maps.DirectionsStatus.OK &&
+              response?.routes?.[0]
             ) {
-              const distanceMeters = response.rows[0].elements[0].distance.value;
-              const distanceKm = Math.round(distanceMeters / 1000);
-              console.log("Distance calculated:", distanceKm, "km");
+              const route = response.routes[0];
+              let totalDistanceMeters = 0;
+              let totalDurationSeconds = 0;
+              route.legs.forEach((leg) => {
+                totalDistanceMeters += leg.distance?.value || 0;
+                totalDurationSeconds += leg.duration?.value || 0;
+              });
+              const distanceKm = Math.round(totalDistanceMeters / 1000);
+              const hours = Math.floor(totalDurationSeconds / 3600);
+              const minutes = Math.round((totalDurationSeconds % 3600) / 60);
+              const durationText = hours > 0 ? `${hours} hr ${minutes} min` : `${minutes} min`;
               setEstimatedDistance(distanceKm);
-            } else {
-              console.log("Distance matrix request failed:", status);
+              setEstimatedDuration(durationText);
             }
           },
         );
@@ -898,6 +920,7 @@ export default function LoadPlanPage() {
     normalizedDropOffPoint,
     normalizedLoadingLocationData,
     normalizedDropOffPointData,
+    JSON.stringify(stopPoints),
   ]);
 
   // Rate Card Calculation Function
@@ -999,16 +1022,13 @@ export default function LoadPlanPage() {
         estimatedDistance,
         tripDays,
       );
-      const total =
-        costBreakdown.total_transport +
-        (parseFloat(goodsInTransitPremium) || 0);
+      const total = costBreakdown.total_transport;
       setTotalVehicleCost(total);
     } else {
       const total =
         approximateFuelCost +
         approximatedVehicleCost +
-        approximatedDriverCost +
-        (parseFloat(goodsInTransitPremium) || 0);
+        approximatedDriverCost;
       setTotalVehicleCost(total);
     }
   }, [
@@ -1018,7 +1038,6 @@ export default function LoadPlanPage() {
     approximateFuelCost,
     approximatedVehicleCost,
     approximatedDriverCost,
-    goodsInTransitPremium,
     calculateRateCardCost,
   ]);
 
@@ -1073,8 +1092,8 @@ export default function LoadPlanPage() {
           .split(" ")
           .filter((coord: string) => coord.trim())
           .map((coord: string) => {
-            const [lng, lat] = coord.split(",");
-            return [parseFloat(lng), parseFloat(lat)];
+            const [lat, lng] = coord.split(",");
+            return [parseFloat(lat), parseFloat(lng)];
           })
           .filter(
             (pair: [number, number]) => !isNaN(pair[0]) && !isNaN(pair[1]),
@@ -1096,13 +1115,12 @@ export default function LoadPlanPage() {
         );
         if (point?.coordinates) {
           try {
-            // Parse coordinates format: "28.141508,-26.232723,0 28.140979,-26.232172,0 ..."
             const coordPairs = point.coordinates
               .split(" ")
               .filter((coord: string) => coord.trim())
               .map((coord: string) => {
-                const [lng, lat, alt] = coord.split(",");
-                return [parseFloat(lng), parseFloat(lat)];
+                const [lat, lng] = coord.split(",");
+                return [parseFloat(lat), parseFloat(lng)];
               })
               .filter(
                 (pair: [number, number]) => !isNaN(pair[0]) && !isNaN(pair[1]),
@@ -1479,7 +1497,6 @@ export default function LoadPlanPage() {
         approximated_vehicle_cost: approximatedVehicleCost,
         approximated_driver_cost: approximatedDriverCost,
         total_vehicle_cost: totalVehicleCost,
-        goods_in_transit_premium: parseFloat(goodsInTransitPremium) || null,
         estimated_distance: estimatedDistance,
         fuel_price_per_liter: parseFloat(fuelPricePerLiter) || null,
       };
@@ -1541,10 +1558,10 @@ export default function LoadPlanPage() {
       setTripType("local");
       setStopPoints([]);
       setFuelPricePerLiter("");
-      setGoodsInTransitPremium("");
       setSelectedVehicleType("");
       setShowSecondSection(false);
       setOptimizedRoute(null);
+      setRouteEtaDistance(null);
 
       // Refresh data
       fetchData();
@@ -1856,52 +1873,50 @@ export default function LoadPlanPage() {
                     </div>
                   </div>
 
-                  {/* Stop Points for National Trips */}
-                  {tripType === "national" && (
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <Label className="text-lg font-medium">
-                          Stop Points
-                        </Label>
+                  {/* Stop Points */}
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <Label className="text-lg font-medium">
+                        Stop Points
+                      </Label>
+                      <Button
+                        type="button"
+                        onClick={() => setStopPoints([...stopPoints, ""])}
+                        size="sm"
+                      >
+                        <Plus className="h-4 w-4 mr-1" /> Add Stop Point
+                      </Button>
+                    </div>
+
+                    {stopPoints.map((stopPoint, index) => (
+                      <div key={index} className="flex gap-2 items-center">
+                        <StopPointDropdown
+                          value={stopPoint}
+                          onChange={(value: any) => {
+                            const updated = [...stopPoints];
+                            updated[index] = value;
+                            setStopPoints(updated);
+                          }}
+                          stopPoints={availableStopPoints}
+                          placeholder="Search stop points"
+                          isLoading={isLoadingStopPoints}
+                        />
                         <Button
                           type="button"
-                          onClick={() => setStopPoints([...stopPoints, ""])}
+                          variant="outline"
                           size="sm"
+                          onClick={() => {
+                            const updated = stopPoints.filter(
+                              (_, i) => i !== index,
+                            );
+                            setStopPoints(updated);
+                          }}
                         >
-                          <Plus className="h-4 w-4 mr-1" /> Add Stop Point
+                          <X className="h-4 w-4" />
                         </Button>
                       </div>
-
-                      {stopPoints.map((stopPoint, index) => (
-                        <div key={index} className="flex gap-2 items-center">
-                          <StopPointDropdown
-                            value={stopPoint}
-                            onChange={(value: any) => {
-                              const updated = [...stopPoints];
-                              updated[index] = value;
-                              setStopPoints(updated);
-                            }}
-                            stopPoints={availableStopPoints}
-                            placeholder="Search stop points"
-                            isLoading={isLoadingStopPoints}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const updated = stopPoints.filter(
-                                (_, i) => i !== index,
-                              );
-                              setStopPoints(updated);
-                            }}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                    ))}
+                  </div>
 
                   {/* Route Preview */}
                   {normalizedLoadingLocation && normalizedDropOffPoint && (
@@ -1940,13 +1955,39 @@ export default function LoadPlanPage() {
                           routeData={
                             tripType === "national" ? optimizedRoute : null
                           }
-                          stopPoints={
-                            tripType === "national"
-                              ? getSelectedStopPointsData()
-                              : []
-                          }
+                          stopPoints={getSelectedStopPointsData()}
                           driverLocation={normalizedDriverLocation || undefined}
                         />
+                        {routeEtaDistance && (
+                          <div className="grid grid-cols-3 gap-3 mt-3">
+                            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 text-center">
+                              <p className="text-xs font-medium text-blue-600 uppercase">Distance</p>
+                              <p className="text-lg font-bold text-blue-900 mt-1">{routeEtaDistance.distance}</p>
+                            </div>
+                            <div className="p-3 bg-green-50 rounded-lg border border-green-200 text-center">
+                              <p className="text-xs font-medium text-green-600 uppercase">ETA</p>
+                              <p className="text-lg font-bold text-green-900 mt-1">{routeEtaDistance.eta}</p>
+                            </div>
+                            <div className="p-3 bg-amber-50 rounded-lg border border-amber-200 text-center">
+                              <p className="text-xs font-medium text-amber-600 uppercase">Duration (w/ breaks)</p>
+                              <p className="text-lg font-bold text-amber-900 mt-1">{routeEtaDistance.totalDurationWithBreaks || routeEtaDistance.duration}</p>
+                            </div>
+                          </div>
+                        )}
+                        {!routeEtaDistance && tripType === "local" && estimatedDistance > 0 && (
+                          <div className="grid grid-cols-2 gap-3 mt-3">
+                            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 text-center">
+                              <p className="text-xs font-medium text-blue-600 uppercase">Trip KM</p>
+                              <p className="text-lg font-bold text-blue-900 mt-1">{estimatedDistance} km</p>
+                            </div>
+                            {estimatedDuration && (
+                              <div className="p-3 bg-green-50 rounded-lg border border-green-200 text-center">
+                                <p className="text-xs font-medium text-green-600 uppercase">ETA Trip Time</p>
+                                <p className="text-lg font-bold text-green-900 mt-1">{estimatedDuration}</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -2144,24 +2185,6 @@ export default function LoadPlanPage() {
                                 className="border-slate-300 focus:border-slate-500"
                               />
                             </div>
-                            <div className="space-y-2">
-                              <Label
-                                htmlFor="goodsInTransit"
-                                className="text-sm font-medium text-slate-700"
-                              >
-                                Goods In Transit Premium
-                              </Label>
-                              <Input
-                                value={goodsInTransitPremium}
-                                onChange={(e) =>
-                                  setGoodsInTransitPremium(e.target.value)
-                                }
-                                placeholder="R 0.00"
-                                type="number"
-                                step="0.01"
-                                className="border-slate-300 focus:border-slate-500"
-                              />
-                            </div>
                           </div>
 
                           {/* Cost Display Cards */}
@@ -2232,17 +2255,6 @@ export default function LoadPlanPage() {
                                   value: approximatedDriverCost,
                                   fill: "url(#driverGradient)",
                                 },
-                                ...(parseFloat(goodsInTransitPremium) > 0
-                                  ? [
-                                      {
-                                        name: "Premium",
-                                        value: parseFloat(
-                                          goodsInTransitPremium,
-                                        ),
-                                        fill: "url(#premiumGradient)",
-                                      },
-                                    ]
-                                  : []),
                               ]}
                               margin={{
                                 top: 20,
@@ -2303,24 +2315,6 @@ export default function LoadPlanPage() {
                                   <stop
                                     offset="100%"
                                     stopColor="#f59e0b"
-                                    stopOpacity={0.7}
-                                  />
-                                </linearGradient>
-                                <linearGradient
-                                  id="premiumGradient"
-                                  x1="0"
-                                  y1="0"
-                                  x2="0"
-                                  y2="1"
-                                >
-                                  <stop
-                                    offset="0%"
-                                    stopColor="#a78bfa"
-                                    stopOpacity={0.9}
-                                  />
-                                  <stop
-                                    offset="100%"
-                                    stopColor="#8b5cf6"
                                     stopOpacity={0.7}
                                   />
                                 </linearGradient>
@@ -2403,14 +2397,6 @@ export default function LoadPlanPage() {
                               Driver
                             </span>
                           </div>
-                          {parseFloat(goodsInTransitPremium) > 0 && (
-                            <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 rounded-full border border-purple-200">
-                              <div className="w-3 h-3 rounded-full from-purple-400 to-purple-600"></div>
-                              <span className="text-xs font-medium text-purple-700">
-                                Premium
-                              </span>
-                            </div>
-                          )}
                         </div>
                       </div>
                     </div>

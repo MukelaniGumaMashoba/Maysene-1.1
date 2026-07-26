@@ -27,10 +27,11 @@ interface Props {
   location?: string;
   jobType?: string;
   priority?: string;
+  inspectionId?: number;
   onSuccess?: () => void;
 }
 
-export function SendToWorkshopDialog({ jobId, jobDescription, vehicleReg, clientName, location, jobType, priority, onSuccess }: Props) {
+export function SendToWorkshopDialog({ jobId, jobDescription, vehicleReg, clientName, location, jobType, priority, inspectionId, onSuccess }: Props) {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState('');
@@ -43,7 +44,7 @@ export function SendToWorkshopDialog({ jobId, jobDescription, vehicleReg, client
         'JC-' + year + '-' + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
 
       // Create workshop job linked to fleet job
-      const { error: workshopError } = await supabase
+      const { data: workshopData, error: workshopError } = await supabase
         .from('workshop_job')
         .insert({
           // id: undefined,
@@ -57,9 +58,26 @@ export function SendToWorkshopDialog({ jobId, jobDescription, vehicleReg, client
           notes: notes || '',
           fleet_job_id: jobId,
           source: 'fleet',
-        });
+        })
+        .select('id')
+        .single();
 
       if (workshopError) throw workshopError;
+
+      const workshopJobId = workshopData?.id;
+
+      // If this came from an inspection, link defects to the new workshop job
+      if (inspectionId && workshopJobId) {
+        const { error: defectLinkError } = await supabase
+          .from('defects')
+          .update({ workshop_job_id: workshopJobId })
+          .eq('inspection_id', inspectionId)
+          .is('workshop_job_id', null);
+
+        if (defectLinkError) {
+          console.error('Failed to link defects to workshop job:', defectLinkError);
+        }
+      }
 
       // Update fleet job status to assigned
       const { error: jobError } = await supabase
