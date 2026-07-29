@@ -187,7 +187,12 @@ export default function LoadPlanPage() {
   const [optimizedRoute, setOptimizedRoute] = useState<any>(null);
   const [showRouteModal, setShowRouteModal] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
-  const [routeEtaDistance, setRouteEtaDistance] = useState<{ duration: string; distance: string; eta: string; totalDurationWithBreaks: string } | null>(null);
+  const [routeEtaDistance, setRouteEtaDistance] = useState<{
+    duration: string;
+    distance: string;
+    eta: string;
+    totalDurationWithBreaks: string;
+  } | null>(null);
 
   type DriverAssignment = {
     id: string;
@@ -231,52 +236,51 @@ export default function LoadPlanPage() {
   //   [dropOffPoint, normalizeLocationValue],
   // );
 
+  // const createZoneFromPoint = (
+  //   point: { lat: number; lng: number },
+  //   radiusMeters = 200
+  // ) => {
+  //   const steps = 16;
+  //   const coords: number[][] = [];
 
-// const createZoneFromPoint = (
-//   point: { lat: number; lng: number },
-//   radiusMeters = 200
-// ) => {
-//   const steps = 16;
-//   const coords: number[][] = [];
+  //   for (let i = 0; i < steps; i++) {
+  //     const angle = (i / steps) * (2 * Math.PI);
 
-//   for (let i = 0; i < steps; i++) {
-//     const angle = (i / steps) * (2 * Math.PI);
+  //     const dx = (radiusMeters / 111320) * Math.cos(angle);
+  //     const dy =
+  //       (radiusMeters / (111320 * Math.cos(point.lat * Math.PI / 180))) *
+  //       Math.sin(angle);
 
-//     const dx = (radiusMeters / 111320) * Math.cos(angle);
-//     const dy =
-//       (radiusMeters / (111320 * Math.cos(point.lat * Math.PI / 180))) *
-//       Math.sin(angle);
+  //     coords.push([
+  //       point.lng + dx,
+  //       point.lat + dy
+  //     ]);
+  //   }
 
-//     coords.push([
-//       point.lng + dx,
-//       point.lat + dy
-//     ]);
-//   }
+  //   // close polygon
+  //   coords.push(coords[0]);
 
-//   // close polygon
-//   coords.push(coords[0]);
+  //   return coords;
+  // };
+  //   const loadingZone = {
+  //   name: "Loading Site",
+  //   coordinates: createZoneFromPoint(normalizedLoadingLocation)
+  // };
 
-//   return coords;
-// };
-//   const loadingZone = {
-//   name: "Loading Site",
-//   coordinates: createZoneFromPoint(normalizedLoadingLocation)
-// };
-
-// const dropoffZone = {
-//   name: "Drop-off Site",
-//   coordinates: createZoneFromPoint(normalizedDropOffPoint)
-// };
-
+  // const dropoffZone = {
+  //   name: "Drop-off Site",
+  //   coordinates: createZoneFromPoint(normalizedDropOffPoint)
+  // };
 
   // Driver assignments state
-  const [driverAssignments, setDriverAssignments] = useState<DriverAssignment[]>([
-    { id: "", name: "", first_name: "", surname: "" },
-  ]);
+  const [driverAssignments, setDriverAssignments] = useState<
+    DriverAssignment[]
+  >([{ id: "", name: "", first_name: "", surname: "" }]);
   const [selectedVehicleId, setSelectedVehicleId] = useState("");
   const [selectedTrailerId, setSelectedTrailerId] = useState("");
   const [selectedVehicleType, setSelectedVehicleType] = useState("");
-  const [selectedDriverLocation, setSelectedDriverLocation] = useState<any>(null);
+  const [selectedDriverLocation, setSelectedDriverLocation] =
+    useState<any>(null);
   const normalizedDriverLocation = selectedDriverLocation
     ? {
         lat: Number((selectedDriverLocation as any).latitude),
@@ -452,7 +456,10 @@ export default function LoadPlanPage() {
             "id, name, client_id, address, contact_person, phone, pickup_locations, dropoff_locations, commodity, IsLoading, coordinates, coords",
           )
           .eq("status", "Active"),
-        supabase.from("vehiclesc").select("*").or("vehicle_available.is.null,vehicle_available.eq.true"),
+        supabase
+          .from("vehiclesc")
+          .select("*")
+          .or("vehicle_available.is.null,vehicle_available.eq.true"),
         supabase.from("cost_centers").select("*"),
         fetch("/api/maysene-drivers"),
       ]);
@@ -565,7 +572,8 @@ export default function LoadPlanPage() {
       "1TON BAKKIE": ["1 ton", "bakkie"],
     };
 
-    const typeKeywords = keywords[selectedVehicleType as keyof typeof keywords] || [];
+    const typeKeywords =
+      keywords[selectedVehicleType as keyof typeof keywords] || [];
 
     return vehicles.filter((vehicle) => {
       const searchText =
@@ -617,7 +625,10 @@ export default function LoadPlanPage() {
       };
     }
 
-    console.warn("Missing DB coordinates for pickup location:", normalizedLocation);
+    console.warn(
+      "Missing DB coordinates for pickup location:",
+      normalizedLocation,
+    );
     return null;
   }, []);
 
@@ -766,14 +777,14 @@ export default function LoadPlanPage() {
         if (response.ok) {
           const routeData = await response.json();
           setOptimizedRoute(routeData);
-          
+
           const route = routeData?.route;
           if (route) {
             setRouteEtaDistance({
-              duration: route.duration || '',
-              distance: route.distance || '',
-              eta: route.eta || '',
-              totalDurationWithBreaks: route.totalDurationWithBreaks || '',
+              duration: route.duration || "",
+              distance: route.distance || "",
+              eta: route.eta || "",
+              totalDurationWithBreaks: route.totalDurationWithBreaks || "",
             });
           } else {
             setRouteEtaDistance(null);
@@ -901,7 +912,8 @@ export default function LoadPlanPage() {
               const distanceKm = Math.round(totalDistanceMeters / 1000);
               const hours = Math.floor(totalDurationSeconds / 3600);
               const minutes = Math.round((totalDurationSeconds % 3600) / 60);
-              const durationText = hours > 0 ? `${hours} hr ${minutes} min` : `${minutes} min`;
+              const durationText =
+                hours > 0 ? `${hours} hr ${minutes} min` : `${minutes} min`;
               setEstimatedDistance(distanceKm);
               setEstimatedDuration(durationText);
             }
@@ -1026,9 +1038,7 @@ export default function LoadPlanPage() {
       setTotalVehicleCost(total);
     } else {
       const total =
-        approximateFuelCost +
-        approximatedVehicleCost +
-        approximatedDriverCost;
+        approximateFuelCost + approximatedVehicleCost + approximatedDriverCost;
       setTotalVehicleCost(total);
     }
   }, [
@@ -1518,9 +1528,13 @@ export default function LoadPlanPage() {
           setVehicles((prev) =>
             prev.map((v) =>
               v.id.toString() === selectedVehicleId
-                ? { ...v, vehicle_available: false, vehicle_not_available_reason: "Assigned to Load" }
-                : v
-            )
+                ? {
+                    ...v,
+                    vehicle_available: false,
+                    vehicle_not_available_reason: "Assigned to Load",
+                  }
+                : v,
+            ),
           );
         } catch (err) {
           console.error("Error updating vehicle availability:", err);
@@ -1876,9 +1890,7 @@ export default function LoadPlanPage() {
                   {/* Stop Points */}
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
-                      <Label className="text-lg font-medium">
-                        Stop Points
-                      </Label>
+                      <Label className="text-lg font-medium">Stop Points</Label>
                       <Button
                         type="button"
                         onClick={() => setStopPoints([...stopPoints, ""])}
@@ -1961,33 +1973,56 @@ export default function LoadPlanPage() {
                         {routeEtaDistance && (
                           <div className="grid grid-cols-3 gap-3 mt-3">
                             <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 text-center">
-                              <p className="text-xs font-medium text-blue-600 uppercase">Distance</p>
-                              <p className="text-lg font-bold text-blue-900 mt-1">{routeEtaDistance.distance}</p>
+                              <p className="text-xs font-medium text-blue-600 uppercase">
+                                Distance
+                              </p>
+                              <p className="text-lg font-bold text-blue-900 mt-1">
+                                {routeEtaDistance.distance}
+                              </p>
                             </div>
                             <div className="p-3 bg-green-50 rounded-lg border border-green-200 text-center">
-                              <p className="text-xs font-medium text-green-600 uppercase">ETA</p>
-                              <p className="text-lg font-bold text-green-900 mt-1">{routeEtaDistance.eta}</p>
+                              <p className="text-xs font-medium text-green-600 uppercase">
+                                ETA
+                              </p>
+                              <p className="text-lg font-bold text-green-900 mt-1">
+                                {routeEtaDistance.eta}
+                              </p>
                             </div>
                             <div className="p-3 bg-amber-50 rounded-lg border border-amber-200 text-center">
-                              <p className="text-xs font-medium text-amber-600 uppercase">Duration (w/ breaks)</p>
-                              <p className="text-lg font-bold text-amber-900 mt-1">{routeEtaDistance.totalDurationWithBreaks || routeEtaDistance.duration}</p>
+                              <p className="text-xs font-medium text-amber-600 uppercase">
+                                Duration (w/ breaks)
+                              </p>
+                              <p className="text-lg font-bold text-amber-900 mt-1">
+                                {routeEtaDistance.totalDurationWithBreaks ||
+                                  routeEtaDistance.duration}
+                              </p>
                             </div>
                           </div>
                         )}
-                        {!routeEtaDistance && tripType === "local" && estimatedDistance > 0 && (
-                          <div className="grid grid-cols-2 gap-3 mt-3">
-                            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 text-center">
-                              <p className="text-xs font-medium text-blue-600 uppercase">Trip KM</p>
-                              <p className="text-lg font-bold text-blue-900 mt-1">{estimatedDistance} km</p>
-                            </div>
-                            {estimatedDuration && (
-                              <div className="p-3 bg-green-50 rounded-lg border border-green-200 text-center">
-                                <p className="text-xs font-medium text-green-600 uppercase">ETA Trip Time</p>
-                                <p className="text-lg font-bold text-green-900 mt-1">{estimatedDuration}</p>
+                        {!routeEtaDistance &&
+                          tripType === "local" &&
+                          estimatedDistance > 0 && (
+                            <div className="grid grid-cols-2 gap-3 mt-3">
+                              <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 text-center">
+                                <p className="text-xs font-medium text-blue-600 uppercase">
+                                  Trip KM
+                                </p>
+                                <p className="text-lg font-bold text-blue-900 mt-1">
+                                  {estimatedDistance} km
+                                </p>
                               </div>
-                            )}
-                          </div>
-                        )}
+                              {estimatedDuration && (
+                                <div className="p-3 bg-green-50 rounded-lg border border-green-200 text-center">
+                                  <p className="text-xs font-medium text-green-600 uppercase">
+                                    ETA Trip Time
+                                  </p>
+                                  <p className="text-lg font-bold text-green-900 mt-1">
+                                    {estimatedDuration}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          )}
                       </div>
                     </div>
                   )}
@@ -2069,15 +2104,20 @@ export default function LoadPlanPage() {
                           <SelectValue placeholder="Select horse (vehicle)" />
                         </SelectTrigger>
                         <SelectContent>
-                          {vehicles.filter(v => v.vehicle_available !== false).map((vehicle) => (
-                            <SelectItem
-                              key={vehicle.id}
-                              value={vehicle.id.toString()}
-                            >
-                              {vehicle.registration_number} - {vehicle.make}{" "}
-                              {vehicle.model}
-                            </SelectItem>
-                          ))}
+                          {vehicles
+                            .filter((v) => v.vehicle_available !== false)
+                            .map((vehicle) => (
+                              <SelectItem
+                                key={vehicle.id}
+                                value={vehicle.id.toString()}
+                              >
+                                {vehicle.registration_number
+                                  ? vehicle.fleet_number
+                                    ? `${vehicle.registration_number} - ${vehicle.fleet_number}`
+                                    : vehicle.registration_number
+                                  : "-"}
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -2434,7 +2474,12 @@ export default function LoadPlanPage() {
             {/* Trip Routes Display */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               {loads
-                .filter((trip) => !['delivered', 'offloading'].includes(trip.status?.toLowerCase()))
+                .filter(
+                  (trip) =>
+                    !["delivered", "offloading"].includes(
+                      trip.status?.toLowerCase(),
+                    ),
+                )
                 .map((trip) => {
                   const assignments =
                     parseJsonField(trip.vehicleassignments) || [];

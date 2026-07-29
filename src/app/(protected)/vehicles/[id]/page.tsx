@@ -2,7 +2,13 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Card, CardHeader, CardContent, CardTitle, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
@@ -57,6 +63,7 @@ interface Vehicle {
   inspected: boolean | null;
   type: string | null;
   workshop_id: string | null;
+  fleet_number: string | null;
 }
 
 function EditableField({
@@ -76,7 +83,11 @@ function EditableField({
   value: any;
   editing: boolean;
   editData: Vehicle | null;
-  onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
+  onInputChange: (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >,
+  ) => void;
   type?: string;
   options?: string[];
   multiline?: boolean;
@@ -170,7 +181,7 @@ export default function VehicleDetailsPage() {
 
     const { error } = await supabase
       .from("vehiclesc")
-      .update({ vehicle_deleted: true })
+      .update({ vehicle_deleted: true } as never)
       .eq("id", vehicle.id);
 
     setDeleting(false);
@@ -213,7 +224,7 @@ export default function VehicleDetailsPage() {
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
+    >,
   ) => {
     if (!editData) return;
     const { name, value } = e.target;
@@ -366,6 +377,15 @@ export default function VehicleDetailsPage() {
                   label="Registration Number"
                   name="registration_number"
                   value={vehicle.registration_number}
+                  editing={editing}
+                  editData={editData}
+                  onInputChange={handleInputChange}
+                />
+
+                <EditableField
+                  label="Fleet Number"
+                  name="fleet_number"
+                  value={vehicle.fleet_number}
                   editing={editing}
                   editData={editData}
                   onInputChange={handleInputChange}
@@ -550,13 +570,13 @@ export default function VehicleDetailsPage() {
 
           <CardFooter>
             <div>
-                <button
-                  onClick={() => router.push(`/vehicles/${vehicle.id}/history`)}
-                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none"
-                >
-                  {!loading ? "History" : "Loading..."}
-                </button>
-              </div>
+              <button
+                onClick={() => router.push(`/vehicles/${vehicle.id}/history`)}
+                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none"
+              >
+                {!loading ? "History" : "Loading..."}
+              </button>
+            </div>
           </CardFooter>
         </Card>
       </div>
