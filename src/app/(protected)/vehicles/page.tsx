@@ -19,7 +19,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Truck, Car, FileText, TruckElectricIcon, RotateCcw } from "lucide-react";
+import {
+  Plus,
+  Truck,
+  Car,
+  FileText,
+  TruckElectricIcon,
+  RotateCcw,
+} from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useForm } from "react-hook-form";
@@ -36,8 +43,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import Link from "next/link";
+import { Alert } from "@/components/ui/alert";
 // import { DataTable } from "@/components/ui/data-table";
 // import { initialVehiclesState } from "@/context/vehicles-context/context";
 
@@ -52,7 +65,7 @@ const vehicleFormSchema = z.object({
   manufactured_year: z.string().min(1, "Manufactured year is required"),
   vehicle_type: z.enum(
     ["vehicle", "trailer", "commercial", "tanker", "truck", "specialized"],
-    { required_error: "Vehicle type is required" }
+    { required_error: "Vehicle type is required" },
   ),
   registration_date: z.string().min(1, "Registration date is required"),
   license_expiry_date: z.string().min(1, "License expiry date is required"),
@@ -82,6 +95,7 @@ const vehicleFormSchema = z.object({
   updated_at: z.string().optional(),
   tech_id: z.number().int().optional(),
   driver_id: z.number().int().optional(),
+  fleet_number: z.string().optional(),
 });
 
 type VehicleFormValues = z.infer<typeof vehicleFormSchema>;
@@ -115,24 +129,29 @@ export default function Vehicles() {
   const [search, setSearch] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(
-    null
+    null,
   );
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [filteredDrivers, setFilteredDrivers] = useState<Driver[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   // const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
 
+  const [trailers, setTrailers] = useState([]);
+
   useEffect(() => {
     const getDrivers = async () => {
-      const { data, error } = await supabase.from("drivers").select("*").neq("deleted", true);
+      const { data, error } = await supabase
+        .from("drivers")
+        .select("*")
+        .neq("deleted", true);
       if (error) {
-        console.error("Error fetching drivers:", error);
+        alert(`Error fetching drivers: ${error.message}`);
         setDrivers([]);
         return;
       }
       setDrivers(data as []);
     };
-    
+
     // const getCostCenters = async () => {
     //   const { data, error } = await supabase
     //     .from("level_3_cost_centers")
@@ -145,7 +164,7 @@ export default function Vehicles() {
     //   }
     //   setCostCenters(data as CostCenter[]);
     // };
-    
+
     getDrivers();
     // getCostCenters();
   }, []);
@@ -154,25 +173,36 @@ export default function Vehicles() {
     const filtered = drivers.filter((driver) =>
       `${driver.first_name} ${driver.surname}`
         .toLowerCase()
-        .includes(searchTerm.toLowerCase())
+        .includes(searchTerm.toLowerCase()),
     );
     setFilteredDrivers(filtered);
   }, [searchTerm, drivers]);
 
+  useEffect(() => {
+    const fetchVehiclesTrailers = async () => {
+      const { data: trailer, error } = await supabase
+        .from("trailers")
+        .select("*")
+      setTrailers(trailer as []);
+    };
+
+    fetchVehiclesTrailers();
+  }, []);
 
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [filteredTechs, setFilteredTechs] = useState<Technician[]>([]);
-  const [selectedVehicle, setSelectedVehicle] = useState<VehicleFormValues | null>(null);
+  const [selectedVehicle, setSelectedVehicle] =
+    useState<VehicleFormValues | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingVehicleId, setEditingVehicleId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState("active");
-  const [deletedVehicles, setDeletedVehicles] = useState<VehicleFormValues[]>([]);
+  const [deletedVehicles, setDeletedVehicles] = useState<VehicleFormValues[]>(
+    [],
+  );
   // const [equipmentData, setEquipmentData] = useState<any[]>([]);
   const [isEquipmentSheetOpen, setIsEquipmentSheetOpen] = useState(false);
   // const [equipmentVehicleReg, setEquipmentVehicleReg] = useState("");
-  
-  
 
   useEffect(() => {
     const getTechnician = async () => {
@@ -186,8 +216,8 @@ export default function Vehicles() {
       }
       const { data: techniciansData, error: techError } = await supabase
         .from("technicians")
-        .select("*")
-        // .eq("type", "internal");
+        .select("*");
+      // .eq("type", "internal");
 
       setTechnicians(techniciansData as []);
 
@@ -202,7 +232,7 @@ export default function Vehicles() {
 
   useEffect(() => {
     const filtered = technicians.filter((tech) =>
-      tech.name.toLowerCase().includes(searchTerm.toLowerCase())
+      tech.name.toLowerCase().includes(searchTerm.toLowerCase()),
     );
     setFilteredTechs(filtered as []);
   }, [searchTerm, technicians]);
@@ -214,13 +244,16 @@ export default function Vehicles() {
   };
 
   // Filter vehicles based on search and active tab
-  const filteredVehicles = (activeTab === "active" ? vehicles : deletedVehicles).filter((vehicle) => {
+  const filteredVehicles = (
+    activeTab === "active" ? vehicles : deletedVehicles
+  ).filter((vehicle) => {
     const searchLower = search.toLowerCase();
     return (
-      (vehicle.make || '').toLowerCase().includes(searchLower) ||
-      (vehicle.model || '').toLowerCase().includes(searchLower) ||
-      (vehicle.registration_number || '').toLowerCase().includes(searchLower) ||
-      (vehicle.vehicle_type || '').toLowerCase().includes(searchLower)
+      (vehicle.make || "").toLowerCase().includes(searchLower) ||
+      (vehicle.model || "").toLowerCase().includes(searchLower) ||
+      (vehicle.registration_number || "").toLowerCase().includes(searchLower) ||
+      (vehicle.vehicle_type || "").toLowerCase().includes(searchLower) ||
+      (vehicle.fleet_number || "").toLowerCase().includes(searchLower)
     );
   });
 
@@ -252,7 +285,6 @@ export default function Vehicles() {
     if (error) {
       console.error("the error is", error.name, error.message);
     } else {
-      // @ts-expect-error
       setVehicles(vehicles || []);
     }
   };
@@ -263,7 +295,6 @@ export default function Vehicles() {
       .select("*")
       .eq("vehicle_deleted", true);
     if (!error) {
-      // @ts-expect-error
       setDeletedVehicles(data || []);
     }
   };
@@ -271,7 +302,7 @@ export default function Vehicles() {
   const handleRestoreVehicle = async (vehicleId: number) => {
     const { error } = await supabase
       .from("vehiclesc")
-      .update({ vehicle_deleted: false })
+      .update({ vehicle_deleted: false } as never)
       .eq("id", vehicleId);
     if (error) {
       toast.error("Failed to restore vehicle");
@@ -298,8 +329,8 @@ export default function Vehicles() {
       sub_model: "",
       manufactured_year: "",
       vehicle_type: "vehicle",
-      registration_date: new Date().toISOString().split('T')[0],
-      license_expiry_date: new Date().toISOString().split('T')[0],
+      registration_date: new Date().toISOString().split("T")[0],
+      license_expiry_date: new Date().toISOString().split("T")[0],
       purchase_price: "",
       retail_price: "",
       vehicle_priority: "medium",
@@ -310,7 +341,7 @@ export default function Vehicles() {
       take_on_kilometers: "",
       service_intervals: "",
       boarding_km_hours: "",
-      expected_boarding_date: new Date().toISOString().split('T')[0],
+      expected_boarding_date: new Date().toISOString().split("T")[0],
       cost_centres: "",
       colour: "",
       monthly_premium: "",
@@ -318,12 +349,13 @@ export default function Vehicles() {
       // created_by: '',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      fleet_number: "",
     },
   });
 
   const onSubmit = async (data: VehicleFormValues) => {
-    console.log('onSubmit called with data:', data);
-    console.log('Form errors:', form.formState.errors);
+    console.log("onSubmit called with data:", data);
+    console.log("Form errors:", form.formState.errors);
     try {
       if (isEditing && editingVehicleId) {
         await handleUpdateVehicle(data);
@@ -332,20 +364,24 @@ export default function Vehicles() {
       }
       fetchVehicles();
     } catch (error) {
-      console.error('Form submission error:', error);
-      toast.error('Form submission failed: ' + (error as Error).message);
+      console.error("Form submission error:", error);
+      toast.error("Form submission failed: " + (error as Error).message);
     }
   };
 
   const handleAddVehicle = async (data: VehicleFormValues) => {
-    console.log('Form data received:', data);
+    console.log("Form data received:", data);
     const { id, ...dataWithoutId } = data;
     const vehicleData = {
       ...dataWithoutId,
-      monthly_premium: data.monthly_premium ? parseFloat(data.monthly_premium.replace(/[^0-9.]/g, '')) : null,
-      hourly_rate: data.hourly_rate ? parseFloat(data.hourly_rate.replace(/[^0-9.]/g, '')) : null
+      monthly_premium: data.monthly_premium
+        ? parseFloat(data.monthly_premium.replace(/[^0-9.]/g, ""))
+        : null,
+      hourly_rate: data.hourly_rate
+        ? parseFloat(data.hourly_rate.replace(/[^0-9.]/g, ""))
+        : null,
     };
-    console.log('Vehicle data to insert:', vehicleData);
+    console.log("Vehicle data to insert:", vehicleData);
     const { data: vehicle, error } = await supabase
       .from("vehiclesc")
       // @ts-expect-error
@@ -368,20 +404,24 @@ export default function Vehicles() {
 
   const handleUpdateVehicle = async (data: VehicleFormValues) => {
     if (!editingVehicleId) return;
-    
+
     const vehicleData = {
       ...data,
-      monthly_premium: data.monthly_premium ? parseFloat(data.monthly_premium.replace(/[^0-9.]/g, '')) : null,
-      hourly_rate: data.hourly_rate ? parseFloat(data.hourly_rate.replace(/[^0-9.]/g, '')) : null
+      monthly_premium: data.monthly_premium
+        ? parseFloat(data.monthly_premium.replace(/[^0-9.]/g, ""))
+        : null,
+      hourly_rate: data.hourly_rate
+        ? parseFloat(data.hourly_rate.replace(/[^0-9.]/g, ""))
+        : null,
     };
-    
+
     const { error } = await supabase
       .from("vehiclesc")
 
       // @ts-expect-error
       .update(vehicleData)
       .eq("id", editingVehicleId);
-    
+
     if (error) {
       console.error(error.message);
       toast.error("Failed to update vehicle: " + error.message);
@@ -412,8 +452,10 @@ export default function Vehicles() {
       low: "bg-green-100 text-green-700 border-green-200",
     };
     return (
-      <Badge className={`${colors[priority as keyof typeof colors]} text-xs px-2 py-0.5 font-medium border`}>
-        {priority?.toUpperCase() || 'N/A'}
+      <Badge
+        className={`${colors[priority as keyof typeof colors]} text-xs px-2 py-0.5 font-medium border`}
+      >
+        {priority?.toUpperCase() || "N/A"}
       </Badge>
     );
   };
@@ -421,7 +463,7 @@ export default function Vehicles() {
   async function handleAssignDriver(vehicleId: number, driverId: number) {
     const { data, error } = await supabase
       .from("vehiclesc")
-      .update({ driver_id: driverId })
+      .update({ driver_id: driverId } as never)
       .eq("id", vehicleId)
       .select();
 
@@ -438,7 +480,7 @@ export default function Vehicles() {
   async function handleAssign(vehicleId: number, techId: number) {
     const { data: datav, error: errorv } = await supabase
       .from("vehiclesc")
-      .update({ tech_id: techId })
+      .update({ tech_id: techId } as never)
       .eq("id", vehicleId)
       .select();
 
@@ -492,7 +534,8 @@ export default function Vehicles() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Vehicles</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {vehicles.filter((v) => v.vehicle_type === "vehicle").length}
+                 {/* {vehicles.filter((v) => v.vehicle_type === "vehicle").length} */}
+                  {vehicles?.length ?? 0}
                 </p>
               </div>
               <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
@@ -507,7 +550,7 @@ export default function Vehicles() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Trailers</p>
                 <p className="text-2xl font-bold text-purple-600">
-                  {vehicles.filter((v) => v.vehicle_type === "trailer").length}
+                  {trailers?.length ?? 0}
                 </p>
               </div>
               <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -538,7 +581,9 @@ export default function Vehicles() {
       {isAddingVehicle && (
         <Card>
           <CardHeader>
-            <CardTitle>{isEditing ? 'Edit Vehicle' : 'Add New Vehicle'}</CardTitle>
+            <CardTitle>
+              {isEditing ? "Edit Vehicle" : "Add New Vehicle"}
+            </CardTitle>
           </CardHeader>
           {/* <CardContent>
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 mb-6 flex flex-col items-center bg-gray-50">
@@ -637,7 +682,21 @@ export default function Vehicles() {
                       <FormItem>
                         <FormLabel>Registration Number *</FormLabel>
                         <FormControl>
-                          <Input placeholder="ABC 123 GP" {...field} />
+                          <Input placeholder="ABC123GP" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="fleet_number"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Fleet Number</FormLabel>
+                        <FormControl>
+                          <Input placeholder="MAY0932" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -993,18 +1052,21 @@ export default function Vehicles() {
                       <FormItem>
                         <FormLabel>Monthly Premium</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="R 5,000" 
+                          <Input
+                            placeholder="R 5,000"
                             {...field}
                             onChange={(e) => {
                               field.onChange(e);
-                              const value = e.target.value.replace(/[^0-9.]/g, '');
+                              const value = e.target.value.replace(
+                                /[^0-9.]/g,
+                                "",
+                              );
                               if (value) {
                                 const monthly = parseFloat(value);
                                 const hourly = (monthly / 30 / 8).toFixed(2);
-                                form.setValue('hourly_rate', hourly);
+                                form.setValue("hourly_rate", hourly);
                               } else {
-                                form.setValue('hourly_rate', '');
+                                form.setValue("hourly_rate", "");
                               }
                             }}
                           />
@@ -1021,8 +1083,8 @@ export default function Vehicles() {
                       <FormItem>
                         <FormLabel>Hourly Rate (Auto-calculated)</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="R 20.83" 
+                          <Input
+                            placeholder="R 20.83"
                             {...field}
                             readOnly
                             className="bg-gray-50"
@@ -1040,19 +1102,24 @@ export default function Vehicles() {
                     className="bg-blue-600 hover:bg-blue-700"
                     onClick={() => {
                       const errors = form.formState.errors;
-                      console.log('All errors:', JSON.stringify(errors, null, 2));
-                      toast.error('Button clicked - check console for errors');
-                      
+                      console.log(
+                        "All errors:",
+                        JSON.stringify(errors, null, 2),
+                      );
+                      toast.error("Button clicked - check console for errors");
+
                       if (Object.keys(errors).length > 0) {
                         Object.entries(errors).forEach(([field, error]) => {
                           console.log(`Field ${field}:`, error);
-                          toast.error(`${field}: ${error?.message || 'Invalid'}`);
+                          toast.error(
+                            `${field}: ${error?.message || "Invalid"}`,
+                          );
                         });
                       }
                     }}
                   >
                     <FileText className="w-4 h-4 mr-2" />
-                    {isEditing ? 'Update Vehicle' : 'Save Vehicle'}
+                    {isEditing ? "Update Vehicle" : "Save Vehicle"}
                   </Button>
                   <Button
                     type="button"
@@ -1098,20 +1165,41 @@ export default function Vehicles() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-slate-50 border-b border-slate-200">
-                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Registration</TableHead>
-                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Make/Model</TableHead>
-                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Type</TableHead>
-                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Year</TableHead>
-                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Fuel</TableHead>
-                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Priority</TableHead>
-                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Driver</TableHead>
-                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Actions</TableHead>
+                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                        Registration
+                      </TableHead>
+                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                        Make/Model
+                      </TableHead>
+                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                        Type
+                      </TableHead>
+                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                        Year
+                      </TableHead>
+                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                        Fuel
+                      </TableHead>
+                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                        Priority
+                      </TableHead>
+                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                        Driver
+                      </TableHead>
+                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredVehicles.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-8 text-gray-500">No vehicles found</TableCell>
+                        <TableCell
+                          colSpan={8}
+                          className="text-center py-8 text-gray-500"
+                        >
+                          No vehicles found
+                        </TableCell>
                       </TableRow>
                     ) : (
                       filteredVehicles.map((vehicle, index) => (
@@ -1119,41 +1207,72 @@ export default function Vehicles() {
                           key={vehicle.id}
                           className="h-12 hover:bg-slate-50 border-b border-slate-100 transition-colors"
                         >
-                          <TableCell className="px-3 py-2 text-sm font-medium text-slate-900">{vehicle.registration_number || '-'}</TableCell>
+                          <TableCell className="px-3 py-2 text-sm font-medium text-slate-900">
+                            {vehicle.registration_number
+                              ? vehicle.fleet_number
+                                ? `${vehicle.registration_number} - ${vehicle.fleet_number}`
+                                : vehicle.registration_number
+                              : "-"}
+                          </TableCell>
                           <TableCell className="px-3 py-2 text-sm text-slate-700">
                             <div className="flex flex-col">
-                              <span className="font-medium">{vehicle.make || '-'}</span>
-                              <span className="text-xs text-slate-500">{vehicle.model || '-'}</span>
+                              <span className="font-medium">
+                                {vehicle.make || "-"}
+                              </span>
+                              <span className="text-xs text-slate-500">
+                                {vehicle.model || "-"}
+                              </span>
                             </div>
                           </TableCell>
                           <TableCell className="px-3 py-2 text-sm text-slate-700">
                             <div className="flex items-center gap-1">
                               {getVehicleTypeIcon(vehicle.vehicle_type)}
-                              <span className="capitalize text-xs">{vehicle.vehicle_type || '-'}</span>
+                              <span className="capitalize text-xs">
+                                {vehicle.vehicle_type || "-"}
+                              </span>
                             </div>
                           </TableCell>
-                          <TableCell className="px-3 py-2 text-sm text-slate-700">{vehicle.manufactured_year || '-'}</TableCell>
                           <TableCell className="px-3 py-2 text-sm text-slate-700">
-                            <span className="capitalize text-xs">{vehicle.fuel_type || '-'}</span>
+                            {vehicle.manufactured_year || "-"}
+                          </TableCell>
+                          <TableCell className="px-3 py-2 text-sm text-slate-700">
+                            <span className="capitalize text-xs">
+                              {vehicle.fuel_type || "-"}
+                            </span>
                           </TableCell>
                           <TableCell className="px-3 py-2 text-sm">
                             {getPriorityBadge(vehicle.vehicle_priority)}
                           </TableCell>
                           <TableCell className="px-3 py-2 text-sm text-slate-700">
-                            {drivers.find(driver => driver.id === vehicle.driver_id) ? (
+                            {drivers.find(
+                              (driver) => driver.id === vehicle.driver_id,
+                            ) ? (
                               <div className="flex items-center justify-between">
                                 <span className="text-xs">
-                                  {drivers.find(driver => driver.id === vehicle.driver_id)?.first_name} {drivers.find(driver => driver.id === vehicle.driver_id)?.surname}
+                                  {
+                                    drivers.find(
+                                      (driver) =>
+                                        driver.id === vehicle.driver_id,
+                                    )?.first_name
+                                  }{" "}
+                                  {
+                                    drivers.find(
+                                      (driver) =>
+                                        driver.id === vehicle.driver_id,
+                                    )?.surname
+                                  }
                                 </span>
                               </div>
                             ) : (
-                              <span className="text-xs text-slate-400">Unassigned</span>
+                              <span className="text-xs text-slate-400">
+                                Unassigned
+                              </span>
                             )}
                           </TableCell>
                           <TableCell className="px-3 py-2">
                             <div className="flex gap-1">
-                              <Button 
-                                variant="outline" 
+                              <Button
+                                variant="outline"
                                 size="sm"
                                 className="h-7 px-2 text-xs"
                                 onClick={() => {
@@ -1164,7 +1283,13 @@ export default function Vehicles() {
                                 View
                               </Button>
                               <Link href={`/vehicles/${vehicle.id}`}>
-                                <Button variant="default" size="sm" className="h-7 px-2 text-xs bg-slate-700 hover:bg-slate-800">Details</Button>
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  className="h-7 px-2 text-xs bg-slate-700 hover:bg-slate-800"
+                                >
+                                  Details
+                                </Button>
                               </Link>
                             </div>
                           </TableCell>
@@ -1196,33 +1321,69 @@ export default function Vehicles() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-slate-50 border-b border-slate-200">
-                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Registration</TableHead>
-                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Make/Model</TableHead>
-                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Type</TableHead>
-                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Year</TableHead>
-                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">Actions</TableHead>
+                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                        Registration
+                      </TableHead>
+                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                        Make/Model
+                      </TableHead>
+                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                        Type
+                      </TableHead>
+                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                        Year
+                      </TableHead>
+                      <TableHead className="h-10 px-3 text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {deletedVehicles.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8 text-gray-500">No deleted vehicles</TableCell>
+                        <TableCell
+                          colSpan={5}
+                          className="text-center py-8 text-gray-500"
+                        >
+                          No deleted vehicles
+                        </TableCell>
                       </TableRow>
                     ) : (
                       filteredVehicles.map((vehicle) => (
-                        <TableRow key={vehicle.id} className="h-12 hover:bg-slate-50 border-b border-slate-100 transition-colors">
-                          <TableCell className="px-3 py-2 text-sm font-medium text-slate-900">{vehicle.registration_number || '-'}</TableCell>
-                          <TableCell className="px-3 py-2 text-sm text-slate-700">
-                            <span className="font-medium">{vehicle.make || '-'}</span> <span className="text-xs text-slate-500">{vehicle.model || '-'}</span>
+                        <TableRow
+                          key={vehicle.id}
+                          className="h-12 hover:bg-slate-50 border-b border-slate-100 transition-colors"
+                        >
+                          <TableCell className="px-3 py-2 text-sm font-medium text-slate-900">
+                            {vehicle.registration_number
+                              ? vehicle.fleet_number
+                                ? `${vehicle.registration_number} - ${vehicle.fleet_number}`
+                                : vehicle.registration_number
+                              : "-"}
                           </TableCell>
-                          <TableCell className="px-3 py-2 text-sm text-slate-700 capitalize text-xs">{vehicle.vehicle_type || '-'}</TableCell>
-                          <TableCell className="px-3 py-2 text-sm text-slate-700">{vehicle.manufactured_year || '-'}</TableCell>
+                          <TableCell className="px-3 py-2 text-sm text-slate-700">
+                            <span className="font-medium">
+                              {vehicle.make || "-"}
+                            </span>{" "}
+                            <span className="text-xs text-slate-500">
+                              {vehicle.model || "-"}
+                            </span>
+                          </TableCell>
+                          <TableCell className="px-3 py-2 text-sm text-slate-700 capitalize text-xs">
+                            {vehicle.vehicle_type || "-"}
+                          </TableCell>
+                          <TableCell className="px-3 py-2 text-sm text-slate-700">
+                            {vehicle.manufactured_year || "-"}
+                          </TableCell>
                           <TableCell className="px-3 py-2">
                             <Button
                               size="sm"
                               variant="default"
                               className="bg-green-600 hover:bg-green-700"
-                              onClick={() => vehicle.id && handleRestoreVehicle(vehicle.id as number)}
+                              onClick={() =>
+                                vehicle.id &&
+                                handleRestoreVehicle(vehicle.id as number)
+                              }
                             >
                               <RotateCcw className="w-4 h-4 mr-1" />
                               Restore
@@ -1253,10 +1414,12 @@ export default function Vehicles() {
                     </div>
                     <div>
                       <SheetTitle className="text-xl font-bold text-slate-900">
-                        {selectedVehicle.registration_number || 'Vehicle Details'}
+                        {selectedVehicle.registration_number ||
+                          "Vehicle Details"}
                       </SheetTitle>
                       <p className="text-sm text-slate-600 mt-1">
-                        {selectedVehicle.make} {selectedVehicle.model} • {selectedVehicle.manufactured_year}
+                        {selectedVehicle.make} {selectedVehicle.model} •{" "}
+                        {selectedVehicle.manufactured_year}
                       </p>
                     </div>
                   </div>
@@ -1272,24 +1435,42 @@ export default function Vehicles() {
                     <div className="w-6 h-6 bg-slate-600 rounded flex items-center justify-center">
                       <Car className="w-3 h-3 text-white" />
                     </div>
-                    <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">Basic Information</h3>
+                    <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">
+                      Basic Information
+                    </h3>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Registration</p>
-                      <p className="text-sm font-medium text-slate-900 mt-1">{selectedVehicle.registration_number || '-'}</p>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                        Registration
+                      </p>
+                      <p className="text-sm font-medium text-slate-900 mt-1">
+                        {selectedVehicle.registration_number || "-"}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Engine Number</p>
-                      <p className="text-sm text-slate-700 mt-1">{selectedVehicle.engine_number || '-'}</p>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                        Engine Number
+                      </p>
+                      <p className="text-sm text-slate-700 mt-1">
+                        {selectedVehicle.engine_number || "-"}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">VIN Number</p>
-                      <p className="text-sm text-slate-700 mt-1">{selectedVehicle.vin_number || '-'}</p>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                        VIN Number
+                      </p>
+                      <p className="text-sm text-slate-700 mt-1">
+                        {selectedVehicle.vin_number || "-"}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Color</p>
-                      <p className="text-sm text-slate-700 mt-1">{selectedVehicle.colour || '-'}</p>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                        Color
+                      </p>
+                      <p className="text-sm text-slate-700 mt-1">
+                        {selectedVehicle.colour || "-"}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -1300,24 +1481,44 @@ export default function Vehicles() {
                     <div className="w-6 h-6 bg-slate-600 rounded flex items-center justify-center">
                       <Truck className="w-3 h-3 text-white" />
                     </div>
-                    <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">Technical Details</h3>
+                    <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">
+                      Technical Details
+                    </h3>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Fuel Type</p>
-                      <p className="text-sm text-slate-700 mt-1 capitalize">{selectedVehicle.fuel_type || '-'}</p>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                        Fuel Type
+                      </p>
+                      <p className="text-sm text-slate-700 mt-1 capitalize">
+                        {selectedVehicle.fuel_type || "-"}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Transmission</p>
-                      <p className="text-sm text-slate-700 mt-1 capitalize">{selectedVehicle.transmission_type || '-'}</p>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                        Transmission
+                      </p>
+                      <p className="text-sm text-slate-700 mt-1 capitalize">
+                        {selectedVehicle.transmission_type || "-"}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Tank Capacity</p>
-                      <p className="text-sm text-slate-700 mt-1">{selectedVehicle.tank_capacity ? `${selectedVehicle.tank_capacity}L` : '-'}</p>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                        Tank Capacity
+                      </p>
+                      <p className="text-sm text-slate-700 mt-1">
+                        {selectedVehicle.tank_capacity
+                          ? `${selectedVehicle.tank_capacity}L`
+                          : "-"}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Service Intervals</p>
-                      <p className="text-sm text-slate-700 mt-1">{selectedVehicle.service_intervals || '-'}</p>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                        Service Intervals
+                      </p>
+                      <p className="text-sm text-slate-700 mt-1">
+                        {selectedVehicle.service_intervals || "-"}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -1328,28 +1529,54 @@ export default function Vehicles() {
                     <div className="w-6 h-6 bg-slate-600 rounded flex items-center justify-center">
                       <span className="text-white text-xs font-bold">R</span>
                     </div>
-                    <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">Financial Information</h3>
+                    <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">
+                      Financial Information
+                    </h3>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Purchase Price</p>
-                      <p className="text-sm font-medium text-slate-900 mt-1">{selectedVehicle.purchase_price || '-'}</p>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                        Purchase Price
+                      </p>
+                      <p className="text-sm font-medium text-slate-900 mt-1">
+                        {selectedVehicle.purchase_price || "-"}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Retail Price</p>
-                      <p className="text-sm text-slate-700 mt-1">{selectedVehicle.retail_price || '-'}</p>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                        Retail Price
+                      </p>
+                      <p className="text-sm text-slate-700 mt-1">
+                        {selectedVehicle.retail_price || "-"}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Monthly Premium</p>
-                      <p className="text-sm text-slate-700 mt-1">{selectedVehicle.monthly_premium ? `R ${selectedVehicle.monthly_premium}` : '-'}</p>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                        Monthly Premium
+                      </p>
+                      <p className="text-sm text-slate-700 mt-1">
+                        {selectedVehicle.monthly_premium
+                          ? `R ${selectedVehicle.monthly_premium}`
+                          : "-"}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Hourly Rate</p>
-                      <p className="text-sm text-slate-700 mt-1">{selectedVehicle.hourly_rate ? `R ${selectedVehicle.hourly_rate}` : '-'}</p>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                        Hourly Rate
+                      </p>
+                      <p className="text-sm text-slate-700 mt-1">
+                        {selectedVehicle.hourly_rate
+                          ? `R ${selectedVehicle.hourly_rate}`
+                          : "-"}
+                      </p>
                     </div>
                     <div className="col-span-2">
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Cost Centres</p>
-                      <p className="text-sm text-slate-700 mt-1">{selectedVehicle.cost_centres || '-'}</p>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                        Cost Centres
+                      </p>
+                      <p className="text-sm text-slate-700 mt-1">
+                        {selectedVehicle.cost_centres || "-"}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -1360,22 +1587,30 @@ export default function Vehicles() {
                     <div className="w-6 h-6 bg-slate-600 rounded flex items-center justify-center">
                       <span className="text-white text-xs font-bold">A</span>
                     </div>
-                    <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">Assignments</h3>
+                    <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">
+                      Assignments
+                    </h3>
                   </div>
                   <div className="grid grid-cols-1 gap-4">
                     <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Assigned Driver</p>
-                      <p className="text-sm text-slate-700 mt-1">{
-                        drivers.find(d => d.id === selectedVehicle.driver_id) 
-                          ? `${drivers.find(d => d.id === selectedVehicle.driver_id)?.first_name} ${drivers.find(d => d.id === selectedVehicle.driver_id)?.surname}`
-                          : 'Not Assigned'
-                      }</p>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                        Assigned Driver
+                      </p>
+                      <p className="text-sm text-slate-700 mt-1">
+                        {drivers.find((d) => d.id === selectedVehicle.driver_id)
+                          ? `${drivers.find((d) => d.id === selectedVehicle.driver_id)?.first_name} ${drivers.find((d) => d.id === selectedVehicle.driver_id)?.surname}`
+                          : "Not Assigned"}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Assigned Technician</p>
-                      <p className="text-sm text-slate-700 mt-1">{
-                        technicians.find(t => t.id === selectedVehicle.tech_id)?.name || 'Not Assigned'
-                      }</p>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                        Assigned Technician
+                      </p>
+                      <p className="text-sm text-slate-700 mt-1">
+                        {technicians.find(
+                          (t) => t.id === selectedVehicle.tech_id,
+                        )?.name || "Not Assigned"}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -1398,7 +1633,6 @@ export default function Vehicles() {
           )}
         </SheetContent>
       </Sheet>
-
     </div>
   );
 }
