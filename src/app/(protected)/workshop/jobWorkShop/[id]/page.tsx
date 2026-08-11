@@ -1,100 +1,106 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { redirect, useParams, useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 import {
   FileText,
-  Eye,
   CheckCircle,
   XCircle,
   ArrowLeft,
   Truck,
-  MapPin,
-  Phone,
   User,
   Calendar,
   DollarSign,
   Wrench,
   Clock,
   AlertTriangle,
-  FileEdit,
+  AlertCircle,
   History,
   Droplet,
+  UserCheck,
+  Camera,
+  X,
+  FileText as FileTextIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import JobStatusHistory from "@/components/workshop/JobStatusHistory";
-import EditJobDialog from "@/components/workshop/EditJobDialog";
+import JobLineItems from "@/components/workshop/JobLineItems";
+import WorkflowActions from "@/components/workshop/WorkflowActions";
+import { STATUS_LABELS, STATUS_COLORS, WorkflowStatus } from "@/lib/line-item-templates";
+import { useCurrentTechnician } from "@/hooks/useCurrentTechnician";
 
 interface WorkshopJob {
   id: number;
-  jobId_workshop: string;
+  jobid_workshop: string;
   job_type: string;
   description?: string;
   status: string;
-  estimated_cost?: number;
-  actual_cost?: number;
-  client_name?: string;
-  client_phone?: string;
+  workflow_status?: string;
+  priority?: string;
+  fleet_number?: string;
+  trailer_registration?: string;
+  assigned_to?: string;
+  job_source?: string;
   registration_no?: string;
   location?: string;
   notes?: string;
-  attachments?: string[];
   created_at: string;
   updated_at?: string;
-  technician_id?: number;
-
-  // labour fields (optional)
+  due_date?: string;
+  start_time?: string;
+  end_time?: string;
+  completed_at?: string;
+  completion_notes?: string;
+  technician_name?: string;
+  client_name?: string;
+  client_phone?: string;
   labour_hours?: number;
   labor_cost?: number;
   total_labor_cost?: number;
-  grand_total?: number;
   total_parts_cost?: number;
   total_sublet_cost?: number;
-  edited_after_approval?: boolean;
-  requires_reapproval?: boolean;
-  edit_count?: number;
-  last_edited_by_name?: string;
-  last_edited_date?: string;
+  grand_total?: number;
+  quality_check_by?: string;
+  quality_check_at?: string;
+  cancelled_reason?: string;
+  return_reason?: string;
+  cancelled_at?: string;
+  assigned_at?: string;
+  accepted_at?: string;
 }
 
 interface Vehicle {
   id: number;
   registration_number: string;
+  fleet_number: string;
   make: string;
   model: string;
   manufactured_year: string;
   vehicle_type: string;
   fuel_type: string;
   colour: string;
+  vehicle_available?: boolean;
+  vehicle_not_available_reason?: string;
 }
 
 interface Technician {
@@ -104,8 +110,7 @@ interface Technician {
   email: string;
 }
 
-
-const notAllowedStatuses = ["completed", "approved", "rejected", "assigned", "part assigned", "part ordered"];
+const notAllowedStatuses = ["job_completed", "quality_check_done", "job_cancelled"];
 
 export default function WorkshopJobDetailPage() {
   const params = useParams();
@@ -114,26 +119,82 @@ export default function WorkshopJobDetailPage() {
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [technician, setTechnician] = useState<Technician | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
+  const [userRole, setUserRole] = useState<string>("");
+  const [allTechnicians, setAllTechnicians] = useState<any[]>([]);
+  const [reassignTechId, setReassignTechId] = useState("");
+  const [isReassigning, setIsReassigning] = useState(false);
   const supabase = createClient() as any;
 
-  // Labour state
   const [labourHours, setLabourHours] = useState<number>(0);
   const [labourRate, setLabourRate] = useState<number>(0);
   const [labourTotal, setLabourTotal] = useState<number>(0);
-  const [isLabourDialogOpen, setIsLabourDialogOpen] = useState(false);
-  const [isSavingLabour, setIsSavingLabour] = useState(false);
   const [consumables, setConsumables] = useState<any[]>([]);
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isChangeRequestOpen, setIsChangeRequestOpen] = useState(false);
-  const [canEditApproved, setCanEditApproved] = useState(false);
-  const [changeReason, setChangeReason] = useState("");
-  const [completionNotes, setCompletionNotes] = useState("");
-  const [isClosing, setIsClosing] = useState(false);
-  const [technicianList, setTechnicianList] = useState<any[]>([]);
-  const [isAssigningTech, setIsAssigningTech] = useState(false);
   const [jobNotes, setJobNotes] = useState("");
   const [isSavingNotes, setIsSavingNotes] = useState(false);
+  const [jobPhotos, setJobPhotos] = useState<string[]>([]);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isUploadingInvoice, setIsUploadingInvoice] = useState(false);
+  const [lineItems, setLineItems] = useState<any[]>([]);
+  
+  const { technician: currentTechnician, loading: techLoading } = useCurrentTechnician();
+
+  useEffect(() => {
+    const getCookie = (name: string) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop()?.split(";").shift();
+      return null;
+    };
+    const role = decodeURIComponent(getCookie("role") || "");
+    setUserRole(role || "mechanic");
+    fetchTechnicians();
+  }, []);
+
+  const fetchTechnicians = async () => {
+    const { data } = await supabase
+      .from("technicians_maysene")
+      .select("id, name")
+      .eq("isActive", true)
+      .order("name");
+    if (data) setAllTechnicians(data);
+  };
+
+  const handleReassign = async () => {
+    if (!reassignTechId || !job) return;
+    const tech = allTechnicians.find((t) => t.id === reassignTechId);
+    if (!tech) return;
+
+    setIsReassigning(true);
+    try {
+      const { error } = await supabase
+        .from("workshop_job")
+        .update({
+          assigned_mechanic_id: null,
+          technician_name: tech.name,
+          workflow_status: "mechanic_assigned",
+          assigned_at: new Date().toISOString(),
+        })
+        .eq("id", job.id);
+
+      if (error) throw error;
+
+      await supabase.from("job_status_history").insert({
+        job_id: job.id,
+        from_status: job.workflow_status,
+        to_status: "mechanic_assigned",
+        notes: `Reassigned from ${job.technician_name || "None"} to ${tech.name}`,
+        changed_by_role: userRole,
+      });
+
+      toast.success(`Job reassigned to ${tech.name}`);
+      setReassignTechId("");
+      handleRefresh();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to reassign");
+    } finally {
+      setIsReassigning(false);
+    }
+  };
 
   useEffect(() => {
     const fetchJobAndVehicle = async () => {
@@ -143,16 +204,14 @@ export default function WorkshopJobDetailPage() {
         .eq("id", Number(params.id))
         .single();
 
-      if (jobError) {
-        console.error("Error fetching workshop job:", jobError);
+      if (jobError || !jobData) {
         setIsLoading(false);
         return;
       }
 
-      setJob(jobData as any as WorkshopJob);
-      setIsEditOpen(false);
+      setJob(jobData as WorkshopJob);
+      setJobPhotos(jobData.photos || []);
 
-      // populate labour state from job row if present
       setLabourHours(jobData?.labour_hours ?? 0);
       setLabourRate(jobData?.labor_cost ?? 0);
       const total =
@@ -161,144 +220,53 @@ export default function WorkshopJobDetailPage() {
       setLabourTotal(total ?? 0);
 
       if (jobData.registration_no) {
-        const { data: vehicleData, error: vehicleError } = await supabase
+        const { data: vehicleData } = await supabase
           .from("vehiclesc")
           .select("*")
           .eq("registration_number", jobData.registration_no)
           .single();
-
-        if (!vehicleError && vehicleData) {
-          setVehicle(vehicleData as Vehicle);
-        }
+        if (vehicleData) setVehicle(vehicleData as Vehicle);
       }
 
-      const { data: techData, error: insertError } = await supabase
-        .from("workshop_assignments")
-        .select("*")
-        .eq("job_id", jobData.id);
-
-      console.log("Tech Assignment Data:", techData);
-      const tech = techData && techData.length > 0 ? techData[0].tech_id : null;
-      // Fetch technician if assigned
-      console.log("Assigned Technician ID:", tech);
-      if (tech) {
-        const { data: technicianData, error: techError } = await supabase
+      if (jobData.technician_name) {
+        const { data: techData } = await supabase
           .from("technicians_maysene")
-          .select("*")
-          .eq("id", tech)
+          .select("id, name, phone, email")
+          .eq("name", jobData.technician_name)
           .single();
-
-        if (!techError && technicianData) {
-          setTechnician(technicianData as Technician);
-          console.log("Technician Data:", technicianData);
-        }
+        if (techData) setTechnician(techData as Technician);
       }
 
-      // Fetch consumables
-      const { data: consumablesData, error: consumError } = await supabase
+      const { data: consumablesData } = await supabase
         .from("workshop_jobpart")
         .select("*")
         .eq("job_id", jobData.id);
-      if (!consumError && consumablesData) {
-        const consumablesList = consumablesData?.flatMap((item: any) => (item as any).consumables || []) || [];
+      if (consumablesData) {
+        const consumablesList = consumablesData?.flatMap((item: any) => item.consumables || []) || [];
         setConsumables(consumablesList);
       }
 
-      // Fetch available technicians
-      const { data: techList } = await supabase
-        .from("technicians_maysene")
-        .select("id, name, phone, email")
-        .order("name");
-      if (techList) setTechnicianList(techList);
+      // Fetch line items
+      const { data: lineItemsData } = await supabase
+        .from("job_line_items")
+        .select("*")
+        .eq("job_id", jobData.id);
+      if (lineItemsData) setLineItems(lineItemsData);
 
-      // Initialize notes from job
       setJobNotes(jobData?.notes || "");
-
       setIsLoading(false);
     };
     if (params.id) fetchJobAndVehicle();
-  }, [params.id, supabase]);
+  }, [params.id]);
 
-  const updateWorkshopJobStatus = async (jobId: number, status: string) => {
-    setUpdating(true);
-    const { data, error } = await supabase
-      .from("workshop_job")
-      .update({
-        status: status,
-        updated_at: new Date().toISOString(),
-        approved: true,
-      })
-      .eq("id", jobId);
-
-    if (error) {
-      console.error("Error updating status:", error);
-      toast.error("Failed to update job status");
-      setUpdating(false);
-      return { success: false, error };
-    } else {
-      toast.success(
-        `Job ${status === "Approved" ? "approved" : "rejected"} successfully`
-      );
-      setJob((prev) => (prev ? { ...prev, status } : null));
-      setUpdating(false);
-      setTimeout(() => router.push("/workshop/jobWorkShop"), 1500);
-      return { success: true, data };
-    }
-  };
-
-  const handleAssignTechnician = async (techId: string) => {
-    if (!techId || !job) return;
-    setIsAssigningTech(true);
-
-    // Remove existing assignment first
-    await supabase.from("workshop_assignments").delete().eq("job_id", job.id);
-
-    // Insert new assignment
-    const { error } = await supabase.from("workshop_assignments").insert({
-      job_id: job.id,
-      tech_id: Number(techId),
-      vehicle_id: job.registration_no || "",
-      driver_id: "",
-    });
-
-    if (error) {
-      toast.error("Failed to assign technician");
-      console.error(error);
-    } else {
-      toast.success("Technician assigned successfully");
-      // Fetch the assigned technician info
-      const { data: techInfo } = await supabase
-        .from("technicians_maysene")
-        .select("id, name, phone, email")
-        .eq("id", Number(techId))
-        .single();
-      if (techInfo) setTechnician(techInfo);
-    }
-    setIsAssigningTech(false);
-  };
-
-  const handleCloseJob = async () => {
+  const handleRefresh = async () => {
     if (!job) return;
-    setIsClosing(true);
-    const { error } = await supabase
+    const { data: jobData } = await supabase
       .from("workshop_job")
-      .update({
-        status: "Completed",
-        updated_at: new Date().toISOString(),
-        completed_at: new Date().toISOString(),
-        completion_notes: completionNotes || null,
-      })
-      .eq("id", job.id);
-
-    if (error) {
-      toast.error("Failed to close job");
-      console.error(error);
-    } else {
-      toast.success("Job closed successfully");
-      setJob((prev) => prev ? { ...prev, status: "Completed" } : null);
-      setTimeout(() => router.push("/workshop/jobWorkShop"), 1500);
-    }
-    setIsClosing(false);
+      .select("*")
+      .eq("id", job.id)
+      .single();
+    if (jobData) setJob(jobData as WorkshopJob);
   };
 
   const handleSaveNotes = async () => {
@@ -306,10 +274,7 @@ export default function WorkshopJobDetailPage() {
     setIsSavingNotes(true);
     const { error } = await supabase
       .from("workshop_job")
-      .update({
-        notes: jobNotes,
-        updated_at: new Date().toISOString(),
-      })
+      .update({ notes: jobNotes, updated_at: new Date().toISOString() })
       .eq("id", job.id);
 
     if (error) {
@@ -321,644 +286,788 @@ export default function WorkshopJobDetailPage() {
     setIsSavingNotes(false);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Awaiting Approval":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "In Progress":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case "Approved":
-        return "bg-green-100 text-green-800 border-green-200";
-      case "Completed":
-        return "bg-green-100 text-green-800 border-green-200";
-      case "Rejected":
-        return "bg-red-100 text-red-800 border-red-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length || !job) return;
+
+    setIsUploadingPhoto(true);
+    try {
+      const newUrls: string[] = [];
+      for (const file of files) {
+        const filePath = `jobs/${job.id}/${Date.now()}-${file.name}`;
+        const { error } = await supabase.storage
+          .from("job-attachments")
+          .upload(filePath, file);
+        if (error) throw error;
+        const { data } = supabase.storage
+          .from("job-attachments")
+          .getPublicUrl(filePath);
+        if (data?.publicUrl) newUrls.push(data.publicUrl);
+      }
+
+      const updatedPhotos = [...jobPhotos, ...newUrls];
+      await supabase
+        .from("workshop_job")
+        .update({ photos: updatedPhotos })
+        .eq("id", job.id);
+
+      setJobPhotos(updatedPhotos);
+      setJob((prev) => prev ? { ...prev, photos: updatedPhotos } : null);
+      toast.success(`${files.length} photo(s) uploaded`);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to upload photos");
+    } finally {
+      setIsUploadingPhoto(false);
+      e.target.value = "";
     }
   };
 
-  const getJobTypeIcon = (type: string) => {
-    switch (type) {
-      case "mechanical":
-        return <Wrench className="h-5 w-5 text-blue-600" />;
-      case "electrical":
-        return <AlertTriangle className="h-5 w-5 text-yellow-600" />;
-      case "towing":
-        return <Truck className="h-5 w-5 text-green-600" />;
-      default:
-        return <FileText className="h-5 w-5 text-gray-600" />;
+  const handleInvoiceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !job) return;
+
+    setIsUploadingInvoice(true);
+    try {
+      const filePath = `jobs/${job.id}/invoice-${Date.now()}-${file.name}`;
+      const { error } = await supabase.storage
+        .from("job-attachments")
+        .upload(filePath, file);
+      if (error) throw error;
+
+      const { data } = supabase.storage
+        .from("job-attachments")
+        .getPublicUrl(filePath);
+
+      if (data?.publicUrl) {
+        await supabase
+          .from("workshop_job")
+          .update({ invoice_url: data.publicUrl })
+          .eq("id", job.id);
+
+        setJob((prev) => prev ? { ...prev, invoice_url: data.publicUrl } : null);
+        toast.success("Invoice uploaded");
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to upload invoice");
+    } finally {
+      setIsUploadingInvoice(false);
+      e.target.value = "";
     }
+  };
+
+  const removePhoto = async (index: number) => {
+    if (!job) return;
+    const updatedPhotos = jobPhotos.filter((_, i) => i !== index);
+    await supabase
+      .from("workshop_job")
+      .update({ photos: updatedPhotos })
+      .eq("id", job.id);
+    setJobPhotos(updatedPhotos);
+    setJob((prev) => prev ? { ...prev, photos: updatedPhotos } : null);
+  };
+
+  const handleCloseJob = async () => {
+    if (!job) return;
+    const { error } = await supabase
+      .from("workshop_job")
+      .update({
+        workflow_status: "job_completed",
+        completed_at: new Date().toISOString(),
+        completion_notes: jobNotes || null,
+      })
+      .eq("id", job.id);
+
+    if (error) {
+      toast.error("Failed to close job");
+    } else {
+      await supabase.from("job_status_history").insert({
+        job_id: job.id,
+        from_status: job.workflow_status,
+        to_status: "job_completed",
+        notes: jobNotes || "Job completed",
+      });
+      toast.success("Job completed successfully");
+      handleRefresh();
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    return STATUS_COLORS[status as WorkflowStatus] || "bg-gray-100 text-gray-800 border-gray-200";
   };
 
   if (isLoading) return <div className="p-8 text-center">Loading...</div>;
   if (!job) return <div className="p-8 text-center">Job not found</div>;
 
-  // Save labour details to DB
-  const handleSaveLabour = async () => {
-    if (!job) return;
-    setIsSavingLabour(true);
-    try {
-      const updatedTotal = Number((labourHours || 0) * (labourRate || 0));
-      const isApproved = job.status?.toLowerCase() === "approved";
-      const { error } = await supabase
-        .from("workshop_job")
-        .update({
-          labour_hours: labourHours,
-          labor_cost: labourRate,
-          total_labor_cost: updatedTotal,
-          status: isApproved ? "Awaiting Approval" : job.status,
-          notes: isApproved && changeReason
-            ? `${job.notes || ""}${job.notes ? "\n" : ""}Change request: ${changeReason}`
-            : job.notes,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", job.id);
-      if (error) {
-        console.error("Error saving labour:", error);
-        toast.error("Failed to save labour");
-      } else {
-        // update local state & job object
-        setLabourTotal(updatedTotal);
-        setJob((prev) =>
-          prev
-            ? {
-              ...prev,
-              labour_hours: labourHours,
-              labor_cost: labourRate,
-              total_labor_cost: updatedTotal,
-              status: isApproved ? "Awaiting Approval" : prev.status,
-            }
-            : prev
-        );
-        toast.success(isApproved ? "Labour updated and sent for approval" : "Labour saved");
-        setIsLabourDialogOpen(false);
-        if (isApproved) {
-          setCanEditApproved(false);
-          setChangeReason("");
-        }
-      }
-    } catch (e) {
-      console.error("Save labour failed:", e);
-      toast.error("Failed to save labour");
-    } finally {
-      setIsSavingLabour(false);
-    }
-  };
+  const workflowStatus = (job as any).workflow_status || "awaiting_assignment";
+  const isWorkshopRole = userRole === "mechanic" || userRole === "senior-mechanic";
+  const isOfficeRole = userRole === "office" || userRole === "fleet-manager" || userRole === "fleet_manager" || userRole === "fleet manager";
+  const isPendingAcceptance = isWorkshopRole && (workflowStatus === "mechanic_assigned" || workflowStatus === "subcontractor_assigned");
+  
+  // OWNERSHIP CHECK: Mechanics can only view their assigned jobs
+  const isOwner = !isWorkshopRole || userRole === "senior-mechanic" || 
+    (job as any).technician_name === currentTechnician?.name;
+
+  if (!isOwner) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-white shadow-sm border-b px-3 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-between">
+            <Link href="/workshop/jobWorkShop">
+              <Button variant="ghost" className="flex items-center gap-2 text-sm sm:text-base">
+                <ArrowLeft className="h-4 w-4" /> Back to Jobs
+              </Button>
+            </Link>
+            <h1 className="text-base sm:text-xl font-bold">Access Denied</h1>
+          </div>
+        </div>
+        <div className="p-6 max-w-2xl mx-auto">
+          <Card>
+            <CardContent className="p-8 text-center">
+              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold mb-2">Job Not Assigned to You</h2>
+              <p className="text-gray-600 mb-4">This job is assigned to another technician. You can only view jobs assigned to you.</p>
+              <Link href="/workshop/jobWorkShop">
+                <Button>Back to Workshop Jobs</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Gate: mechanic/senior-mechanic must accept before seeing full job
+  if (isPendingAcceptance) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-white shadow-sm border-b px-3 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-between">
+            <Link href="/workshop/jobWorkShop">
+              <Button variant="ghost" className="flex items-center gap-2 text-sm sm:text-base">
+                <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Back to Jobs</span><span className="sm:hidden">Back</span>
+              </Button>
+            </Link>
+            <h1 className="text-base sm:text-xl font-bold">Job Requires Acceptance</h1>
+          </div>
+        </div>
+        <div className="p-6 max-w-2xl mx-auto">
+          <Card>
+            <CardHeader className="bg-orange-500 text-white">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                <div>
+                  <CardTitle className="text-2xl">{job.jobid_workshop}</CardTitle>
+                  <p className="text-orange-100">{job.job_type}</p>
+                  {job.fleet_number && (
+                    <p className="text-orange-100 text-sm">Fleet #: {job.fleet_number}</p>
+                  )}
+                </div>
+                <div className="text-right">
+                  <Badge className={`${getStatusColor(workflowStatus)} px-3 py-1 text-base`}>
+                    {STATUS_LABELS[workflowStatus as WorkflowStatus] || workflowStatus}
+                  </Badge>
+                  <p className="text-orange-100 text-sm mt-1">
+                    {new Date(job.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6 space-y-4">
+              <div className="bg-gray-50 p-3 rounded">
+                <p className="text-sm text-gray-600">Vehicle Registration</p>
+                <p className="font-semibold text-lg">{job.registration_no || "N/A"}</p>
+              </div>
+              <div className="bg-gray-50 p-3 rounded">
+                <p className="text-sm text-gray-600">Description</p>
+                <p className="font-semibold">{job.description || "No description"}</p>
+              </div>
+              {job.notes && (
+                <div className="bg-orange-50 border-l-4 border-orange-400 p-3 rounded">
+                  <p className="text-sm text-gray-600 font-semibold">Notes</p>
+                  <p className="text-gray-700">{job.notes}</p>
+                </div>
+              )}
+              <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
+                <WorkflowActions
+                  jobId={job.id}
+                  currentStatus={workflowStatus}
+                  registrationNo={job.registration_no}
+                  isOffice={isOfficeRole}
+                  onSuccess={handleRefresh}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b px-6 py-4">
+      <div className="bg-white shadow-sm border-b px-3 sm:px-6 py-3 sm:py-4">
         <div className="flex items-center justify-between">
           <Link href="/workshop/jobWorkShop">
-            <Button variant="ghost" className="flex items-center gap-2">
-              <ArrowLeft className="h-4 w-4" /> Back to Jobs
+            <Button variant="ghost" className="flex items-center gap-2 text-sm sm:text-base">
+              <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Back to Jobs</span><span className="sm:hidden">Back</span>
             </Button>
           </Link>
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold text-black">
-              Maysene - Job Details
-            </h1>
-            {/* <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsEditOpen(true)}
-            >
-              <FileEdit className="h-4 w-4 mr-2" />
-              Edit Job
-            </Button> */}
-          </div>
+          <h1 className="text-base sm:text-xl font-bold">Job Details</h1>
         </div>
       </div>
 
-      <div className="p-6">
-        {/* Job Header */}
+      <div className="p-3 sm:p-6">
+        {/* Job Header Card */}
         <Card className="mb-6">
           <CardHeader className="bg-orange-500 text-white">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
               <div>
-                <CardTitle className="text-2xl">{job.jobId_workshop}</CardTitle>
-                <p className="text-orange-100 capitalize">
-                  {job.job_type} Service
-                </p>
+                <CardTitle className="text-2xl">{job.jobid_workshop}</CardTitle>
+                <p className="text-orange-100">{job.job_type}</p>
+                {job.fleet_number && (
+                  <p className="text-orange-100 text-sm">Fleet #: {job.fleet_number}</p>
+                )}
+                {job.trailer_registration && (
+                  <p className="text-orange-100 text-sm">Trailer: {job.trailer_registration}</p>
+                )}
               </div>
               <div className="text-right">
-                <Badge className={`${getStatusColor(job.status)} px-3 py-1`}>
-                  {job.status}
+                <Badge className={`${getStatusColor(workflowStatus)} px-3 py-1 text-base`}>
+                  {STATUS_LABELS[workflowStatus as WorkflowStatus] || workflowStatus}
                 </Badge>
-                {job.requires_reapproval && (
-                  <div className="mt-2">
-                    <Badge className="bg-orange-100 text-orange-800">
-                      Needs Re-Approval
-                    </Badge>
-                  </div>
-                )}
-                {!job.requires_reapproval && job.edited_after_approval && (
-                  <div className="mt-2">
-                    <Badge className="bg-blue-100 text-blue-800">
-                      Edited{job.edit_count ? ` (${job.edit_count})` : ""}
-                    </Badge>
-                  </div>
+                {job.priority && (
+                  <Badge className="ml-2 bg-white/20 text-white px-2 py-1">
+                    Priority {job.priority}
+                  </Badge>
                 )}
                 <p className="text-orange-100 text-sm mt-1">
                   {new Date(job.created_at).toLocaleDateString()}
                 </p>
+                {job.due_date && (
+                  <p className="text-orange-100 text-xs">Due: {new Date(job.due_date).toLocaleDateString()}</p>
+                )}
               </div>
             </div>
           </CardHeader>
         </Card>
 
-        {job.requires_reapproval && (
+        {/* Workflow Actions */}
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <WorkflowActions
+              jobId={job.id}
+              currentStatus={workflowStatus}
+              registrationNo={job.registration_no}
+              isOffice={isOfficeRole}
+              onSuccess={handleRefresh}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Work Summary for Returned to Office */}
+        {workflowStatus === "returned_to_office" && (
           <Card className="mb-6 border-orange-200 bg-orange-50">
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-orange-600 mt-0.5" />
-                <div>
-                  <p className="font-semibold text-orange-800">
-                    Re-approval required
-                  </p>
-                  <p className="text-sm text-orange-700">
-                    This job was edited after approval and needs fleet manager approval again.
-                    {job.last_edited_by_name && job.last_edited_date
-                      ? ` Last edited by ${job.last_edited_by_name} on ${new Date(job.last_edited_date).toLocaleDateString()}.`
-                      : ""}
+            <CardHeader>
+              <CardTitle className="text-orange-800 flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                Work Summary - Returned to Office
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Time Information */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-white p-3 rounded border border-orange-200">
+                  <p className="text-xs font-medium text-gray-500">Assigned At</p>
+                  <p className="text-sm font-semibold">
+                    {job.assigned_at
+                      ? new Date(job.assigned_at).toLocaleString("en-ZA", { dateStyle: "medium", timeStyle: "short" })
+                      : "N/A"}
                   </p>
                 </div>
+                <div className="bg-white p-3 rounded border border-orange-200">
+                  <p className="text-xs font-medium text-gray-500">Started At</p>
+                  <p className="text-sm font-semibold">
+                    {job.start_time
+                      ? new Date(job.start_time).toLocaleString("en-ZA", { dateStyle: "medium", timeStyle: "short" })
+                      : "Not started"}
+                  </p>
+                </div>
+                <div className="bg-white p-3 rounded border border-orange-200">
+                  <p className="text-xs font-medium text-gray-500">Returned At</p>
+                  <p className="text-sm font-semibold">
+                    {job.updated_at
+                      ? new Date(job.updated_at).toLocaleString("en-ZA", { dateStyle: "medium", timeStyle: "short" })
+                      : "N/A"}
+                  </p>
+                </div>
+                <div className="bg-white p-3 rounded border border-orange-200">
+                  <p className="text-xs font-medium text-gray-500">Technician</p>
+                  <p className="text-sm font-semibold">{job.technician_name || "N/A"}</p>
+                </div>
               </div>
+
+              {/* Return Reason */}
+              <div className="bg-white p-3 rounded border border-orange-200">
+                <p className="text-xs font-medium text-gray-500 mb-1">Return Reason</p>
+                <p className="text-sm font-semibold text-red-700">{job.return_reason || job.cancelled_reason || "N/A"}</p>
+              </div>
+
+              {/* Notes */}
+              {job.notes && (
+                <div className="bg-white p-3 rounded border border-orange-200">
+                  <p className="text-xs font-medium text-gray-500 mb-1">Job Notes</p>
+                  <p className="text-sm">{job.notes}</p>
+                </div>
+              )}
+
+              {/* Line Items Completed */}
+              {lineItems.length > 0 && (
+                <div className="bg-white p-4 rounded border border-orange-200">
+                  <p className="text-xs font-medium text-gray-500 mb-3">Line Items Completed ({lineItems.filter(i => i.status === 'ok').length} OK, {lineItems.filter(i => i.status === 'faulty').length} Faulty)</p>
+                  <div className="space-y-2">
+                    {lineItems.map((item) => {
+                      const itemStatus = (item.status || "").toLowerCase();
+                      return (
+                      <div key={item.id} className="flex items-start gap-3 p-2 bg-gray-50 rounded">
+                        <div className="mt-0.5">
+                          {itemStatus === "ok" ? (
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          ) : itemStatus === "faulty" ? (
+                            <XCircle className="h-4 w-4 text-red-600" />
+                          ) : (
+                            <div className="h-4 w-4 rounded-full border-2 border-gray-300" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium">{item.description}</p>
+                            <Badge variant={itemStatus === "ok" ? "default" : itemStatus === "faulty" ? "destructive" : "secondary"} className="text-xs">
+                              {item.status || "pending"}
+                            </Badge>
+                          </div>
+                          {item.notes && (
+                            <p className="text-xs text-gray-600 mt-1">{item.notes}</p>
+                          )}
+                          {item.photos && item.photos.length > 0 && (
+                            <div className="flex gap-2 mt-2">
+                              {item.photos.map((photo: string, idx: number) => (
+                                <a key={idx} href={photo} target="_blank" rel="noopener noreferrer">
+                                  <img src={photo} alt="" className="h-12 w-12 object-cover rounded border" />
+                                </a>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Job Photos */}
+              {jobPhotos.length > 0 && (
+                <div className="bg-white p-4 rounded border border-orange-200">
+                  <p className="text-xs font-medium text-gray-500 mb-3">Job Photos</p>
+                  <div className="flex gap-2 flex-wrap">
+                    {jobPhotos.map((photo, idx) => (
+                      <a key={idx} href={photo} target="_blank" rel="noopener noreferrer">
+                        <img src={photo} alt="" className="h-20 w-20 object-cover rounded border" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
 
         <Tabs defaultValue="details" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="details">
-              <FileText className="h-4 w-4 mr-2" />
-              Details
-            </TabsTrigger>
-            <TabsTrigger value="history">
-              <History className="h-4 w-4 mr-2" />
-              Status History
-              {job.edit_count ? (
-                <Badge className="ml-2" variant="secondary">
-                  {job.edit_count}
-                </Badge>
-              ) : null}
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-3 px-3">
+            <TabsList className="flex flex-wrap gap-1 w-full bg-gray-100 p-1 rounded-lg">
+              <TabsTrigger value="details" className="flex-1 min-w-0 text-xs sm:text-sm px-2 py-2">
+                <FileText className="h-4 w-4 mr-1 hidden sm:inline" />
+                <span className="hidden sm:inline">Details</span><span className="sm:hidden">Info</span>
+              </TabsTrigger>
+              <TabsTrigger value="line-items" className="flex-1 min-w-0 text-xs sm:text-sm px-2 py-2">
+                <CheckCircle className="h-4 w-4 mr-1 hidden sm:inline" />
+                <span className="hidden sm:inline">Line Items</span><span className="sm:hidden">Items</span>
+              </TabsTrigger>
+              <TabsTrigger value="costs" className="flex-1 min-w-0 text-xs sm:text-sm px-2 py-2">
+                <DollarSign className="h-4 w-4 mr-1 hidden sm:inline" />
+                Costs
+              </TabsTrigger>
+              <TabsTrigger value="history" className="flex-1 min-w-0 text-xs sm:text-sm px-2 py-2">
+                <History className="h-4 w-4 mr-1 hidden sm:inline" />
+                History
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
+          {/* Details Tab */}
           <TabsContent value="details">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Vehicle Section */}
-          <Card>
-            <CardHeader className="bg-gray-100 border-b">
-              <CardTitle className="flex items-center gap-2 text-black">
-                <Truck className="h-5 w-5 text-orange-500" />
-                Vehicle Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              {vehicle ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="bg-gray-50 p-3 rounded">
-                    <p className="text-sm text-gray-600">Registration</p>
-                    <p className="font-semibold text-lg">
-                      {vehicle.registration_number}
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded">
-                    <p className="text-sm text-gray-600">Make & Model</p>
-                    <p className="font-semibold">
-                      {vehicle.make} {vehicle.model}
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded">
-                    <p className="text-sm text-gray-600">Year</p>
-                    <p className="font-semibold">{vehicle.manufactured_year}</p>
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded">
-                    <p className="text-sm text-gray-600">Type</p>
-                    <p className="font-semibold capitalize">
-                      {vehicle.vehicle_type}
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded">
-                    <p className="text-sm text-gray-600">Fuel</p>
-                    <p className="font-semibold capitalize">
-                      {vehicle.fuel_type}
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded">
-                    <p className="text-sm text-gray-600">Colour</p>
-                    <p className="font-semibold">{vehicle.colour}</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Truck className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-600">Vehicle not found</p>
-                  <p className="text-sm text-gray-500">
-                    Registration: {job.registration_no}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+              {/* Vehicle Section */}
+              <Card>
+                <CardHeader className="bg-gray-100 border-b">
+                  <CardTitle className="flex items-center gap-2 text-black">
+                    <Truck className="h-5 w-5 text-orange-500" />
+                    Vehicle Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  {vehicle ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="bg-gray-50 p-3 rounded">
+                        <p className="text-sm text-gray-600">Registration</p>
+                        <p className="font-semibold text-lg">{vehicle.registration_number}</p>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded">
+                        <p className="text-sm text-gray-600">Fleet Number</p>
+                        <p className="font-semibold">{vehicle.fleet_number || "N/A"}</p>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded">
+                        <p className="text-sm text-gray-600">Make & Model</p>
+                        <p className="font-semibold">{vehicle.make} {vehicle.model}</p>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded">
+                        <p className="text-sm text-gray-600">Year</p>
+                        <p className="font-semibold">{vehicle.manufactured_year}</p>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded">
+                        <p className="text-sm text-gray-600">Availability</p>
+                        <p className={`font-semibold ${vehicle.vehicle_available ? "text-green-600" : "text-red-600"}`}>
+                          {vehicle.vehicle_available ? "Available" : `Unavailable - ${vehicle.vehicle_not_available_reason}`}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Truck className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-600">Vehicle not found</p>
+                      <p className="text-sm text-gray-500">Registration: {job.registration_no}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
-          {/* Client Section */}
-          <Card>
-            <CardHeader className="bg-gray-100 border-b">
-              <CardTitle className="flex items-center gap-2 text-black">
-                <User className="h-5 w-5 text-orange-500" />
-                Client Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                <div className="bg-gray-50 p-3 rounded">
-                  <p className="text-sm text-gray-600">Driver Name</p>
-                  <p className="font-semibold">
-                    {job.client_name || "Not specified"}
-                  </p>
-                </div>
-                <div className="bg-gray-50 p-3 rounded">
-                  <p className="text-sm text-gray-600">Phone Number</p>
-                  <p className="font-semibold">
-                    {job.client_phone || "Not provided"}
-                  </p>
-                </div>
-                <div className="bg-gray-50 p-3 rounded">
-                  <p className="text-sm text-gray-600">Location</p>
-                  <p className="font-semibold">
-                    {job.location || "Not specified"}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-          {/* Job Description Section */}
-          <Card>
-            <CardHeader className="bg-gray-100 border-b">
-              <CardTitle className="flex items-center gap-2 text-black">
-                <FileText className="h-5 w-5 text-orange-500" />
-                Job Description
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="bg-gray-50 p-4 rounded mb-4">
-                <p className="text-gray-800">
-                  {job.description || "No description provided"}
-                </p>
-              </div>
-              {job.notes && (
-                <div>
-                  <h4 className="font-semibold text-black mb-2">
-                    Additional Notes:
-                  </h4>
-                  <div className="bg-orange-50 border-l-4 border-orange-400 p-3 rounded">
-                    <p className="text-gray-700">{job.notes}</p>
+              {/* Job Details */}
+              <Card>
+                <CardHeader className="bg-gray-100 border-b">
+                  <CardTitle className="flex items-center gap-2 text-black">
+                    <FileText className="h-5 w-5 text-orange-500" />
+                    Job Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 space-y-4">
+                  <div className="bg-gray-50 p-3 rounded">
+                    <p className="text-sm text-gray-600">Description</p>
+                    <p className="font-semibold">{job.description || "No description"}</p>
                   </div>
-                </div>
-              )}
+                  <div className="bg-gray-50 p-3 rounded">
+                    <p className="text-sm text-gray-600">Job Source</p>
+                    <p className="font-semibold capitalize">{(job as any).job_source || "Office Created"}</p>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded">
+                    <p className="text-sm text-gray-600">Assigned To</p>
+                    <p className="font-semibold capitalize">{(job as any).assigned_to || "Not Assigned"}</p>
+                  </div>
+                  {job.technician_name ? (
+                    <div className="bg-green-50 p-3 rounded border border-green-200">
+                      <p className="text-sm text-green-700">Technician</p>
+                      <p className="font-semibold text-green-800">{job.technician_name}</p>
+                    </div>
+                  ) : (
+                    <div className="bg-yellow-50 p-3 rounded border border-yellow-200">
+                      <p className="text-sm text-yellow-700">Technician</p>
+                      <p className="font-semibold text-yellow-800">Not Assigned</p>
+                    </div>
+                  )}
 
-              {/* Consumables Section */}
-              {consumables && consumables.length > 0 && (
-                <div className="mt-6 pt-6 border-t">
-                  <h4 className="font-semibold text-gray-900 mb-2 text-base flex items-center gap-2">
-                    <Droplet className="h-4 w-4 text-purple-600" />
-                    Consumables Used
-                  </h4>
-                  <ul className="space-y-2 max-h-48 overflow-auto border border-purple-200 bg-purple-50 p-3 rounded-lg">
-                    {consumables.map((consumable, index) => (
-                      <li
-                        key={index}
-                        className="flex items-center justify-between bg-white border border-purple-100 rounded-md px-3 py-2 shadow-sm hover:bg-purple-50 transition"
-                      >
-                        <div className="flex-1">
-                          <span className="text-sm text-gray-800 font-medium">
-                            {consumable.name || "Unnamed"}
-                          </span>
-                          {consumable.quantity && consumable.unit && (
-                            <p className="text-xs text-gray-500">
-                              Qty: {consumable.quantity} {consumable.unit}
-                            </p>
-                          )}
+                  {/* Reassign section — visible to office at any time */}
+                  {(userRole === "office" || userRole === "fleet-manager" || userRole === "fleet_manager" || userRole === "fleet manager") && (
+                    <div className="border-t pt-3 mt-3">
+                      <Label className="text-sm font-semibold text-gray-700">Reassign Technician</Label>
+                      <div className="flex gap-2 mt-2">
+                        <Select value={reassignTechId} onValueChange={setReassignTechId}>
+                          <SelectTrigger className="flex-1">
+                            <SelectValue placeholder="Select technician..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {allTechnicians.map((t) => (
+                              <SelectItem key={t.id} value={t.id}>
+                                {t.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          onClick={handleReassign}
+                          disabled={isReassigning || !reassignTechId}
+                          className="bg-blue-600 hover:bg-blue-700"
+                          size="sm"
+                        >
+                          <UserCheck className="h-4 w-4 mr-1" />
+                          {isReassigning ? "Assigning..." : "Re-Assign"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  {job.location && (
+                    <div className="bg-gray-50 p-3 rounded">
+                      <p className="text-sm text-gray-600">Location</p>
+                      <p className="font-semibold">{job.location}</p>
+                    </div>
+                  )}
+                  {job.notes && (
+                    <div className="bg-orange-50 border-l-4 border-orange-400 p-3 rounded">
+                      <p className="text-sm text-gray-600 font-semibold">Notes</p>
+                      <p className="text-gray-700">{job.notes}</p>
+                    </div>
+                  )}
+
+                  {/* Time Tracking */}
+                  <div className="border-t pt-4">
+                    <h4 className="font-semibold text-gray-900 mb-2">Time Tracking</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      {job.start_time && (
+                        <div className="bg-green-50 p-2 rounded text-sm">
+                          <Clock className="h-3 w-3 inline mr-1" />
+                          Started: {new Date(job.start_time).toLocaleString()}
                         </div>
-                        <span className="text-sm font-semibold text-purple-600">
-                          R{parseFloat(consumable.price || 0).toFixed(2)}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="mt-3 pt-3 border-t border-purple-200">
-                    <div className="flex justify-between items-center">
-                      <span className="font-semibold text-gray-900">
-                        Consumables Total:
-                      </span>
-                      <span className="text-lg font-bold text-purple-600">
-                        R{consumables.reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0).toFixed(2)}
-                      </span>
+                      )}
+                      {job.end_time && (
+                        <div className="bg-red-50 p-2 rounded text-sm">
+                          <Clock className="h-3 w-3 inline mr-1" />
+                          Ended: {new Date(job.end_time).toLocaleString()}
+                        </div>
+                      )}
+                      {job.completed_at && (
+                        <div className="bg-blue-50 p-2 rounded text-sm">
+                          <CheckCircle className="h-3 w-3 inline mr-1" />
+                          Completed: {new Date(job.completed_at).toLocaleString()}
+                        </div>
+                      )}
+                      {(job as any).quality_check_at && (
+                        <div className="bg-emerald-50 p-2 rounded text-sm">
+                          <CheckCircle className="h-3 w-3 inline mr-1" />
+                          QC: {new Date((job as any).quality_check_at).toLocaleString()}
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
 
-          {/* Technician Section */}
-          <Card>
-            <CardHeader className="bg-gray-100 border-b">
-              <CardTitle className="flex items-center gap-2 text-black">
-                <User className="h-5 w-5 text-orange-500" />
-                Assigned Technician
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              {technician?.id !== null && technician ? (
-                <div className="space-y-4">
-                  <div className="bg-gray-50 p-3 rounded">
-                    <p className="text-sm text-gray-600">Name</p>
-                    <p className="font-semibold text-black">
-                      {technician?.name}
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded">
-                    <p className="text-sm text-gray-600">Phone</p>
-                    <p className="font-semibold">{technician?.phone}</p>
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded">
-                    <p className="text-sm text-gray-600">Email</p>
-                    <p className="font-semibold">{technician?.email}</p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setTechnician(null)}
-                    className="w-full"
-                  >
-                    Change Technician
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <p className="text-sm text-gray-600">Select a technician for this job:</p>
-                  <select
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    onChange={(e) => handleAssignTechnician(e.target.value)}
-                    disabled={isAssigningTech}
-                    defaultValue=""
-                  >
-                    <option value="" disabled>
-                      {isAssigningTech ? "Assigning..." : "Choose a technician"}
-                    </option>
-                    {technicianList.map((tech) => (
-                      <option key={tech.id} value={tech.id}>
-                        {tech.name} — {tech.phone}
-                      </option>
+                  {/* Notes Section */}
+                  {!["job_completed", "quality_check_done", "job_cancelled"].includes(workflowStatus) && (
+                    <div className="border-t pt-4">
+                      <Label className="text-sm font-semibold text-gray-700">Job Notes</Label>
+                      <Textarea
+                        value={jobNotes}
+                        onChange={(e) => setJobNotes(e.target.value)}
+                        placeholder="Add notes about this job..."
+                        rows={3}
+                        className="mt-2"
+                      />
+                      <Button
+                        size="sm"
+                        className="mt-2 bg-gray-600 hover:bg-gray-700 text-white"
+                        onClick={handleSaveNotes}
+                        disabled={isSavingNotes}
+                      >
+                        {isSavingNotes ? "Saving..." : "Save Notes"}
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Consumables */}
+            {consumables && consumables.length > 0 && (
+              <Card className="mt-6">
+                <CardHeader className="bg-gray-100 border-b">
+                  <CardTitle className="flex items-center gap-2 text-black">
+                    <Droplet className="h-5 w-5 text-purple-600" />
+                    Consumables Used
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="space-y-2">
+                    {consumables.map((c: any, i: number) => (
+                      <div key={i} className="flex items-center justify-between bg-purple-50 p-2 rounded">
+                        <span>{c.name || "Unnamed"}</span>
+                        <span className="font-semibold">R{parseFloat(c.price || 0).toFixed(2)}</span>
+                      </div>
                     ))}
-                  </select>
-                  {technicianList.length === 0 && (
-                    <p className="text-xs text-gray-500">No technicians available</p>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-purple-200 flex justify-between">
+                    <span className="font-semibold">Consumables Total:</span>
+                    <span className="font-bold text-purple-600">
+                      R{consumables.reduce((sum: number, c: any) => sum + (parseFloat(c.price) || 0), 0).toFixed(2)}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Photos & Invoice Section */}
+            <Card className="mt-6">
+              <CardHeader className="bg-gray-100 border-b">
+                <CardTitle className="flex items-center gap-2 text-black">
+                  <Camera className="h-5 w-5 text-blue-600" />
+                  Photos & Documents
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                {/* Job Photos */}
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700">Job Photos</Label>
+                  <label className="mt-2 flex items-center gap-2 px-4 py-3 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    <Camera className="h-5 w-5 text-gray-400" />
+                    <span className="text-sm text-gray-600">
+                      {isUploadingPhoto ? "Uploading..." : "Click to upload photos"}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={handlePhotoUpload}
+                      disabled={isUploadingPhoto}
+                    />
+                  </label>
+                  {jobPhotos.length > 0 && (
+                    <div className="flex gap-3 mt-3 flex-wrap">
+                      {jobPhotos.map((url, i) => (
+                        <div key={i} className="relative group">
+                          <a href={url} target="_blank" rel="noopener noreferrer">
+                            <img
+                              src={url}
+                              alt={`Job photo ${i + 1}`}
+                              className="h-24 w-24 object-cover rounded border"
+                            />
+                          </a>
+                          <button
+                            onClick={() => removePhoto(i)}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
-              )}
-            </CardContent>
-          </Card>
 
-          {/* Cost & Actions Section */}
-          <Card>
-            <CardHeader className="bg-gray-100 border-b">
-              <CardTitle className="flex items-center gap-2 text-black">
-                <DollarSign className="h-5 w-5 text-orange-500" />
-                Cost & Actions
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="space-y-4 mb-6">
-                <div className="bg-green-50 p-3 rounded border border-green-200">
-                  <p className="text-sm text-green-700">Labour Cost</p>
-                  <p className="text-xl font-bold text-green-800">
-                    {job.total_labor_cost
-                      ? `R ${job.total_labor_cost.toFixed(2)}`
-                      : "TBD"}
-                  </p>
-                </div>
-                <div className="bg-blue-50 p-3 rounded border border-blue-200">
-                  <p className="text-sm text-blue-700">Total Parts Cost</p>
-                  <p className="text-xl font-bold text-blue-800">
-                    {job.total_parts_cost
-                      ? `R ${job.total_parts_cost.toFixed(2)}`
-                      : "0.00"}
-                  </p>
-                </div>
-
-                {/* Sublet Cost Section */}
-                <div className="bg-yellow-50 p-3 rounded border border-yellow-200">
-                  <p className="text-sm text-yellow-500">Total Sublet Cost</p>
-                  <p className="text-xl font-bold text-yellow-800">
-                    {job.total_sublet_cost
-                      ? `R ${job.total_sublet_cost.toFixed(2)}`
-                      : "0.00"}
-                  </p>
-                </div>
-
-                {consumables && consumables.length > 0 && (
-                  <div className="bg-purple-50 p-3 rounded border border-purple-200">
-                    <p className="text-sm text-purple-700">Total Consumables Cost</p>
-                    <p className="text-xl font-bold text-purple-800">
-                      R{consumables.reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0).toFixed(2)}
-                    </p>
+                {/* Invoice (subcontractor jobs) */}
+                {(job as any).assigned_to === "subcontractor" && (
+                  <div className="border-t pt-4">
+                    <Label className="text-sm font-semibold text-gray-700">Invoice (Subcontractor)</Label>
+                    {(job as any).invoice_url ? (
+                      <div className="mt-2">
+                        <a
+                          href={(job as any).invoice_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-blue-600 hover:underline"
+                        >
+                          <FileText className="h-4 w-4" />
+                          View Invoice
+                        </a>
+                      </div>
+                    ) : (
+                      <label className="mt-2 flex items-center gap-2 px-4 py-3 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                        <FileText className="h-5 w-5 text-gray-400" />
+                        <span className="text-sm text-gray-600">
+                          {isUploadingInvoice ? "Uploading..." : "Click to upload invoice"}
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/*,.pdf"
+                          className="hidden"
+                          onChange={handleInvoiceUpload}
+                          disabled={isUploadingInvoice}
+                        />
+                      </label>
+                    )}
                   </div>
                 )}
-
-
-
-                {/* Labour Section */}
-                <div className="border-t pt-4">
-                  <h4 className="font-semibold text-gray-900 mb-2">Labour</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-600">Hours</span>
-                      <p className="font-medium">{labourHours ?? 0}</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Rate (R/hr)</span>
-                      <p className="font-medium">
-                        {labourRate !== undefined ? `R ${labourRate}` : "N/A"}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Labour Total</span>
-                      <p className="font-medium text-green-600">{`R ${(
-                        labourTotal ?? labourHours * labourRate
-                      ).toFixed(2)}`}</p>
-                    </div>
-                  </div>
-                  <div className="bg-blue-50 p-3 rounded border border-blue-200">
-                    <p className="text-sm text-blue-700">Total Cost (Labour & Sublet & Parts & Consumables)</p>
-                    <p className="text-xl font-bold text-blue-800">
-                      {(job.total_labor_cost ?? 0) + (job.total_parts_cost ?? 0) + (job.total_sublet_cost ?? 0) + (consumables ? consumables.reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0) : 0) >
-                        0
-                        ? `R ${(
-                          (job.total_labor_cost ?? 0) +
-                          (job.total_parts_cost ?? 0) +
-                          (job.total_sublet_cost ?? 0) +
-                          (consumables ? consumables.reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0) : 0)
-                        ).toFixed(2)}`
-                        : "Pending"}
-                    </p>
-                  </div>
-                  {/* <div className="mt-3">
-                    <Button
-                      size="sm"
-                      onClick={() => setIsLabourDialogOpen(true)}
-                      disabled={
-                        job.status?.toLowerCase() === "completed" ||
-                        job.status?.toLowerCase() === "awaiting approval" ||
-                        (job.status?.toLowerCase() === "approved" && !canEditApproved)
-                      }
-                    >
-                      Edit Labour
-                    </Button>
-                  </div> */}
-                </div>
-              </div>
-
-              {/* Notes Section */}
-              {job.status?.toLowerCase() !== "completed" && (
-                <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
-                  <Label className="text-sm font-semibold text-gray-700">Job Notes</Label>
-                  <Textarea
-                    value={jobNotes}
-                    onChange={(e) => setJobNotes(e.target.value)}
-                    placeholder="Add notes about this job..."
-                    rows={3}
-                    className="mt-2"
-                  />
-                  <Button
-                    size="sm"
-                    className="mt-2 bg-gray-600 hover:bg-gray-700 text-white"
-                    onClick={handleSaveNotes}
-                    disabled={isSavingNotes}
-                  >
-                    {isSavingNotes ? "Saving..." : "Save Notes"}
-                  </Button>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="space-y-3 mt-4">
-                {job.status?.toLowerCase() !== "completed" && (
-                  <Button
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white"
-                    onClick={() => updateWorkshopJobStatus(job.id, "Approved")}
-                    disabled={updating || notAllowedStatuses.includes(job.status?.toLowerCase() || "") || technician?.id === null}
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    {updating ? "Processing..." : "Approve Job"}
-                  </Button>
-                )}
-                <Button
-                  variant="destructive"
-                  className="w-full"
-                  onClick={() => updateWorkshopJobStatus(job.id, "Rejected")}
-                  disabled={updating || notAllowedStatuses.includes(job.status?.toLowerCase() || "") || technician?.id === null}
-                >
-                  <XCircle className="h-4 w-4 mr-2" />
-                  {updating ? "Processing..." : "Reject Job"}
-                </Button>
-
-                {/* Close/Complete Button */}
-                {job.status?.toLowerCase() !== "completed" && (
-                  <div className="border-t pt-3">
-                    <Label className="text-sm font-semibold text-gray-700">Completion Notes (optional)</Label>
-                    <Textarea
-                      value={completionNotes}
-                      onChange={(e) => setCompletionNotes(e.target.value)}
-                      placeholder="What was done to complete this job..."
-                      rows={2}
-                      className="mt-2"
-                    />
-                    <Button
-                      variant="outline"
-                      className="w-full border-green-500 text-green-700 hover:bg-green-50 mt-2"
-                      onClick={handleCloseJob}
-                      disabled={isClosing}
-                    >
-                      {isClosing ? "Closing..." : "Close/Complete Job"}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
+              </CardContent>
+            </Card>
           </TabsContent>
 
+          {/* Line Items Tab */}
+          <TabsContent value="line-items">
+            <Card>
+              <CardContent className="p-6">
+                <JobLineItems
+                  jobId={job.id}
+                  isMechanic={true}
+                  onUpdate={handleRefresh}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Costs Tab */}
+          <TabsContent value="costs">
+            <Card>
+              <CardHeader className="bg-gray-100 border-b">
+                <CardTitle className="flex items-center gap-2 text-black">
+                  <DollarSign className="h-5 w-5 text-orange-500" />
+                  Cost Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-green-50 p-4 rounded border border-green-200">
+                    <p className="text-sm text-green-700">Labour Cost</p>
+                    <p className="text-xl font-bold text-green-800">
+                      {job.total_labor_cost ? `R ${job.total_labor_cost.toFixed(2)}` : "TBD"}
+                    </p>
+                    <p className="text-xs text-green-600">{labourHours} hrs @ R{labourRate}/hr</p>
+                  </div>
+                  <div className="bg-blue-50 p-4 rounded border border-blue-200">
+                    <p className="text-sm text-blue-700">Parts Cost</p>
+                    <p className="text-xl font-bold text-blue-800">
+                      {job.total_parts_cost ? `R ${job.total_parts_cost.toFixed(2)}` : "R 0.00"}
+                    </p>
+                  </div>
+                  <div className="bg-yellow-50 p-4 rounded border border-yellow-200">
+                    <p className="text-sm text-yellow-500">Sublet Cost</p>
+                    <p className="text-xl font-bold text-yellow-800">
+                      {job.total_sublet_cost ? `R ${job.total_sublet_cost.toFixed(2)}` : "R 0.00"}
+                    </p>
+                  </div>
+                </div>
+                {consumables && consumables.length > 0 && (
+                  <div className="bg-purple-50 p-4 rounded border border-purple-200">
+                    <p className="text-sm text-purple-700">Consumables Cost</p>
+                    <p className="text-xl font-bold text-purple-800">
+                      R{consumables.reduce((sum: number, c: any) => sum + (parseFloat(c.price) || 0), 0).toFixed(2)}
+                    </p>
+                  </div>
+                )}
+                <div className="bg-gray-900 text-white p-4 rounded">
+                  <p className="text-sm text-gray-300">Grand Total</p>
+                  <p className="text-2xl font-bold">
+                    R{(
+                      (job.total_labor_cost ?? 0) +
+                      (job.total_parts_cost ?? 0) +
+                      (job.total_sublet_cost ?? 0) +
+                      (consumables ? consumables.reduce((sum: number, c: any) => sum + (parseFloat(c.price) || 0), 0) : 0)
+                    ).toFixed(2)}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* History Tab */}
           <TabsContent value="history">
             <JobStatusHistory jobId={job.id} />
           </TabsContent>
         </Tabs>
-
-        {/* Labour Edit Dialog */}
-        <Dialog open={isLabourDialogOpen} onOpenChange={setIsLabourDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Edit Labour</DialogTitle>
-              <DialogDescription>
-                Set labour hours and rate (total = hours × rate)
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-3">
-              <div>
-                <label>Hours</label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={labourHours}
-                  onChange={(e) => setLabourHours(Number(e.target.value) || 0)}
-                />
-              </div>
-              <div>
-                <label>Rate (R/hr)</label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={labourRate}
-                  onChange={(e) => setLabourRate(Number(e.target.value) || 0)}
-                />
-              </div>
-              <div>
-                <label>Total</label>
-                <div className="p-2 bg-gray-50 rounded border">{`R ${(
-                  (labourHours || 0) * (labourRate || 0)
-                ).toFixed(2)}`}</div>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 mt-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsLabourDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleSaveLabour}
-                disabled={isSavingLabour}
-              >
-                {isSavingLabour ? "Saving..." : "Save"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
     </div>
   );

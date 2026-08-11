@@ -15,12 +15,15 @@ import { Separator } from "@/components/ui/separator";
 import {
   Clock,
   User,
+  UserCheck,
   FileEdit,
   CheckCircle,
   XCircle,
   AlertCircle,
   RefreshCw,
   TrendingUp,
+  Play,
+  Package,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -69,7 +72,7 @@ export default function JobStatusHistory({
         {
           event: "*",
           schema: "public",
-          table: "workshop_job_status_history",
+          table: "job_status_history",
           filter: `job_id=eq.${jobId}`,
         },
         () => {
@@ -86,13 +89,44 @@ export default function JobStatusHistory({
   const fetchHistory = async () => {
     setLoading(true);
     const { data, error } = await supabase
-      .from("workshop_job_status_history")
+      .from("job_status_history")
       .select("*")
       .eq("job_id", jobId)
       .order("created_at", { ascending: false });
 
     if (!error && data) {
-      setHistory(data as StatusHistoryEntry[]);
+      // Resolve changed_by names from users or technicians_maysene
+      const entries = await Promise.all(
+        data.map(async (entry: any) => {
+          let changedByName = entry.changed_by_name || entry.changed_by_role;
+
+          if (entry.changed_by && !entry.changed_by_name) {
+            // Try users table first
+            const { data: user } = await supabase
+              .from("users")
+              .select("email, role")
+              .eq("id", entry.changed_by)
+              .single();
+
+            if (user) {
+              changedByName = user.email || user.role;
+            } else {
+              // Try technicians_maysene
+              const { data: tech } = await supabase
+                .from("technicians_maysene")
+                .select("name")
+                .eq("id", entry.changed_by)
+                .single();
+              if (tech) {
+                changedByName = tech.name;
+              }
+            }
+          }
+
+          return { ...entry, changed_by_name: changedByName };
+        })
+      );
+      setHistory(entries as StatusHistoryEntry[]);
     } else {
       console.error("Error fetching job history:", error);
     }
@@ -101,14 +135,27 @@ export default function JobStatusHistory({
 
   const getStatusIcon = (status: string | null) => {
     switch (status?.toLowerCase()) {
-      case "approved":
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case "rejected":
-        return <XCircle className="h-4 w-4 text-red-600" />;
-      case "awaiting approval":
+      case "awaiting_assignment":
         return <Clock className="h-4 w-4 text-yellow-600" />;
-      case "completed":
-        return <CheckCircle className="h-4 w-4 text-blue-600" />;
+      case "mechanic_assigned":
+      case "subcontractor_assigned":
+        return <UserCheck className="h-4 w-4 text-blue-600" />;
+      case "mechanic_accepted":
+        return <CheckCircle className="h-4 w-4 text-indigo-600" />;
+      case "job_in_progress":
+        return <Play className="h-4 w-4 text-orange-600" />;
+      case "parts_outstanding":
+        return <Package className="h-4 w-4 text-amber-600" />;
+      case "parts_received":
+        return <Package className="h-4 w-4 text-teal-600" />;
+      case "returned_to_office":
+        return <RefreshCw className="h-4 w-4 text-gray-600" />;
+      case "job_completed":
+        return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case "quality_check_done":
+        return <CheckCircle className="h-4 w-4 text-emerald-600" />;
+      case "job_cancelled":
+        return <XCircle className="h-4 w-4 text-red-600" />;
       default:
         return <AlertCircle className="h-4 w-4 text-gray-600" />;
     }
@@ -116,18 +163,28 @@ export default function JobStatusHistory({
 
   const getStatusColor = (status: string | null) => {
     switch (status?.toLowerCase()) {
-      case "approved":
-        return "bg-green-100 text-green-800";
-      case "rejected":
-        return "bg-red-100 text-red-800";
-      case "awaiting approval":
+      case "awaiting_assignment":
         return "bg-yellow-100 text-yellow-800";
-      case "completed":
+      case "mechanic_assigned":
         return "bg-blue-100 text-blue-800";
-      case "part assigned":
+      case "subcontractor_assigned":
         return "bg-purple-100 text-purple-800";
-      case "part ordered":
+      case "mechanic_accepted":
+        return "bg-indigo-100 text-indigo-800";
+      case "job_in_progress":
         return "bg-orange-100 text-orange-800";
+      case "parts_outstanding":
+        return "bg-amber-100 text-amber-800";
+      case "parts_received":
+        return "bg-teal-100 text-teal-800";
+      case "returned_to_office":
+        return "bg-gray-100 text-gray-800";
+      case "job_completed":
+        return "bg-green-100 text-green-800";
+      case "quality_check_done":
+        return "bg-emerald-100 text-emerald-800";
+      case "job_cancelled":
+        return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }

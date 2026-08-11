@@ -62,6 +62,10 @@ export default function SubcontractorJobAllocationBoard() {
       .update({
         subcontractor_id: subcontractorId,
         allocation_status: "allocated",
+        workflow_status: "subcontractor_assigned",
+        status: "Subcontractor Assigned",
+        assigned_to: "subcontractor",
+        assigned_at: new Date().toISOString(),
       })
       .eq("id", jobId);
 

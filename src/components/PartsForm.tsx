@@ -27,14 +27,12 @@ export default function PartsForm({ onSaved }: { onSaved?: () => void }) {
     setName("");
     setSku("");
     setBrand("");
-    setUnitBrand({ value: "" });
+    setVehicleBrand("");
     setUnitCost("");
     setQty("0");
     onSaved?.();
   };
 
-  // small helper to avoid typos
-  function setUnitBrand({ value }: { value: string }) {
   return (
     <form onSubmit={save} className="card p-4 space-y-2">
       <h3 className="text-lg">Add Part</h3>

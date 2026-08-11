@@ -39,7 +39,7 @@ export default function FleetJobsForAdmin({ supabase, onJobUpdated }: Props) {
     const { data, error } = await supabase
       .from("workshop_job")
       .select("*")
-      .in("status", ["Pending Admin Review"])
+      .eq("workflow_status", "awaiting_assignment")
       .order("created_at", { ascending: false });
 
     if (!error && data) setFleetJobs(data as WorkshopJob[]);
@@ -53,14 +53,14 @@ export default function FleetJobsForAdmin({ supabase, onJobUpdated }: Props) {
   const handleAccept = async (job: WorkshopJob) => {
     const { error } = await supabase
       .from("workshop_job")
-      .update({ status: "Awaiting Approval" })
+      .update({ workflow_status: "mechanic_assigned", assigned_at: new Date().toISOString() })
       .eq("id", job.id);
 
     if (error) {
       toast.error("Failed to accept job");
       return;
     }
-    toast.success(`Job ${job.jobId_workshop} accepted — now in Workshop Jobs`);
+    toast.success(`Job ${job.jobId_workshop} accepted — now assigned to mechanic`);
     fetchFleetJobs();
     onJobUpdated();
   };

@@ -55,10 +55,14 @@ export async function signup(formData: FormData) {
   const phone = formData.get("phone") as string;
   if (
     role !== "fleet manager" &&
+    role !== "fleet_manager" &&
     role !== "customer" &&
     role !== "call centre" &&
     role !== "cost centre" &&
-    role !== "fc"
+    role !== "fc" &&
+    role !== "office" &&
+    role !== "senior-mechanic" &&
+    role !== "mechanic"
   ) {
     redirect(`/signup?message=Role not found`);
   }

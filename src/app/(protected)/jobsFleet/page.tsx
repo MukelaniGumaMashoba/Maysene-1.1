@@ -57,8 +57,10 @@ import { toast } from "sonner";
 import Modal from "@/components/modals/modal";
 import { AllocateSubcontractorDialog } from "@/components/modals/subcontractors";
 import { SendToWorkshopDialog } from "@/components/modals/send-to-workshop";
+import CompletedJobsReport from "@/components/workshop/CompletedJobsReport";
 import PendingFleetApprovalTab from "@/components/workshop/PendingFleetApprovalTab";
 import JobCardWorkflow from "@/components/ui-personal/job-card-workflow";
+import CreateJobCardDialog from "@/components/workshop/CreateJobCardDialog";
 
 interface Job {
   id: number;
@@ -112,6 +114,25 @@ interface Technician {
   specialties: string[];
 }
 
+interface WorkshopJob {
+  id: number;
+  jobid_workshop: string;
+  registration_no: string;
+  fleet_number: string;
+  trailer_registration: string;
+  job_type: string;
+  job_source: string;
+  description: string;
+  status: string;
+  workflow_status: string;
+  priority: string;
+  assigned_mechanic_id: string;
+  technician_name: string;
+  assigned_to: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export default function FleetJobsPage() {
   // active jobs shown in the List tab
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -156,19 +177,34 @@ export default function FleetJobsPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
+      case "awaiting_assignment":
         return "bg-yellow-100 text-yellow-800";
       case "assigned":
+      case "mechanic_assigned":
+      case "subcontractor_assigned":
         return "bg-blue-100 text-blue-800";
+      case "mechanic_accepted":
+        return "bg-indigo-100 text-indigo-800";
       case "inprogress":
+      case "job_in_progress":
         return "bg-orange-100 text-orange-800";
+      case "parts_outstanding":
+        return "bg-amber-100 text-amber-800";
+      case "parts_received":
+        return "bg-teal-100 text-teal-800";
+      case "returned_to_office":
+        return "bg-red-100 text-red-800";
       case "awaiting-approval":
         return "bg-purple-100 text-purple-800";
       case "approved":
-        return "bg-green-100 text-green-800";
       case "completed":
+      case "job_completed":
         return "bg-green-100 text-green-800";
+      case "quality_check_done":
+        return "bg-emerald-100 text-emerald-800";
       case "cancelled":
-        return "bg-red-100 text-red-800";
+      case "job_cancelled":
+        return "bg-red-200 text-red-900";
       case "Breakdown Request":
         return "bg-red-500 text-white";
       default:
@@ -176,12 +212,34 @@ export default function FleetJobsPage() {
     }
   };
 
+  const formatStatusDisplay = (status: string) => {
+    const statusLabels: Record<string, string> = {
+      "awaiting_assignment": "Awaiting Assignment",
+      "mechanic_assigned": "Mechanic Assigned",
+      "subcontractor_assigned": "Subcontractor Assigned",
+      "mechanic_accepted": "Mechanic Accepted",
+      "job_in_progress": "Job In Progress",
+      "parts_outstanding": "Parts Outstanding",
+      "parts_received": "Parts Received",
+      "returned_to_office": "Returned to Office",
+      "job_completed": "Job Completed",
+      "quality_check_done": "Quality Check Done",
+      "job_cancelled": "Job Cancelled",
+    };
+    if (statusLabels[status]) return statusLabels[status];
+    return status?.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ") || "Unknown";
+  };
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "emergency":
+      case "A":
         return "bg-red-500 text-white";
       case "high":
+      case "B":
         return "bg-orange-500 text-white";
+      case "B#":
+        return "bg-yellow-500 text-white";
       case "medium":
         return "bg-yellow-500 text-white";
       case "low":
@@ -266,47 +324,39 @@ export default function FleetJobsPage() {
     }
   }, [selectedJobForTech]);
 
-  // Fetch all jobs (including completed/cancelled). Then derive active and completed.
+  // Fetch workshop jobs (new workflow system)
   const getJobs = async () => {
-    const { data: jobsData, error } = await supabase
-      .from("job_assignments")
-      .select(
-        `
-          *,
-          drivers (*),
-          vehiclesc (*),
-          technicians:technician_id(*)
-        `,
-      )
+    const { data: workshopJobsData, error } = await supabase
+      .from("workshop_job")
+      .select("*")
       .order("created_at", { ascending: false });
 
     if (error) {
       console.error(error);
       return;
     }
-    const all = (jobsData || []) as unknown as Job[];
-    setAllJobs(all);
 
-    // Active jobs for the List tab (exclude completed, cancelled, and rejected)
-    const active = all.filter((j) => {
-      const statusLower = j.status?.toLowerCase?.() ?? "";
-      const isCompleted = statusLower === "completed";
-      const isCancelled = statusLower === "cancelled";
-      const isRejected = j.created === 1;
+    const allJobs = (workshopJobsData || []) as unknown as WorkshopJob[];
 
-      return !isCompleted && !isCancelled && !isRejected;
+    // Office sees jobs that are NOT assigned to a mechanic yet
+    // Exclude cancelled jobs and jobs that have been shifted to workshop (assigned_mechanic_id set)
+    const officeJobs = allJobs.filter((j) => {
+      const ws = (j as any).workflow_status;
+      const hasMechanic = !!(j as any).assigned_mechanic_id;
+      // Exclude cancelled jobs
+      if (ws === "job_cancelled") return false;
+      // Exclude jobs that have been shifted (mechanic assigned, accepted, in progress, etc.)
+      if (hasMechanic) return false;
+      return true;
     });
-    setJobs(active);
-    setFilteredJobs(active);
 
-    // Completed jobs for analytics/cards that rely on completed
-    const completedJobs = all.filter((j) => j.status === "completed");
-    setCompleted(completedJobs);
+    setJobs(officeJobs as any);
+    setFilteredJobs(officeJobs as any);
   };
 
   // Fetch technicians from Supabase
   const fetchTechnicians = async () => {
-    const { data, error } = await supabase.from("technicians").select("*");
+    const { data, error } = await supabase.from("technicians_maysene").select("*");
     if (error) {
       console.error("Error fetching technicians:", error);
       setTechnicians([]); // Optional fallback
@@ -400,10 +450,17 @@ export default function FleetJobsPage() {
       )
       .subscribe();
 
-    const role = localStorage.getItem("userRole") || "call-center";
-    setUserRole(role);
+    const getCookie = (name: string) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop()?.split(";").shift();
+      return null;
+    };
+    const role = decodeURIComponent(getCookie("role") || "");
+    setUserRole(role || "call-center");
 
     getJobs();
+    fetchWorkshopJobs();
 
     return () => {
       jobAssignments.unsubscribe();
@@ -540,6 +597,7 @@ export default function FleetJobsPage() {
         <div className="flex items-center justify-between">
           <h2 className="text-3xl font-bold tracking-tight">All Jobs</h2>
           <div className="flex items-center space-x-2">
+            <CreateJobCardDialog onSuccess={getJobs} />
             <div className="relative">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -555,19 +613,17 @@ export default function FleetJobsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="Breakdown Request">Pending</SelectItem>
-                <SelectItem value="assigned">Assigned</SelectItem>
-                <SelectItem value="inprogress">In Progress</SelectItem>
-                <SelectItem value="Breakdown Request">
-                  Breakdown Request
-                </SelectItem>
-                <SelectItem value="Technician on site">
-                  Technician On Site
-                </SelectItem>
-                <SelectItem value="Technician accepted">
-                  Technician accepted
-                </SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectItem value="awaiting_assignment">Awaiting Assignment</SelectItem>
+                <SelectItem value="mechanic_assigned">Mechanic Assigned</SelectItem>
+                <SelectItem value="subcontractor_assigned">Subcontractor Assigned</SelectItem>
+                <SelectItem value="mechanic_accepted">Mechanic Accepted</SelectItem>
+                <SelectItem value="job_in_progress">Job In Progress</SelectItem>
+                <SelectItem value="parts_outstanding">Parts Outstanding</SelectItem>
+                <SelectItem value="parts_received">Parts Received</SelectItem>
+                <SelectItem value="returned_to_office">Returned to Office</SelectItem>
+                <SelectItem value="job_completed">Job Completed</SelectItem>
+                <SelectItem value="quality_check_done">Quality Check Done</SelectItem>
+                <SelectItem value="job_cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
             <Select value={serviceFilter} onValueChange={setServiceFilter}>
@@ -601,8 +657,9 @@ export default function FleetJobsPage() {
             <TabsTrigger value="workshop-jobs" onClick={fetchWorkshopJobs}>Workshop Jobs</TabsTrigger>
             <TabsTrigger value="stock-levels" onClick={fetchStockLevels}>Stock Levels</TabsTrigger>
             <TabsTrigger value="kanban">Kanban Board</TabsTrigger>
-            <TabsTrigger value="calendar">Rejected</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="calendar">Cancelled Jobs</TabsTrigger>
+            <TabsTrigger value="efficiency">Efficiency</TabsTrigger>
+            <TabsTrigger value="completed">Completed Jobs</TabsTrigger>
           </TabsList>
 
           <TabsContent value="pending-approval" className="space-y-4">
@@ -628,17 +685,38 @@ export default function FleetJobsPage() {
               <div className="grid gap-4">
                 {workshopJobs.map((job) => {
                   const totalCost = (job.total_labor_cost ?? 0) + (job.total_parts_cost ?? 0) + (job.total_sublet_cost ?? 0);
+                  const workflowStatus = (job as any).workflow_status || job.status;
                   const statusColor = (() => {
-                    switch (job.status?.toLowerCase()) {
-                      case "awaiting approval": return "bg-yellow-100 text-yellow-800";
-                      case "approved": return "bg-green-100 text-green-800";
-                      case "rejected": return "bg-red-100 text-red-800";
-                      case "part assigned": return "bg-purple-100 text-purple-800";
-                      case "part ordered": return "bg-orange-100 text-orange-800";
-                      case "completed": return "bg-green-100 text-green-800";
-                      case "awaiting fleet approval": return "bg-blue-100 text-blue-800";
+                    switch (workflowStatus?.toLowerCase()) {
+                      case "awaiting_assignment": return "bg-yellow-100 text-yellow-800";
+                      case "mechanic_assigned": return "bg-blue-100 text-blue-800";
+                      case "subcontractor_assigned": return "bg-purple-100 text-purple-800";
+                      case "mechanic_accepted": return "bg-indigo-100 text-indigo-800";
+                      case "job_in_progress": return "bg-orange-100 text-orange-800";
+                      case "parts_outstanding": return "bg-amber-100 text-amber-800";
+                      case "parts_received": return "bg-teal-100 text-teal-800";
+                      case "returned_to_office": return "bg-gray-100 text-gray-800";
+                      case "job_completed": return "bg-green-100 text-green-800";
+                      case "quality_check_done": return "bg-emerald-100 text-emerald-800";
+                      case "job_cancelled": return "bg-red-100 text-red-800";
                       default: return "bg-gray-100 text-gray-800";
                     }
+                  })();
+                  const statusLabel = (() => {
+                    const labels: Record<string, string> = {
+                      "awaiting_assignment": "Awaiting Assignment",
+                      "mechanic_assigned": "Mechanic Assigned",
+                      "subcontractor_assigned": "Subcontractor Assigned",
+                      "mechanic_accepted": "Mechanic Accepted",
+                      "job_in_progress": "Job In Progress",
+                      "parts_outstanding": "Parts Outstanding",
+                      "parts_received": "Parts Received",
+                      "returned_to_office": "Returned to Office",
+                      "job_completed": "Job Completed",
+                      "quality_check_done": "Quality Check Done",
+                      "job_cancelled": "Job Cancelled",
+                    };
+                    return labels[workflowStatus] || workflowStatus;
                   })();
                   return (
                     <Card key={job.id} className="border-l-4 border-l-orange-400">
@@ -647,8 +725,8 @@ export default function FleetJobsPage() {
                           <div className="flex items-center gap-3">
                             <Wrench className="h-5 w-5 text-orange-500" />
                             <CardTitle className="text-base">{job.jobId_workshop}</CardTitle>
-                            <Badge className={statusColor}>{job.status}</Badge>
-                            <Badge className={job.priority === 'emergency' ? 'bg-red-500 text-white' : job.priority === 'high' ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-800'}>
+                            <Badge className={statusColor}>{statusLabel}</Badge>
+                            <Badge className={job.priority === 'A' ? 'bg-red-500 text-white' : job.priority === 'B' ? 'bg-orange-500 text-white' : job.priority === 'B#' ? 'bg-yellow-500 text-white' : 'bg-gray-100 text-gray-800'}>
                               {job.priority}
                             </Badge>
                           </div>
@@ -657,9 +735,13 @@ export default function FleetJobsPage() {
                       </CardHeader>
                       <CardContent className="space-y-3">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                          <div><p className="text-gray-500">Vehicle</p><p className="font-medium">{job.registration_no || "N/A"}</p></div>
-                          <div><p className="text-gray-500">Type</p><p className="font-medium capitalize">{job.job_type}</p></div>
-                          <div><p className="text-gray-500">Driver</p><p className="font-medium">{job.client_name || "N/A"}</p></div>
+                          <div><p className="text-gray-500">Vehicle Reg</p><p className="font-medium">{job.vehiclesc?.registration_number || job.registration_no || "N/A"}</p></div>
+                          <div><p className="text-gray-500">Fleet Number</p><p className="font-medium">{job.vehiclesc?.fleet_number || job.fleet_number || "N/A"}</p></div>
+                          <div><p className="text-gray-500">Make / Model</p><p className="font-medium">{job.vehiclesc?.make ? `${job.vehiclesc.make} ${job.vehiclesc.model || ""}` : "N/A"}</p></div>
+                          <div><p className="text-gray-500">Trailer Reg</p><p className="font-medium">{job.trailer_registration || "N/A"}</p></div>
+                          <div><p className="text-gray-500">Job Type</p><p className="font-medium capitalize">{job.job_type}</p></div>
+                          <div><p className="text-gray-500">Assigned To</p><p className="font-medium capitalize">{job.assigned_to || "N/A"}</p></div>
+                          <div><p className="text-gray-500">Technician</p><p className="font-medium">{job.technician_name || "Not Assigned"}</p></div>
                           <div>
                             <p className="text-gray-500">Total Cost</p>
                             <p className="font-medium text-green-700">{totalCost > 0 ? `R ${totalCost.toFixed(2)}` : "Pending"}</p>
@@ -1054,7 +1136,7 @@ export default function FleetJobsPage() {
 
                       <div className="flex justify-between items-center">
                         <div className="flex gap-2">
-                          <Link href={`/jobsFleet/${job.id}`}>
+                          <Link href={`/workshop/jobWorkShop/${job.id}`}>
                             <Button variant="outline" size="sm">
                               <Eye className="h-4 w-4 mr-2" />
                               View Details
@@ -1104,74 +1186,7 @@ export default function FleetJobsPage() {
                           </Button>
                         )}
 
-                        {job.status === "Breakdown Request" && (
-                          <div className="flex gap-2">
-                            <Button
-                              onClick={() =>
-                                handleCreatedRequired(
-                                  job.id,
-                                  "Approved",
-                                  "Job approved by fleet manager",
-                                  0,
-                                )
-                              }
-                              className="bg-green-600 hover:bg-green-700"
-                              size="sm"
-                            >
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Approve
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              onClick={() =>
-                                handleCreatedRequired(
-                                  job.id,
-                                  "Cancelled",
-                                  "Job rejected by fleet manager",
-                                  1,
-                                )
-                              }
-                              size="sm"
-                            >
-                              <XCircle className="h-4 w-4 mr-2" />
-                              Reject
-                            </Button>
-                          </div>
-                        )}
 
-                        {job.status === "awaiting-approval" &&
-                          canApproveJobs && (
-                            <div className="flex gap-2">
-                              <Button
-                                onClick={() =>
-                                  handleUpdateJobStatus(
-                                    job.id,
-                                    "approved",
-                                    "Job approved by fleet manager",
-                                  )
-                                }
-                                className="bg-green-600 hover:bg-green-700"
-                                size="sm"
-                              >
-                                <CheckCircle className="h-4 w-4 mr-2" />
-                                Approve
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                onClick={() =>
-                                  handleUpdateJobStatus(
-                                    job.id,
-                                    "cancelled",
-                                    "Job rejected by fleet manager",
-                                  )
-                                }
-                                size="sm"
-                              >
-                                <XCircle className="h-4 w-4 mr-2" />
-                                Reject
-                              </Button>
-                            </div>
-                          )}
                       </div>
                     </CardContent>
                   </Card>
@@ -1185,51 +1200,59 @@ export default function FleetJobsPage() {
           </TabsContent>
 
           <TabsContent value="kanban" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {[
-                "Breakdown Request",
-                "completed",
-                "inprogress",
-                "assigned",
-                "Technician accepted",
-                "Technician on site",
+                "awaiting_assignment",
+                "mechanic_assigned",
+                "subcontractor_assigned",
+                "mechanic_accepted",
+                "job_in_progress",
+                "parts_outstanding",
+                "parts_received",
+                "returned_to_office",
+                "job_completed",
+                "quality_check_done",
               ].map((status) => (
                 <Card key={status}>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium capitalize">
-                      {status}
+                    <CardTitle className="text-sm font-medium">
+                      {formatStatusDisplay(status)}
                       <Badge className="ml-2" variant="secondary">
-                        {allJobs.filter((job) => job.status === status).length}
+                        {workshopJobs.filter((job: any) => job.workflow_status === status).length}
                       </Badge>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    {allJobs
-                      .filter((job) => job.status === status)
-                      .map((job) => (
-                        <Card
-                          key={job.id}
-                          className="p-3 hover:shadow-sm transition-shadow"
-                        >
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <p className="text-sm font-medium">
-                                {job.job_id}
+                    {workshopJobs
+                      .filter((job: any) => job.workflow_status === status)
+                      .map((job: any) => (
+                        <Link key={job.id} href={`/workshop/jobWorkShop/${job.id}`}>
+                          <Card className="p-3 hover:shadow-sm transition-shadow cursor-pointer">
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium">
+                                  {job.jobId_workshop}
+                                </p>
+                                <div className="flex items-center gap-1">
+                                  <Badge className={getPriorityColor(job.priority)}>
+                                    {job.priority}
+                                  </Badge>
+                                </div>
+                              </div>
+                              <p className="text-xs text-gray-600">
+                                {job.registration_no || ""}
                               </p>
-                              <Badge className={getPriorityColor(job.priority)}>
-                                {job.priority}
-                              </Badge>
-                            </div>
-                            <p className="text-xs text-gray-600 line-clamp-2">
-                              {job.description}
-                            </p>
-                            <div className="flex items-center justify-between text-xs text-gray-500">
-                              {job.estimatedCost && (
-                                <span>R {job.estimatedCost}</span>
+                              <p className="text-xs text-gray-600 line-clamp-2">
+                                {job.description}
+                              </p>
+                              {job.technician_name && (
+                                <p className="text-xs text-blue-600">
+                                  Tech: {job.technician_name}
+                                </p>
                               )}
                             </div>
-                          </div>
-                        </Card>
+                          </Card>
+                        </Link>
                       ))}
                   </CardContent>
                 </Card>
@@ -1331,113 +1354,55 @@ export default function FleetJobsPage() {
             </TabsContent>
             
 
-          <TabsContent value="analytics" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Total Jobs
-                  </CardTitle>
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{allJobs.length}</div>
-                  <p className="text-xs text-muted-foreground">All Jobs</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    In Progress
-                  </CardTitle>
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {
-                      allJobs.filter((job) => job.status === "inprogress")
-                        .length
-                    }
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Active jobs being worked on
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Completed
-                  </CardTitle>
-                  <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {allJobs.filter((job) => job.status === "completed").length}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Successfully completed jobs
-                  </p>
-                </CardContent>
-              </Card>
-              {/* <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Avg. Cost
-                  </CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">R304</div>
-                  <p className="text-xs text-muted-foreground">
-                    Average job cost
-                  </p>
-                </CardContent>
-              </Card> */}
-            </div>
-
+          <TabsContent value="efficiency" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Job Status Distribution</CardTitle>
-                <CardDescription>Overview of all job statuses</CardDescription>
+                <CardTitle>Job Efficiency Overview</CardTitle>
+                <CardDescription>
+                  Number of jobs and percentage by status
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {[
-                    "Breakdown Request",
-                    "completed",
-                    "assigned",
-                    "Technician on site",
-                    "Technician accepted",
-                    "inprogress",
-                    "awaiting-approval",
-                    "approved",
-                    "cancelled",
-                  ].map((status) => {
-                    const count = allJobs.filter(
-                      (job) => job.status === status,
+                    { status: "awaiting_assignment", label: "Awaiting Assignment" },
+                    { status: "mechanic_assigned", label: "Mechanic Assigned" },
+                    { status: "subcontractor_assigned", label: "Subcontractor Assigned" },
+                    { status: "mechanic_accepted", label: "Mechanic Accepted" },
+                    { status: "job_in_progress", label: "Job In Progress" },
+                    { status: "parts_outstanding", label: "Parts Outstanding" },
+                    { status: "parts_received", label: "Parts Received" },
+                    { status: "returned_to_office", label: "Returned to Office" },
+                    { status: "job_completed", label: "Job Completed" },
+                    { status: "quality_check_done", label: "Quality Check Done" },
+                    { status: "job_cancelled", label: "Cancelled Jobs" },
+                  ].map(({ status, label }) => {
+                    const count = workshopJobs.filter(
+                      (job: any) => job.workflow_status === status
                     ).length;
                     const percentage =
-                      allJobs.length > 0 ? (count / allJobs.length) * 100 : 0;
+                      workshopJobs.length > 0
+                        ? (count / workshopJobs.length) * 100
+                        : 0;
                     return (
                       <div
                         key={status}
-                        className="flex items-center justify-between"
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                       >
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
                           <Badge className={getStatusColor(status)}>
-                            {status}
+                            {label}
                           </Badge>
-                          <span className="text-sm">{count} jobs</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-24 bg-gray-200 rounded-full h-2">
+                        <div className="flex items-center gap-4">
+                          <span className="text-sm font-semibold w-16 text-right">{count} jobs</span>
+                          <div className="w-32 bg-gray-200 rounded-full h-3">
                             <div
-                              className="bg-blue-600 h-2 rounded-full"
+                              className="bg-blue-600 h-3 rounded-full"
                               style={{ width: `${percentage}%` }}
                             ></div>
                           </div>
-                          <span className="text-sm text-gray-500">
+                          <span className="text-sm font-medium text-gray-600 w-12 text-right">
                             {percentage.toFixed(1)}%
                           </span>
                         </div>
@@ -1445,8 +1410,18 @@ export default function FleetJobsPage() {
                     );
                   })}
                 </div>
+                <div className="mt-6 pt-4 border-t">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-600">Total Jobs</span>
+                    <span className="text-lg font-bold">{workshopJobs.length}</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="completed" className="space-y-4">
+            <CompletedJobsReport />
           </TabsContent>
         </Tabs>
 

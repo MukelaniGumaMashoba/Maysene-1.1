@@ -50,8 +50,8 @@ export async function POST(request: NextRequest) {
           console.warn('[API][maintenance/workflow] Insufficient permissions to approve:', { userId: user.id })
           return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
         }
-        newStatus = 'approved'
-        newJobStatus = 'approved'
+        newStatus = 'mechanic_assigned'
+        newJobStatus = 'Mechanic Assigned'
         break
 
       case 'reject':
@@ -59,8 +59,8 @@ export async function POST(request: NextRequest) {
           console.warn('[API][maintenance/workflow] Insufficient permissions to reject:', { userId: user.id })
           return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
         }
-        newStatus = 'rejected'
-        newJobStatus = 'rejected'
+        newStatus = 'job_cancelled'
+        newJobStatus = 'Cancelled'
         
         // Store in rejected_jobs table
         {
@@ -84,8 +84,8 @@ export async function POST(request: NextRequest) {
           console.warn('[API][maintenance/workflow] Insufficient permissions to complete:', { userId: user.id })
           return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
         }
-        newStatus = 'completed'
-        newJobStatus = 'completed'
+        newStatus = 'job_completed'
+        newJobStatus = 'Completed'
         break
 
       default:

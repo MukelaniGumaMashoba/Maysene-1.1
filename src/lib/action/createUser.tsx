@@ -10,9 +10,13 @@ export async function CreateUser(formData: FormData) {
     // Validate role
     if (
         role !== "fleet manager" &&
+        role !== "fleet_manager" &&
         role !== "customer" &&
         role !== "call centre" &&
-        role !== "cost centre"
+        role !== "cost centre" &&
+        role !== "office" &&
+        role !== "senior-mechanic" &&
+        role !== "mechanic"
     ) {
         redirect(`/signup?message=Role not found`);
     }

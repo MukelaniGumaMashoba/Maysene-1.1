@@ -95,7 +95,7 @@ export default function UpdatedJobCardForm({ onSuccess, onCancel }: JobCardFormP
 
   const fetchTechnicians = async () => {
     const { data, error } = await supabase
-      .from('technicians')
+      .from('technicians_maysene')
       .select('id, name, phone, specialties')
       .eq('isActive', true)
       .order('name')

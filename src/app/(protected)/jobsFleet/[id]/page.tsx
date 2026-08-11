@@ -295,31 +295,6 @@ export default function FleetJobDetailPage() {
                             {job.clientType === "external" && <Badge variant="outline">External Client</Badge>}
                         </div>
                     </div>
-
-                    {/* Quick Actions */}
-                    {job.status === "awaiting-approval" && canApproveJobs && (
-                        <div className="flex gap-2 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                            <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
-                            <div className="flex-1">
-                                <h4 className="font-semibold text-yellow-800">Approval Required</h4>
-                                <p className="text-sm text-yellow-700">This job requires fleet manager approval to proceed.</p>
-                            </div>
-                            <div className="flex gap-2">
-                                <Button
-                                    onClick={() => handleStatusUpdate("approved")}
-                                    className="bg-green-600 hover:bg-green-700"
-                                    size="sm"
-                                >
-                                    <CheckCircle className="h-4 w-4 mr-2" />
-                                    Approve
-                                </Button>
-                                <Button variant="destructive" onClick={() => handleStatusUpdate("cancelled")} size="sm">
-                                    <XCircle className="h-4 w-4 mr-2" />
-                                    Reject
-                                </Button>
-                            </div>
-                        </div>
-                    )}
                 </div>
 
                 <Tabs defaultValue="details" className="space-y-4">
@@ -457,52 +432,18 @@ export default function FleetJobDetailPage() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="flex gap-2 flex-wrap">
-                                        <Button
-                                            variant={job.status === "assigned" ? "default" : "outline"}
-                                            // onClick={() => handleStatusUpdate("assigned")}
-                                            size="sm"
-                                        >
+                                        <Badge variant={job.status === "assigned" ? "default" : "outline"}>
                                             Assigned
-                                        </Button>
-                                        <Button
-                                            variant={job.status === "inprogress" ? "default" : "outline"}
-                                            // onClick={() => handleStatusUpdate("inprogress")}
-                                            size="sm"
-                                        >
+                                        </Badge>
+                                        <Badge variant={job.status === "inprogress" ? "default" : "outline"}>
                                             In Progress
-                                        </Button>
-                                        <Button
-                                            variant={job.status === "awaiting-approval" ? "default" : "outline"}
-                                            // onClick={() => handleStatusUpdate("awaiting-approval")}
-                                            size="sm"
-                                        >
-                                            Awaiting Approval
-                                        </Button>
-                                        {canApproveJobs && (
-                                            <>
-                                                <Button
-                                                    variant={job.status === "approved" ? "default" : "outline"}
-                                                    // onClick={() => handleStatusUpdate("approved")}
-                                                    size="sm"
-                                                >
-                                                    Approved
-                                                </Button>
-                                                <Button
-                                                    variant={job.status === "completed" ? "default" : "outline"}
-                                                    // onClick={() => handleStatusUpdate("completed")}
-                                                    size="sm"
-                                                >
-                                                    Completed
-                                                </Button>
-                                            </>
-                                        )}
-                                        <Button
-                                            variant={job.status === "cancelled" ? "destructive" : "outline"}
-                                            // onClick={() => handleStatusUpdate("cancelled")}
-                                            size="sm"
-                                        >
+                                        </Badge>
+                                        <Badge variant={job.status === "completed" ? "default" : "outline"}>
+                                            Completed
+                                        </Badge>
+                                        <Badge variant={job.status === "cancelled" ? "destructive" : "outline"}>
                                             Cancelled
-                                        </Button>
+                                        </Badge>
                                     </div>
                                 </CardContent>
                             </Card>

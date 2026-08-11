@@ -47,17 +47,18 @@ export function SendToWorkshopDialog({ jobId, jobDescription, vehicleReg, client
       const { data: workshopData, error: workshopError } = await supabase
         .from('workshop_job')
         .insert({
-          // id: undefined,
           registration_no: vehicleReg || '',
           job_type: jobType || 'repair',
           description: jobDescription,
           status: 'Awaiting Approval',
+          workflow_status: 'awaiting_assignment',
           priority: priority || 'medium',
           client_name: clientName || '',
           location: location || '',
           notes: notes || '',
           fleet_job_id: jobId,
           source: 'fleet',
+          job_source: 'defect',
         })
         .select('id')
         .single();

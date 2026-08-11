@@ -142,17 +142,17 @@ export default function JobCardWorkflow() {
     console.log('[JobCardWorkflow] Handling workflow action:', { jobId: job.id, action })
     
     try {
-      let newStatus = job.workflow_status || 'pending_approval'
-      let newJobStatus = job.status || 'pending'
+      let newStatus = job.workflow_status || 'awaiting_assignment'
+      let newJobStatus = job.status || 'Awaiting Assignment'
 
       switch (action.action) {
         case 'approve':
-          newStatus = 'approved'
-          newJobStatus = 'approved'
+          newStatus = 'mechanic_assigned'
+          newJobStatus = 'Mechanic Assigned'
           break
         case 'reject':
-          newStatus = 'rejected'
-          newJobStatus = 'rejected'
+          newStatus = 'job_cancelled'
+          newJobStatus = 'Cancelled'
           // Store in rejected_jobs table
           {
             const { error } = await (supabase as any)
@@ -169,12 +169,12 @@ export default function JobCardWorkflow() {
           }
           break
         case 'complete':
-          newStatus = 'completed'
-          newJobStatus = 'completed'
+          newStatus = 'job_completed'
+          newJobStatus = 'Completed'
           break
         case 'reopen':
-          newStatus = 'pending_approval'
-          newJobStatus = 'pending'
+          newStatus = 'awaiting_assignment'
+          newJobStatus = 'Awaiting Assignment'
           break
       }
 
@@ -280,20 +280,34 @@ export default function JobCardWorkflow() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending_approval': return 'bg-yellow-100 text-yellow-800'
-      case 'approved': return 'bg-green-100 text-green-800'
-      case 'rejected': return 'bg-red-100 text-red-800'
-      case 'completed': return 'bg-blue-100 text-blue-800'
+      case 'awaiting_assignment': return 'bg-yellow-100 text-yellow-800'
+      case 'mechanic_assigned': return 'bg-blue-100 text-blue-800'
+      case 'subcontractor_assigned': return 'bg-purple-100 text-purple-800'
+      case 'mechanic_accepted': return 'bg-indigo-100 text-indigo-800'
+      case 'job_in_progress': return 'bg-orange-100 text-orange-800'
+      case 'parts_outstanding': return 'bg-amber-100 text-amber-800'
+      case 'parts_received': return 'bg-teal-100 text-teal-800'
+      case 'returned_to_office': return 'bg-gray-100 text-gray-800'
+      case 'job_completed': return 'bg-green-100 text-green-800'
+      case 'quality_check_done': return 'bg-emerald-100 text-emerald-800'
+      case 'job_cancelled': return 'bg-red-100 text-red-800'
       default: return 'bg-gray-100 text-gray-800'
     }
   }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'pending_approval': return <Clock className="h-4 w-4" />
-      case 'approved': return <CheckCircle className="h-4 w-4" />
-      case 'rejected': return <XCircle className="h-4 w-4" />
-      case 'completed': return <CheckCircle className="h-4 w-4" />
+      case 'awaiting_assignment': return <Clock className="h-4 w-4" />
+      case 'mechanic_assigned': return <User className="h-4 w-4" />
+      case 'subcontractor_assigned': return <User className="h-4 w-4" />
+      case 'mechanic_accepted': return <CheckCircle className="h-4 w-4" />
+      case 'job_in_progress': return <FileText className="h-4 w-4" />
+      case 'parts_outstanding': return <Package className="h-4 w-4" />
+      case 'parts_received': return <Package className="h-4 w-4" />
+      case 'returned_to_office': return <AlertTriangle className="h-4 w-4" />
+      case 'job_completed': return <CheckCircle className="h-4 w-4" />
+      case 'quality_check_done': return <CheckCircle className="h-4 w-4" />
+      case 'job_cancelled': return <XCircle className="h-4 w-4" />
       default: return <FileText className="h-4 w-4" />
     }
   }
@@ -301,13 +315,13 @@ export default function JobCardWorkflow() {
   const canPerformAction = (action: string, job: JobCard) => {
     switch (action) {
       case 'approve':
-        return userPermissions.can_approve_jobs && job.workflow_status === 'pending_approval'
+        return userPermissions.can_approve_jobs && job.workflow_status === 'awaiting_assignment'
       case 'reject':
-        return userPermissions.can_reject_jobs && job.workflow_status === 'pending_approval'
+        return userPermissions.can_reject_jobs && job.workflow_status === 'awaiting_assignment'
       case 'complete':
-        return userPermissions.can_close_jobs && job.workflow_status === 'approved'
+        return userPermissions.can_close_jobs && job.workflow_status === 'job_in_progress'
       case 'print':
-        return job.workflow_status === 'approved'
+        return true
       default:
         return false
     }
@@ -330,9 +344,9 @@ export default function JobCardWorkflow() {
                       <p className="text-sm text-gray-600">{job.registration_no}</p>
                       <p className="text-sm text-gray-500">{job.description}</p>
                     </div>
-                    <Badge className={`${getStatusColor(job.workflow_status || 'pending_approval')} flex items-center space-x-1`}>
-                      {getStatusIcon(job.workflow_status || 'pending_approval')}
-                      <span>{(job.workflow_status || 'pending_approval').replace('_', ' ').toUpperCase()}</span>
+                    <Badge className={`${getStatusColor(job.workflow_status || 'awaiting_assignment')} flex items-center space-x-1`}>
+                      {getStatusIcon(job.workflow_status || 'awaiting_assignment')}
+                      <span>{(job.workflow_status || 'awaiting_assignment').replace(/_/g, ' ').toUpperCase()}</span>
                     </Badge>
                   </div>
                   

@@ -95,8 +95,13 @@ export default function RejectedJobs() {
       }
     } catch (error) {
       console.error('Error fetching user role:', error)
-      // Fallback to localStorage if available
-      const role = localStorage.getItem("userRole") || ""
+      const getCookie = (name: string) => {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop()?.split(";").shift();
+        return null;
+      };
+      const role = decodeURIComponent(getCookie("role") || "")
       setUserRole(role)
     }
   }
