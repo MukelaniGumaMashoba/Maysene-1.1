@@ -83,6 +83,7 @@ import {
   locationToSearchText,
   normalizeLocationInput,
 } from "@/lib/utils/location";
+import * as XLSX from "xlsx";
 
 export default function LoadPlanPage() {
   console.log("LoadPlanPage component rendering");
@@ -1327,6 +1328,91 @@ export default function LoadPlanPage() {
     { id: "b", title: "TRADELANDER 5 CC", addr: "Randfontein, South Africa" },
   ]);
 
+  const handleExportTripSummary = (trip: any) => {
+    const assignments = parseJsonField(trip.vehicleassignments) || [];
+    const vehicle = assignments[0]?.vehicle?.name || "";
+    const trailer = assignments[0]?.trailer?.name || "";
+    const driverName = assignments[0]?.drivers?.map((d: any) => d.name || `${d.first_name} ${d.surname}`).filter(Boolean).join(", ") || "";
+    const clientDetails = parseJsonField(trip.clientdetails);
+    const pickupLocations = parseJsonField(trip.pickuplocations) || [];
+    const dropoffLocations = parseJsonField(trip.dropofflocations) || [];
+    const selectedStopPoints = parseJsonField(trip.selectedstoppoints || trip.selectedStopPoints) || [];
+    const statusHistory = Array.isArray(trip.status_history) ? trip.status_history : [];
+
+    const pickup = pickupLocations[0]?.location || pickupLocations[0]?.address || trip.origin || "";
+    const dropoff = dropoffLocations[0]?.location || dropoffLocations[0]?.address || trip.destination || "";
+    const stopPoints = selectedStopPoints.map((sp: any) => sp.name || sp.location || sp.address || "").filter(Boolean).join("; ") || "-";
+
+    const statusMap: Record<string, string> = {};
+    statusHistory.forEach((entry: any) => {
+      const s = entry.status;
+      const ts = entry.timestamp || entry.recorded_at;
+      if (!statusMap[s] && ts) {
+        statusMap[s] = new Date(ts).toLocaleString("en-ZA", { dateStyle: "medium", timeStyle: "short" });
+      }
+    });
+
+    const status1 = statusMap["pending"] || "";
+    const status2 = statusMap["accepted"] || "";
+    const status3 = statusMap["arrived-at-loading"] || "";
+    const status4 = statusMap["staging-area"] || "";
+    const status5 = statusMap["loading"] || "";
+    const status6 = statusMap["on-trip"] || "";
+    const status7 = statusMap["offloading"] || "";
+
+    let totalTime = "";
+    if (statusHistory.length >= 2) {
+      const first = new Date(statusHistory[0].timestamp || statusHistory[0].recorded_at);
+      const last = new Date(statusHistory[statusHistory.length - 1].timestamp || statusHistory[statusHistory.length - 1].recorded_at);
+      const diffMs = last.getTime() - first.getTime();
+      const hours = Math.floor(diffMs / 3600000);
+      const mins = Math.floor((diffMs % 3600000) / 60000);
+      totalTime = `${hours}h ${mins}m`;
+    }
+
+    const row = {
+      "Load nr": trip.trip_id || "",
+      "Load date": trip.startdate || "",
+      "Client": clientDetails?.name || "",
+      "Order number": trip.ordernumber || "",
+      "Commodity": trip.cargo || "",
+      "Pick Up": pickup,
+      "Drop off": dropoff,
+      "Stop Points": stopPoints,
+      "Horse": vehicle,
+      "Trailer": trailer,
+      "Driver Name": driverName,
+      "Expected KM": trip.estimated_distance || "",
+      "Opening KM": trip.start_mileage || "",
+      "Closing KM": trip.end_mileage || "",
+      "Actual KM": trip.total_distance || "",
+      "Trip Status 1 - Pending": status1,
+      "Trip Status 2 - Accepted": status2,
+      "Trip Status 3 - Arrived at Loading": status3,
+      "Trip Status 4 - Staging Area": status4,
+      "Trip Status 5 - Loading": status5,
+      "Trip Status 6 - On Trip": status6,
+      "Trip Status 7 - Offloading": status7,
+      "Total Time": totalTime,
+    };
+
+    const ws = XLSX.utils.json_to_sheet([row]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Trip Summary");
+
+    const keys = Object.keys(row);
+    ws["!cols"] = keys.map((key) => {
+      const maxLen = Math.max(
+        key.length,
+        ...[row[key]].map((v) => String(v).length)
+      );
+      return { wch: Math.min(maxLen + 2, 50) };
+    });
+    ws["!autofilter"] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 0, c: keys.length - 1 } }) };
+
+    XLSX.writeFile(wb, `${trip.trip_id || "trip-summary"}.xlsx`);
+  };
+
   const handleCreateClick = (e: React.FormEvent) => {
     e.preventDefault();
     handleCreate();
@@ -1736,7 +1822,7 @@ export default function LoadPlanPage() {
                           </span>
                         </TableCell>
                         <TableCell>
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" onClick={() => handleExportTripSummary(row)}>
                             <FileText className="h-4 w-4" />
                             Summary
                           </Button>

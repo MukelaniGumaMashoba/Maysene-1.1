@@ -399,7 +399,7 @@ export default function WorkshopJobDetailPage() {
   if (!job) return <div className="p-8 text-center">Job not found</div>;
 
   const workflowStatus = (job as any).workflow_status || "awaiting_assignment";
-  const isWorkshopRole = userRole === "mechanic" || userRole === "senior-mechanic";
+  const isWorkshopRole = userRole === "mechanic" || userRole === "senior-mechanic" || userRole === "technician";
   const isOfficeRole = userRole === "office" || userRole === "fleet-manager" || userRole === "fleet_manager" || userRole === "fleet manager";
   const isPendingAcceptance = isWorkshopRole && (workflowStatus === "mechanic_assigned" || workflowStatus === "subcontractor_assigned");
   
@@ -518,12 +518,12 @@ export default function WorkshopJobDetailPage() {
 
       <div className="p-3 sm:p-6">
         {/* Job Header Card */}
-        <Card className="mb-6">
-          <CardHeader className="bg-orange-500 text-white">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <Card className="mb-4 sm:mb-6">
+          <CardHeader className="bg-orange-500 text-white p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4">
               <div>
-                <CardTitle className="text-2xl">{job.jobid_workshop}</CardTitle>
-                <p className="text-orange-100">{job.job_type}</p>
+                <CardTitle className="text-lg sm:text-2xl">{job.jobid_workshop}</CardTitle>
+                <p className="text-orange-100 text-sm">{job.job_type}</p>
                 {job.fleet_number && (
                   <p className="text-orange-100 text-sm">Fleet #: {job.fleet_number}</p>
                 )}
@@ -531,15 +531,17 @@ export default function WorkshopJobDetailPage() {
                   <p className="text-orange-100 text-sm">Trailer: {job.trailer_registration}</p>
                 )}
               </div>
-              <div className="text-right">
-                <Badge className={`${getStatusColor(workflowStatus)} px-3 py-1 text-base`}>
+              <div className="text-left sm:text-right">
+                <div className="flex flex-wrap gap-1.5 items-center">
+                <Badge className={`${getStatusColor(workflowStatus)} px-2 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-base`}>
                   {STATUS_LABELS[workflowStatus as WorkflowStatus] || workflowStatus}
                 </Badge>
                 {job.priority && (
-                  <Badge className="ml-2 bg-white/20 text-white px-2 py-1">
+                  <Badge className="bg-white/20 text-white px-2 py-0.5 sm:py-1 text-xs">
                     Priority {job.priority}
                   </Badge>
                 )}
+                </div>
                 <p className="text-orange-100 text-sm mt-1">
                   {new Date(job.created_at).toLocaleDateString()}
                 </p>
@@ -552,8 +554,8 @@ export default function WorkshopJobDetailPage() {
         </Card>
 
         {/* Workflow Actions */}
-        <Card className="mb-6">
-          <CardContent className="p-4">
+        <Card className="mb-4 sm:mb-6">
+          <CardContent className="p-3 sm:p-4">
             <WorkflowActions
               jobId={job.id}
               currentStatus={workflowStatus}
@@ -566,17 +568,17 @@ export default function WorkshopJobDetailPage() {
 
         {/* Work Summary for Returned to Office */}
         {workflowStatus === "returned_to_office" && (
-          <Card className="mb-6 border-orange-200 bg-orange-50">
-            <CardHeader>
-              <CardTitle className="text-orange-800 flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5" />
+          <Card className="mb-4 sm:mb-6 border-orange-200 bg-orange-50">
+            <CardHeader className="p-3 sm:p-6">
+              <CardTitle className="text-orange-800 flex items-center gap-2 text-base sm:text-lg">
+                <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5" />
                 Work Summary - Returned to Office
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-3 sm:p-6 space-y-3 sm:space-y-4">
               {/* Time Information */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-white p-3 rounded border border-orange-200">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
+                <div className="bg-white p-2 sm:p-3 rounded border border-orange-200">
                   <p className="text-xs font-medium text-gray-500">Assigned At</p>
                   <p className="text-sm font-semibold">
                     {job.assigned_at
@@ -584,7 +586,7 @@ export default function WorkshopJobDetailPage() {
                       : "N/A"}
                   </p>
                 </div>
-                <div className="bg-white p-3 rounded border border-orange-200">
+                <div className="bg-white p-2 sm:p-3 rounded border border-orange-200">
                   <p className="text-xs font-medium text-gray-500">Started At</p>
                   <p className="text-sm font-semibold">
                     {job.start_time
@@ -592,7 +594,7 @@ export default function WorkshopJobDetailPage() {
                       : "Not started"}
                   </p>
                 </div>
-                <div className="bg-white p-3 rounded border border-orange-200">
+                <div className="bg-white p-2 sm:p-3 rounded border border-orange-200">
                   <p className="text-xs font-medium text-gray-500">Returned At</p>
                   <p className="text-sm font-semibold">
                     {job.updated_at
@@ -600,21 +602,21 @@ export default function WorkshopJobDetailPage() {
                       : "N/A"}
                   </p>
                 </div>
-                <div className="bg-white p-3 rounded border border-orange-200">
+                <div className="bg-white p-2 sm:p-3 rounded border border-orange-200">
                   <p className="text-xs font-medium text-gray-500">Technician</p>
                   <p className="text-sm font-semibold">{job.technician_name || "N/A"}</p>
                 </div>
               </div>
 
               {/* Return Reason */}
-              <div className="bg-white p-3 rounded border border-orange-200">
+              <div className="bg-white p-2 sm:p-3 rounded border border-orange-200">
                 <p className="text-xs font-medium text-gray-500 mb-1">Return Reason</p>
                 <p className="text-sm font-semibold text-red-700">{job.return_reason || job.cancelled_reason || "N/A"}</p>
               </div>
 
               {/* Notes */}
               {job.notes && (
-                <div className="bg-white p-3 rounded border border-orange-200">
+                <div className="bg-white p-2 sm:p-3 rounded border border-orange-200">
                   <p className="text-xs font-medium text-gray-500 mb-1">Job Notes</p>
                   <p className="text-sm">{job.notes}</p>
                 </div>
@@ -682,23 +684,23 @@ export default function WorkshopJobDetailPage() {
           </Card>
         )}
 
-        <Tabs defaultValue="details" className="space-y-6">
+        <Tabs defaultValue="details" className="space-y-4 sm:space-y-6">
           <div className="overflow-x-auto -mx-3 px-3">
             <TabsList className="flex flex-wrap gap-1 w-full bg-gray-100 p-1 rounded-lg">
-              <TabsTrigger value="details" className="flex-1 min-w-0 text-xs sm:text-sm px-2 py-2">
-                <FileText className="h-4 w-4 mr-1 hidden sm:inline" />
+              <TabsTrigger value="details" className="flex-1 min-w-0 text-xs px-1.5 sm:text-sm sm:px-2 py-1.5 sm:py-2">
+                <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 hidden sm:inline" />
                 <span className="hidden sm:inline">Details</span><span className="sm:hidden">Info</span>
               </TabsTrigger>
-              <TabsTrigger value="line-items" className="flex-1 min-w-0 text-xs sm:text-sm px-2 py-2">
-                <CheckCircle className="h-4 w-4 mr-1 hidden sm:inline" />
+              <TabsTrigger value="line-items" className="flex-1 min-w-0 text-xs px-1.5 sm:text-sm sm:px-2 py-1.5 sm:py-2">
+                <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 hidden sm:inline" />
                 <span className="hidden sm:inline">Line Items</span><span className="sm:hidden">Items</span>
               </TabsTrigger>
-              <TabsTrigger value="costs" className="flex-1 min-w-0 text-xs sm:text-sm px-2 py-2">
-                <DollarSign className="h-4 w-4 mr-1 hidden sm:inline" />
+              <TabsTrigger value="costs" className="flex-1 min-w-0 text-xs px-1.5 sm:text-sm sm:px-2 py-1.5 sm:py-2">
+                <DollarSign className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 hidden sm:inline" />
                 Costs
               </TabsTrigger>
-              <TabsTrigger value="history" className="flex-1 min-w-0 text-xs sm:text-sm px-2 py-2">
-                <History className="h-4 w-4 mr-1 hidden sm:inline" />
+              <TabsTrigger value="history" className="flex-1 min-w-0 text-xs px-1.5 sm:text-sm sm:px-2 py-1.5 sm:py-2">
+                <History className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 hidden sm:inline" />
                 History
               </TabsTrigger>
             </TabsList>
@@ -706,16 +708,16 @@ export default function WorkshopJobDetailPage() {
 
           {/* Details Tab */}
           <TabsContent value="details">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               {/* Vehicle Section */}
               <Card>
-                <CardHeader className="bg-gray-100 border-b">
-                  <CardTitle className="flex items-center gap-2 text-black">
-                    <Truck className="h-5 w-5 text-orange-500" />
+                <CardHeader className="bg-gray-100 border-b p-3 sm:p-6">
+                  <CardTitle className="flex items-center gap-2 text-black text-base sm:text-lg">
+                    <Truck className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
                     Vehicle Information
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-6">
+                <CardContent className="p-3 sm:p-6">
                   {vehicle ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="bg-gray-50 p-3 rounded">
@@ -753,13 +755,13 @@ export default function WorkshopJobDetailPage() {
 
               {/* Job Details */}
               <Card>
-                <CardHeader className="bg-gray-100 border-b">
-                  <CardTitle className="flex items-center gap-2 text-black">
-                    <FileText className="h-5 w-5 text-orange-500" />
+                <CardHeader className="bg-gray-100 border-b p-3 sm:p-6">
+                  <CardTitle className="flex items-center gap-2 text-black text-base sm:text-lg">
+                    <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
                     Job Details
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-6 space-y-4">
+                <CardContent className="p-3 sm:p-6 space-y-3 sm:space-y-4">
                   <div className="bg-gray-50 p-3 rounded">
                     <p className="text-sm text-gray-600">Description</p>
                     <p className="font-semibold">{job.description || "No description"}</p>
@@ -884,14 +886,14 @@ export default function WorkshopJobDetailPage() {
 
             {/* Consumables */}
             {consumables && consumables.length > 0 && (
-              <Card className="mt-6">
-                <CardHeader className="bg-gray-100 border-b">
-                  <CardTitle className="flex items-center gap-2 text-black">
-                    <Droplet className="h-5 w-5 text-purple-600" />
+              <Card className="mt-4 sm:mt-6">
+                <CardHeader className="bg-gray-100 border-b p-3 sm:p-6">
+                  <CardTitle className="flex items-center gap-2 text-black text-base sm:text-lg">
+                    <Droplet className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
                     Consumables Used
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-6">
+                <CardContent className="p-3 sm:p-6">
                   <div className="space-y-2">
                     {consumables.map((c: any, i: number) => (
                       <div key={i} className="flex items-center justify-between bg-purple-50 p-2 rounded">
@@ -911,14 +913,14 @@ export default function WorkshopJobDetailPage() {
             )}
 
             {/* Photos & Invoice Section */}
-            <Card className="mt-6">
-              <CardHeader className="bg-gray-100 border-b">
-                <CardTitle className="flex items-center gap-2 text-black">
-                  <Camera className="h-5 w-5 text-blue-600" />
+            <Card className="mt-4 sm:mt-6">
+              <CardHeader className="bg-gray-100 border-b p-3 sm:p-6">
+                <CardTitle className="flex items-center gap-2 text-black text-base sm:text-lg">
+                  <Camera className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
                   Photos & Documents
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-6 space-y-4">
+              <CardContent className="p-3 sm:p-6 space-y-4">
                 {/* Job Photos */}
                 <div>
                   <Label className="text-sm font-semibold text-gray-700">Job Photos</Label>
@@ -1012,14 +1014,14 @@ export default function WorkshopJobDetailPage() {
           {/* Costs Tab */}
           <TabsContent value="costs">
             <Card>
-              <CardHeader className="bg-gray-100 border-b">
-                <CardTitle className="flex items-center gap-2 text-black">
-                  <DollarSign className="h-5 w-5 text-orange-500" />
+              <CardHeader className="bg-gray-100 border-b p-3 sm:p-6">
+                <CardTitle className="flex items-center gap-2 text-black text-base sm:text-lg">
+                  <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
                   Cost Summary
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-6 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <CardContent className="p-3 sm:p-6 space-y-3 sm:space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                   <div className="bg-green-50 p-4 rounded border border-green-200">
                     <p className="text-sm text-green-700">Labour Cost</p>
                     <p className="text-xl font-bold text-green-800">

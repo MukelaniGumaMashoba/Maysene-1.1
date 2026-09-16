@@ -895,7 +895,7 @@ export default function FleetJobsPage() {
       <Tabs defaultValue="workshopJobs" className="space-y-6">
         <div className="overflow-x-auto -mx-2 px-2">
           <TabsList className="bg-white shadow rounded-lg border flex flex-wrap gap-1 p-1 w-full">
-            {(userRole === "mechanic" || userRole === "senior-mechanic"
+            {(userRole === "mechanic" || userRole === "senior-mechanic" || userRole === "technician"
               ? ["workshopJobs"]
               : ["workshopJobs", "fleetJobs", "vehicles", "changes", "kanban", "efficiency", "cancelled", "completed"]
             ).map((tab) => (
@@ -925,7 +925,7 @@ export default function FleetJobsPage() {
         </div>
         <TabsContent
           value="workshopJobs"
-          className="space-y-6 p-6 bg-gray-50 min-h-screen"
+          className="space-y-4 sm:space-y-6 p-3 sm:p-6 bg-gray-50 min-h-screen"
         >
           <div className="flex flex-col space-y-4">
             {/* Section Header */}
@@ -954,14 +954,14 @@ export default function FleetJobsPage() {
                 {filteredJobs.map((job) => (
                   <Card
                     key={job.id || job.jobId_workshop}
-                    className="hover:shadow-md transition-shadow rounded-lg border border-gray-200 p-6 bg-white"
+                    className="hover:shadow-md transition-shadow rounded-lg border border-gray-200 p-3 sm:p-6 bg-white"
                   >
-                    <CardHeader className="pb-3 flex justify-between items-center">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                        <CardTitle className="text-lg">
+                    <CardHeader className="pb-3 flex justify-between items-start sm:items-center gap-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 w-full">
+                        <CardTitle className="text-base sm:text-lg">
                           {job.jobId_workshop}
                         </CardTitle>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <Badge className={getStatusColor((job as any).workflow_status || job.status)}>
                             {formatStatusDisplay((job as any).workflow_status || job.status)}
                             {(job as any).workflow_status === "awaiting_assignment" && (

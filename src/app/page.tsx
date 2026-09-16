@@ -10,5 +10,10 @@ export default async function Home() {
     redirect('/login')
   }
 
+  const workshopRoles = ['mechanic', 'senior-mechanic', 'technician']
+  if (workshopRoles.includes(role)) {
+    redirect('/workshop/jobWorkShop')
+  }
+
   redirect('/dashboard')
 }

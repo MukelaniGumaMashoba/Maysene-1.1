@@ -103,7 +103,7 @@ const PERMISSIONS: Record<string, Record<string, string[]>> = {
     canAcceptJob: ["mechanic_assigned", "subcontractor_assigned"],
     canStartWork: ["mechanic_accepted"],
     canRequestParts: ["job_in_progress"],
-    canReceiveParts: [],
+    canReceiveParts: ["parts_outstanding"],
     canCompleteLineItems: ["job_in_progress", "parts_received"],
     canCompleteJob: ["job_in_progress", "parts_received"],
     canReturnToOffice: ["mechanic_assigned", "mechanic_accepted", "job_in_progress", "parts_outstanding", "parts_received"],
@@ -117,7 +117,21 @@ const PERMISSIONS: Record<string, Record<string, string[]>> = {
     canAcceptJob: ["mechanic_assigned", "subcontractor_assigned"],
     canStartWork: ["mechanic_accepted"],
     canRequestParts: ["job_in_progress"],
-    canReceiveParts: [],
+    canReceiveParts: ["parts_outstanding"],
+    canCompleteLineItems: ["job_in_progress", "parts_received"],
+    canCompleteJob: ["job_in_progress", "parts_received"],
+    canReturnToOffice: ["mechanic_assigned", "mechanic_accepted", "job_in_progress", "parts_outstanding", "parts_received"],
+    canQualityCheck: [],
+    canUpdateVehicleStatus: ["*"],
+    canCancelJob: [],
+  },
+  technician: {
+    canCreateJob: ["*"],
+    canAssignJob: [],
+    canAcceptJob: ["mechanic_assigned", "subcontractor_assigned"],
+    canStartWork: ["mechanic_accepted"],
+    canRequestParts: ["job_in_progress"],
+    canReceiveParts: ["parts_outstanding"],
     canCompleteLineItems: ["job_in_progress", "parts_received"],
     canCompleteJob: ["job_in_progress", "parts_received"],
     canReturnToOffice: ["mechanic_assigned", "mechanic_accepted", "job_in_progress", "parts_outstanding", "parts_received"],
@@ -398,9 +412,9 @@ export default function WorkflowActions({
 
   const renderAssignSection = () => (
     <div className="space-y-2">
-      <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row gap-2">
         <Select value={assignType} onValueChange={(v: "internal" | "subcontractor") => { setAssignType(v); setSelectedTechnician(""); }}>
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-full sm:w-40">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -437,7 +451,7 @@ export default function WorkflowActions({
         <Button
           onClick={handleAssignTechnician}
           disabled={loading || !selectedTechnician}
-          className="bg-blue-600 hover:bg-blue-700"
+          className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
         >
           <UserCheck className="h-4 w-4 mr-2" />
           {currentStatus === "awaiting_assignment" ? "Assign" : "Re-Assign"}
@@ -454,27 +468,27 @@ export default function WorkflowActions({
           {canAssign && renderAssignSection()}
           <div className="flex gap-2 flex-wrap">
             {canAccept && (
-              <Button onClick={handleAcceptJob} disabled={loading} className="bg-indigo-600 hover:bg-indigo-700">
+              <Button onClick={handleAcceptJob} disabled={loading} className="bg-indigo-600 hover:bg-indigo-700 w-full sm:w-auto">
                 <CheckCircle className="h-4 w-4 mr-2" /> Accept Job
               </Button>
             )}
             {canStart && (
-              <Button onClick={handleStartWork} disabled={loading} className="bg-orange-600 hover:bg-orange-700">
+              <Button onClick={handleStartWork} disabled={loading} className="bg-orange-600 hover:bg-orange-700 w-full sm:w-auto">
                 <Play className="h-4 w-4 mr-2" /> Start Work
               </Button>
             )}
             {canRequestParts && (
-              <Button onClick={handleRequestParts} disabled={loading} className="bg-amber-600 hover:bg-amber-700">
+              <Button onClick={handleRequestParts} disabled={loading} className="bg-amber-600 hover:bg-amber-700 w-full sm:w-auto">
                 <Package className="h-4 w-4 mr-2" /> Request Parts
               </Button>
             )}
             {canReceiveParts && (
-              <Button onClick={handlePartsReceived} disabled={loading} className="bg-teal-600 hover:bg-teal-700">
+              <Button onClick={handlePartsReceived} disabled={loading} className="bg-teal-600 hover:bg-teal-700 w-full sm:w-auto">
                 <Package className="h-4 w-4 mr-2" /> Confirm Parts Received
               </Button>
             )}
             {canComplete && (
-              <Button onClick={handleCompleteJob} disabled={loading} className="bg-green-600 hover:bg-green-700">
+              <Button onClick={handleCompleteJob} disabled={loading} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
                 <CheckCircle className="h-4 w-4 mr-2" /> Complete Job
               </Button>
             )}
@@ -495,27 +509,32 @@ export default function WorkflowActions({
           {canAssign && renderAssignSection()}
           <div className="flex gap-2 flex-wrap">
             {canAccept && (
-              <Button onClick={handleAcceptJob} disabled={loading} className="bg-indigo-600 hover:bg-indigo-700">
+              <Button onClick={handleAcceptJob} disabled={loading} className="bg-indigo-600 hover:bg-indigo-700 w-full sm:w-auto">
                 <CheckCircle className="h-4 w-4 mr-2" /> Accept Job
               </Button>
             )}
             {canStart && (
-              <Button onClick={handleStartWork} disabled={loading} className="bg-orange-600 hover:bg-orange-700">
+              <Button onClick={handleStartWork} disabled={loading} className="bg-orange-600 hover:bg-orange-700 w-full sm:w-auto">
                 <Play className="h-4 w-4 mr-2" /> Start Work
               </Button>
             )}
             {canRequestParts && (
-              <Button onClick={handleRequestParts} disabled={loading} className="bg-amber-600 hover:bg-amber-700">
+              <Button onClick={handleRequestParts} disabled={loading} className="bg-amber-600 hover:bg-amber-700 w-full sm:w-auto">
                 <Package className="h-4 w-4 mr-2" /> Request Parts
               </Button>
             )}
+            {canReceiveParts && (
+              <Button onClick={handlePartsReceived} disabled={loading} className="bg-teal-600 hover:bg-teal-700 w-full sm:w-auto">
+                <Package className="h-4 w-4 mr-2" /> Confirm Parts Received
+              </Button>
+            )}
             {canComplete && (
-              <Button onClick={handleCompleteJob} disabled={loading} className="bg-green-600 hover:bg-green-700">
+              <Button onClick={handleCompleteJob} disabled={loading} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
                 <CheckCircle className="h-4 w-4 mr-2" /> Complete Job
               </Button>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {canReturn && <ReturnToOfficeDialog jobId={jobId} currentStatus={currentStatus} onSuccess={onSuccess} />}
             {canQC && (
               <QualityCheckDialog jobId={jobId} currentStatus={currentStatus} registrationNo={registrationNo} onSuccess={onSuccess} />
@@ -525,32 +544,39 @@ export default function WorkflowActions({
       );
     }
 
-    // Mechanic role
+    // Mechanic/Technician role
     return (
       <div className="space-y-3">
         <div className="flex gap-2 flex-wrap">
           {canAccept && (
-            <Button onClick={handleAcceptJob} disabled={loading} className="bg-indigo-600 hover:bg-indigo-700">
+            <Button onClick={handleAcceptJob} disabled={loading} className="bg-indigo-600 hover:bg-indigo-700 w-full sm:w-auto">
               <CheckCircle className="h-4 w-4 mr-2" /> Accept Job
             </Button>
           )}
           {canStart && (
-            <Button onClick={handleStartWork} disabled={loading} className="bg-orange-600 hover:bg-orange-700">
+            <Button onClick={handleStartWork} disabled={loading} className="bg-orange-600 hover:bg-orange-700 w-full sm:w-auto">
               <Play className="h-4 w-4 mr-2" /> Start Work
             </Button>
           )}
           {canRequestParts && (
-            <Button onClick={handleRequestParts} disabled={loading} className="bg-amber-600 hover:bg-amber-700">
+            <Button onClick={handleRequestParts} disabled={loading} className="bg-amber-600 hover:bg-amber-700 w-full sm:w-auto">
               <Package className="h-4 w-4 mr-2" /> Request Parts
             </Button>
           )}
+          {canReceiveParts && (
+            <Button onClick={handlePartsReceived} disabled={loading} className="bg-teal-600 hover:bg-teal-700 w-full sm:w-auto">
+              <Package className="h-4 w-4 mr-2" /> Confirm Parts Received
+            </Button>
+          )}
           {canComplete && (
-            <Button onClick={handleCompleteJob} disabled={loading} className="bg-green-600 hover:bg-green-700">
+            <Button onClick={handleCompleteJob} disabled={loading} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
               <CheckCircle className="h-4 w-4 mr-2" /> Complete Job
             </Button>
           )}
         </div>
-        {canReturn && <ReturnToOfficeDialog jobId={jobId} currentStatus={currentStatus} onSuccess={onSuccess} />}
+        <div className="flex gap-2 flex-wrap">
+          {canReturn && <ReturnToOfficeDialog jobId={jobId} currentStatus={currentStatus} onSuccess={onSuccess} />}
+        </div>
       </div>
     );
   };

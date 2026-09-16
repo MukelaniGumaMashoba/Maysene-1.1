@@ -105,15 +105,13 @@ const roleNavigation = {
     { name: "Technicians", href: "/workshop/callcenter/technician", Icon: <Users /> },
   ],
   "senior-mechanic": [
-    { name: "Dashboard", href: "/workshop/dashboard", Icon: <ChartBar /> },
     { name: "Workshop Jobs", href: "/workshop/jobWorkShop", Icon: <Wrench /> },
-    { name: "Vehicles", href: "/workshop/vehicles", Icon: <Car /> },
-    { name: "Technicians", href: "/workshop/callcenter/technician", Icon: <Users /> },
   ],
   mechanic: [
-    { name: "Dashboard", href: "/workshop/dashboard", Icon: <ChartBar /> },
     { name: "Workshop Jobs", href: "/workshop/jobWorkShop", Icon: <Wrench /> },
-    { name: "Vehicles", href: "/workshop/vehicles", Icon: <Car /> },
+  ],
+  technician: [
+    { name: "Workshop Jobs", href: "/workshop/jobWorkShop", Icon: <Wrench /> },
   ],
   admin: [
     // Workshop subsection

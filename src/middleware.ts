@@ -95,6 +95,14 @@ const roles = [
       '/workshop/settings', '/workshop/technicians', '/workshop/callcenter', '/workshop/callcenter/technicians',
       '/login', '/signup', '/', '/logout'],
   },
+  {
+    name: 'technician',
+    path: ['/workshop/jobWorkShop', '/workshop/dashboard', '/workshop/jobs', '/workshop/profile',
+      '/workshop/inspections', '/workshop/clients', '/workshop/vehicles', '/workshop/drivers',
+      '/workshop/stop-points', '/workshop/load-plan', '/workshop/fuel', '/workshop/audit',
+      '/workshop/settings', '/workshop/technicians', '/workshop/callcenter', '/workshop/callcenter/technicians',
+      '/login', '/signup', '/', '/logout'],
+  },
 ]
 
 const publicRoutes = ['/login', '/signup', '/', '/logout', '/register',

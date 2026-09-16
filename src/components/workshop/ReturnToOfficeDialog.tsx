@@ -101,7 +101,7 @@ export default function ReturnToOfficeDialog({ jobId, currentStatus, onSuccess }
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="border-gray-400 text-gray-700 hover:bg-gray-50">
+        <Button variant="outline" size="sm" className="border-gray-400 text-gray-700 hover:bg-gray-50 w-full sm:w-auto">
           <RotateCcw className="h-4 w-4 mr-2" />
           Return to Office
         </Button>
