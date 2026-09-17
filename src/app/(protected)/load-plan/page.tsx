@@ -1328,23 +1328,27 @@ export default function LoadPlanPage() {
     { id: "b", title: "TRADELANDER 5 CC", addr: "Randfontein, South Africa" },
   ]);
 
-  const handleExportTripSummary = (trip: any) => {
+  const handleExportTripSummary = async (trip: any) => {
     const assignments = parseJsonField(trip.vehicleassignments) || [];
     const vehicle = assignments[0]?.vehicle?.name || "";
     const trailer = assignments[0]?.trailer?.name || "";
     const driverName = assignments[0]?.drivers?.map((d: any) => d.name || `${d.first_name} ${d.surname}`).filter(Boolean).join(", ") || "";
     const clientDetails = parseJsonField(trip.clientdetails);
+    const selectedClient = parseJsonField(trip.selectedclient || trip.selectedClient);
+    const clientName = clientDetails?.name || selectedClient?.name || trip.client || trip.selectedclient || "";
     const pickupLocations = parseJsonField(trip.pickuplocations) || [];
     const dropoffLocations = parseJsonField(trip.dropofflocations) || [];
     const selectedStopPoints = parseJsonField(trip.selectedstoppoints || trip.selectedStopPoints) || [];
-    const statusHistory = Array.isArray(trip.status_history) ? trip.status_history : [];
+    const stopsData = Array.isArray(trip.stops_data) ? trip.stops_data : [];
+
+    const loadDate = trip.startdate || trip.startDate || trip.created_at?.split("T")[0] || "";
 
     const pickup = pickupLocations[0]?.location || pickupLocations[0]?.address || trip.origin || "";
     const dropoff = dropoffLocations[0]?.location || dropoffLocations[0]?.address || trip.destination || "";
     const stopPoints = selectedStopPoints.map((sp: any) => sp.name || sp.location || sp.address || "").filter(Boolean).join("; ") || "-";
 
     const statusMap: Record<string, string> = {};
-    statusHistory.forEach((entry: any) => {
+    stopsData.forEach((entry: any) => {
       const s = entry.status;
       const ts = entry.timestamp || entry.recorded_at;
       if (!statusMap[s] && ts) {
@@ -1361,19 +1365,46 @@ export default function LoadPlanPage() {
     const status7 = statusMap["offloading"] || "";
 
     let totalTime = "";
-    if (statusHistory.length >= 2) {
-      const first = new Date(statusHistory[0].timestamp || statusHistory[0].recorded_at);
-      const last = new Date(statusHistory[statusHistory.length - 1].timestamp || statusHistory[statusHistory.length - 1].recorded_at);
+    if (stopsData.length >= 2) {
+      const first = new Date(stopsData[0].timestamp || stopsData[0].recorded_at);
+      const last = new Date(stopsData[stopsData.length - 1].timestamp || stopsData[stopsData.length - 1].recorded_at);
       const diffMs = last.getTime() - first.getTime();
       const hours = Math.floor(diffMs / 3600000);
       const mins = Math.floor((diffMs % 3600000) / 60000);
       totalTime = `${hours}h ${mins}m`;
     }
 
+    let openingKm = "";
+    let closingKm = "";
+    let actualKm = "";
+
+    if (vehicle) {
+      try {
+        const from = trip.startdate ? new Date(trip.startdate).toISOString() : "";
+        const to = trip.end_date ? new Date(trip.end_date).toISOString() : trip.enddate ? new Date(trip.enddate).toISOString() : "";
+        const res = await fetch("/api/vehicle/mileage", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ vehicles: [{ reg: vehicle, from, to }] }),
+        });
+        if (res.ok) {
+          const mileageData = await res.json();
+          const result = Array.isArray(mileageData) ? mileageData.find((m: any) => m.start_mileage != null || m.distance_km != null) : null;
+          if (result) {
+            openingKm = result.start_mileage != null ? String(result.start_mileage) : "";
+            closingKm = result.end_mileage != null ? String(result.end_mileage) : "";
+            actualKm = result.distance_km != null ? String(result.distance_km) : "";
+          }
+        }
+      } catch (err) {
+        console.error("Mileage API error:", err);
+      }
+    }
+
     const row = {
       "Load nr": trip.trip_id || "",
-      "Load date": trip.startdate || "",
-      "Client": clientDetails?.name || "",
+      "Load date": loadDate,
+      "Client": clientName,
       "Order number": trip.ordernumber || "",
       "Commodity": trip.cargo || "",
       "Pick Up": pickup,
@@ -1383,9 +1414,9 @@ export default function LoadPlanPage() {
       "Trailer": trailer,
       "Driver Name": driverName,
       "Expected KM": trip.estimated_distance || "",
-      "Opening KM": trip.start_mileage || "",
-      "Closing KM": trip.end_mileage || "",
-      "Actual KM": trip.total_distance || "",
+      "Opening KM": openingKm,
+      "Closing KM": closingKm,
+      "Actual KM": actualKm,
       "Trip Status 1 - Pending": status1,
       "Trip Status 2 - Accepted": status2,
       "Trip Status 3 - Arrived at Loading": status3,
