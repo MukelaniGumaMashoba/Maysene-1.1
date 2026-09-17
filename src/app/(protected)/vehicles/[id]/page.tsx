@@ -151,6 +151,20 @@ export default function VehicleDetailsPage() {
   const [deleting, setDeleting] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editData, setEditData] = useState<Vehicle | null>(null);
+  const [userRole, setUserRole] = useState("");
+
+  useEffect(() => {
+    const getCookie = (name: string) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop()?.split(";").shift();
+      return null;
+    };
+    const role = decodeURIComponent(getCookie("role") || "");
+    setUserRole(role);
+  }, []);
+
+  const isWorkshopRole = userRole === "mechanic" || userRole === "senior-mechanic" || userRole === "technician";
 
   /** Fetch vehicle details */
   const fetchVehicle = useCallback(async () => {
@@ -294,6 +308,7 @@ export default function VehicleDetailsPage() {
             {vehicle.make} {vehicle.model}
           </h1>
           <div className="ml-auto">
+            {!isWorkshopRole && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
@@ -310,7 +325,7 @@ export default function VehicleDetailsPage() {
                   <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
                   <AlertDialogDescription>
                     This action will <strong>archive</strong> the vehicle. It
-                    won’t appear in lists anymore but will remain in the
+                    won't appear in lists anymore but will remain in the
                     database for record keeping. You can restore it later if
                     needed.
                   </AlertDialogDescription>
@@ -327,26 +342,29 @@ export default function VehicleDetailsPage() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+            )}
           </div>
 
           <div>
-            {editing ? (
-              <>
-                <Button onClick={handleUpdate} className="ml-2">
-                  Save
+            {!isWorkshopRole && (
+              editing ? (
+                <>
+                  <Button onClick={handleUpdate} className="ml-2">
+                    Save
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={cancelEditing}
+                    className="ml-2"
+                  >
+                    Cancel
+                  </Button>
+                </>
+              ) : (
+                <Button onClick={startEditing} className="ml-2">
+                  Edit Vehicle
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={cancelEditing}
-                  className="ml-2"
-                >
-                  Cancel
-                </Button>
-              </>
-            ) : (
-              <Button onClick={startEditing} className="ml-2">
-                Edit Vehicle
-              </Button>
+              )
             )}
           </div>
         </div>

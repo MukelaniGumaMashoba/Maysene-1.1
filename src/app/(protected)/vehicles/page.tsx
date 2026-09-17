@@ -127,6 +127,20 @@ export default function Vehicles() {
   const router = useRouter();
   const supabase = createClient();
   const [search, setSearch] = useState("");
+  const [userRole, setUserRole] = useState("");
+
+  useEffect(() => {
+    const getCookie = (name: string) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop()?.split(";").shift();
+      return null;
+    };
+    const role = decodeURIComponent(getCookie("role") || "");
+    setUserRole(role);
+  }, []);
+
+  const isWorkshopRole = userRole === "mechanic" || userRole === "senior-mechanic" || userRole === "technician";
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(
     null,
@@ -502,6 +516,7 @@ export default function Vehicles() {
             Manage your vehicle and trailer fleet
           </p>
         </div>
+        {!isWorkshopRole && (
         <Button
           onClick={() => setIsAddingVehicle(true)}
           className="bg-blue-600 hover:bg-blue-700"
@@ -509,6 +524,7 @@ export default function Vehicles() {
           <Plus className="w-4 h-4 mr-2" />
           Add Vehicle
         </Button>
+        )}
       </div>
 
       {/* Stats Cards */}
