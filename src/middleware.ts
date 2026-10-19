@@ -85,6 +85,7 @@ const roles = [
       '/workshop/inspections', '/workshop/clients', '/workshop/vehicles', '/workshop/drivers',
       '/workshop/stop-points', '/workshop/load-plan', '/workshop/fuel', '/workshop/audit',
       '/workshop/settings', '/workshop/technicians', '/workshop/callcenter', '/workshop/callcenter/technicians',
+      '/vehicles', '/vehicles/[id]',
       '/login', '/signup', '/', '/logout'],
   },
   {
@@ -93,6 +94,7 @@ const roles = [
       '/workshop/inspections', '/workshop/clients', '/workshop/vehicles', '/workshop/drivers',
       '/workshop/stop-points', '/workshop/load-plan', '/workshop/fuel', '/workshop/audit',
       '/workshop/settings', '/workshop/technicians', '/workshop/callcenter', '/workshop/callcenter/technicians',
+      '/vehicles', '/vehicles/[id]',
       '/login', '/signup', '/', '/logout'],
   },
   {
@@ -101,6 +103,7 @@ const roles = [
       '/workshop/inspections', '/workshop/clients', '/workshop/vehicles', '/workshop/drivers',
       '/workshop/stop-points', '/workshop/load-plan', '/workshop/fuel', '/workshop/audit',
       '/workshop/settings', '/workshop/technicians', '/workshop/callcenter', '/workshop/callcenter/technicians',
+      '/vehicles', '/vehicles/[id]',
       '/login', '/signup', '/', '/logout'],
   },
 ]
