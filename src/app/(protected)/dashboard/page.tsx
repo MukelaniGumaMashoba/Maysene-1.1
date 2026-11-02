@@ -67,6 +67,9 @@ import TestRouteMap from "@/components/map/test-route-map";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from 'recharts';
 
+// Cache vehicle registrations across ETA polls to avoid a Supabase query every minute
+const vehicleRegistrationCache = new Map<string, string>()
+
 // Trip Time Info Component with ETA
 function TripTimeInfo({ trip, gpsData }: any) {
   const [eta, setEta] = useState<any>(null);
@@ -81,7 +84,6 @@ function TripTimeInfo({ trip, gpsData }: any) {
       
       setLoading(true);
       try {
-        const supabase = createClient();
         const assignments = trip.vehicleassignments || trip.vehicle_assignments || [];
         if (!assignments.length) {
           setLoading(false);
@@ -89,15 +91,34 @@ function TripTimeInfo({ trip, gpsData }: any) {
         }
         
         const assignment = assignments[0];
-        let vehicleInfo = null;
+        let vehicleInfo: any = null;
         
-        if (assignment.vehicle?.id) {
-          const { data: vehicle } = await supabase
-            .from('vehiclesc')
-            .select('registration_number')
-            .eq('id', assignment.vehicle.id)
-            .single();
-          vehicleInfo = vehicle;
+        // Prefer the registration already carried on the trip assignment; fall back
+        // to a one-time lookup that is cached instead of querying on every poll.
+        const directReg =
+          assignment.vehicle?.registration_number ||
+          assignment.vehicle?.registration;
+        
+        if (directReg) {
+          vehicleInfo = { registration_number: directReg };
+        } else if (assignment.vehicle?.id) {
+          const cacheKey = String(assignment.vehicle.id);
+          const cached = vehicleRegistrationCache.get(cacheKey);
+          if (cached) {
+            vehicleInfo = { registration_number: cached };
+          } else {
+            const supabase = createClient();
+            const { data } = await supabase
+              .from('vehiclesc')
+              .select('registration_number')
+              .eq('id', assignment.vehicle.id)
+              .single();
+            const vehicle = data as any;
+            vehicleInfo = vehicle;
+            if (vehicle?.registration_number) {
+              vehicleRegistrationCache.set(cacheKey, vehicle.registration_number);
+            }
+          }
         }
         
         if (!vehicleInfo?.registration_number) {

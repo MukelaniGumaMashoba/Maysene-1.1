@@ -126,6 +126,7 @@ export async function middleware(req: NextRequest) {
     // List all cookies you want to clear
     response.cookies.delete('access_token')
     response.cookies.delete('refresh_token')
+    response.cookies.delete('role')
     // Add more cookies here if needed
     return response
   }
@@ -144,61 +145,54 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL('/login', req.url))
   }
 
-  // If authenticated, get user role from database
+  // If authenticated, resolve the role from the cookie set at login.
+  // This avoids an auth.getUser() + users table query on EVERY request,
+  // which was the main source of Supabase API gateway traffic.
   if (isAuthenticated) {
-    try {
-      const supabase = await createClient()
-      const { data: { user }, error } = await supabase.auth.getUser()
+    const roleCookie = req.cookies.get('role')?.value
+    let role = roleCookie ? decodeURIComponent(roleCookie) : ''
+    let response: NextResponse | null = null
 
-      // Query the users table to get the role for the logged-in user
-      const { data: userRecord, error: userError } = await supabase
-        .from("users")
-        .select("role")
-        .eq("id", (user?.id) as string)
-        .single();
+    // Fallback only for sessions that predate the role cookie.
+    if (!role) {
+      try {
+        const supabase = await createClient()
+        const { data: { user }, error } = await supabase.auth.getUser()
 
+        if (error || !user) {
+          return NextResponse.redirect(new URL('/login', req.url))
+        }
 
-      if (error || userError) {
+        const { data: userRecord, error: userError } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', user.id)
+          .single()
+
+        if (userError || !userRecord?.role) {
+          return NextResponse.redirect(new URL('/login', req.url))
+        }
+
+        role = decodeURIComponent(userRecord.role)
+        response = NextResponse.next()
+        response.cookies.set('role', role, { path: '/', sameSite: 'lax' })
+      } catch (error) {
+        console.error('Error in middleware:', error)
         return NextResponse.redirect(new URL('/login', req.url))
       }
-      // Log sanitized info for debugging
-      console.log("User authenticated with role:", userRecord?.role ? 'valid' : 'invalid')
+    }
 
-      if (user) {
-        const role = decodeURIComponent(userRecord?.role || '')
-        if (role) {
-          const allowedPaths = getAllowedPaths(role)
-          console.log('Checking access - Role:', role, 'Path:', path, 'Allowed paths:', allowedPaths)
-          const isAllowed = allowedPaths.some(p => path.startsWith(p))
-          if (!isAllowed) {
-            console.log('Access denied for role:', role, 'trying to access:', path)
-            return NextResponse.redirect(new URL('/login', req.url))
-          }
-          // switch (role) {
-          //   case "call center":
-          //     return NextResponse.redirect(new URL('/callcenter', req.url))
-          //     break
-          //   case "fleet manager":
-          //     return NextResponse.redirect(new URL('/fleetManager', req.url))
-          //     break
-          //   case "cost center":
-          //     return NextResponse.redirect(new URL('/ccenter', req.url))
-          //     break
-          //   case "customer":
-          //     return NextResponse.redirect(new URL('/customer', req.url))
-          //     break
-          //   default:
-          //     return NextResponse.redirect(new URL('/dashboard', req.url))
-          // }
-        } else {
-          console.log('No role found for user — redirecting to /dashboard')
-          return NextResponse.redirect(new URL('/dashboard', req.url))
-        }
-      }
-    } catch (error) {
-      console.error('Error in middleware:', error)
+    if (!role) {
       return NextResponse.redirect(new URL('/login', req.url))
     }
+
+    const allowedPaths = getAllowedPaths(role)
+    const isAllowed = allowedPaths.some(p => path.startsWith(p))
+    if (!isAllowed) {
+      return NextResponse.redirect(new URL('/login', req.url))
+    }
+
+    return response ?? NextResponse.next()
   }
 
   return NextResponse.next()
