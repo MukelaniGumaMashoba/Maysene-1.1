@@ -378,7 +378,7 @@ export default function FleetJobsPage() {
     const { data, error } = await supabase
       .from("workshop_job")
       .select("*")
-      .not("fleet_job_id", "is", null)
+      .or("workflow_status.is.null,workflow_status.neq.job_cancelled")
       .order("created_at", { ascending: false });
     if (!error && data) setWorkshopJobs(data);
     setWorkshopJobsLoading(false);

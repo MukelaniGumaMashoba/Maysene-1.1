@@ -475,7 +475,6 @@ export default function LoadPlanPage() {
       const driversResult = await driversResponse.json();
       const driversData = driversResult.drivers || [];
 
-      // API now returns only available drivers
       const formattedDrivers = (driversData || []).map((driver: any) => ({
         id: driver.id,
         name: `${driver.first_name} ${driver.surname}`.trim(),
@@ -812,15 +811,11 @@ export default function LoadPlanPage() {
     if (loadingLocation) {
       getSortedDriversByDistance(loadingLocation).then((sorted) => {
         setSortedDrivers(sorted);
-        // Also update available drivers with distance info
-        const availableWithDistance = sorted.filter(
-          (d) => d.available === true,
-        );
-        setAvailableDrivers(availableWithDistance);
+        setAvailableDrivers(sorted);
       });
     } else {
       setSortedDrivers(drivers);
-      setAvailableDrivers(drivers.filter((d) => d.available === true));
+      setAvailableDrivers(drivers);
     }
   }, [loadingLocation, getSortedDriversByDistance, drivers]);
 
@@ -1363,6 +1358,7 @@ export default function LoadPlanPage() {
     const status5 = statusMap["loading"] || "";
     const status6 = statusMap["on-trip"] || "";
     const status7 = statusMap["offloading"] || "";
+    const status8 = statusMap["end-trip-after-offloading"] || "";
 
     let totalTime = "";
     if (stopsData.length >= 2) {
@@ -1424,6 +1420,7 @@ export default function LoadPlanPage() {
       "Trip Status 5 - Loading": status5,
       "Trip Status 6 - On Trip": status6,
       "Trip Status 7 - Offloading": status7,
+      "Trip Status 8 - End Trip After Offloading": status8,
       "Total Time": totalTime,
     };
 
@@ -2163,7 +2160,7 @@ export default function LoadPlanPage() {
                             handleDriverChange(driverIndex, value)
                           }
                           drivers={availableDrivers}
-                          placeholder="Select available driver"
+                          placeholder="Select driver"
                           isCalculatingDistance={isCalculatingDistance}
                           vehicleTrackingData={vehicleTrackingData}
                         />

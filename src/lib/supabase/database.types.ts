@@ -11900,6 +11900,7 @@ export type Database = {
           grand_total: number | null
           hours: string | null
           id: number
+          inspection_id: number | null
           job_status: string | null
           job_type: string | null
           jobid_workshop: string | null
@@ -11974,6 +11975,7 @@ export type Database = {
           grand_total?: number | null
           hours?: string | null
           id?: never
+          inspection_id?: number | null
           job_status?: string | null
           job_type?: string | null
           jobid_workshop?: string | null
@@ -12048,6 +12050,7 @@ export type Database = {
           grand_total?: number | null
           hours?: string | null
           id?: never
+          inspection_id?: number | null
           job_status?: string | null
           job_type?: string | null
           jobid_workshop?: string | null

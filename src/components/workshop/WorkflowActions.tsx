@@ -31,6 +31,7 @@ interface Props {
   currentStatus: string;
   registrationNo?: string;
   isOffice?: boolean;
+  readOnly?: boolean;
   onSuccess?: () => void;
 }
 
@@ -153,6 +154,7 @@ export default function WorkflowActions({
   currentStatus,
   registrationNo,
   isOffice = false,
+  readOnly = false,
   onSuccess,
 }: Props) {
   const [loading, setLoading] = useState(false);
@@ -198,7 +200,10 @@ export default function WorkflowActions({
     return "Failed to update status. Please try again or contact support.";
   };
 
+  const officeViewOnly = readOnly || userRole === "office";
+
   const updateStatus = async (newStatus: string, extraData?: any) => {
+    if (officeViewOnly) return;
     setLoading(true);
     try {
       // Map workflow_status to human-readable status for the legacy status field
@@ -258,6 +263,7 @@ export default function WorkflowActions({
   };
 
   const handleAssignTechnician = async () => {
+    if (officeViewOnly) return;
     if (!selectedTechnician) {
       toast.error("Please select a technician or subcontractor");
       return;
@@ -308,12 +314,14 @@ export default function WorkflowActions({
   };
 
   const handleStartWork = async () => {
+    if (officeViewOnly) return;
     await updateStatus("job_in_progress", {
       start_time: new Date().toISOString(),
     });
   };
 
   const handleAcceptJob = async () => {
+    if (officeViewOnly) return;
     await updateStatus("mechanic_accepted", {
       accepted_at: new Date().toISOString(),
     });
@@ -341,6 +349,7 @@ export default function WorkflowActions({
   };
 
   const handleRequestParts = async () => {
+    if (officeViewOnly) return;
     await updateStatus("parts_outstanding");
     
     // Send notification
@@ -352,6 +361,7 @@ export default function WorkflowActions({
   };
 
   const handlePartsReceived = async () => {
+    if (officeViewOnly) return;
     await updateStatus("parts_received");
     
     // Send notification
@@ -363,6 +373,7 @@ export default function WorkflowActions({
   };
 
   const handleCompleteJob = async () => {
+    if (officeViewOnly) return;
     await updateStatus("job_completed", {
       completed_at: new Date().toISOString(),
     });
@@ -461,6 +472,8 @@ export default function WorkflowActions({
   );
 
   const renderActions = () => {
+    if (officeViewOnly) return null;
+
     // Office role (includes fleet_manager, fleet-manager, fleet manager)
     if (effectiveIsOffice) {
       return (

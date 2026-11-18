@@ -63,12 +63,13 @@ import JobCardPrinter from "@/components/ui-personal/job-card-printer";
 import FleetJobsForAdmin from "@/components/workshop/FleetJobsForAdmin";
 import { useCurrentTechnician } from "@/hooks/useCurrentTechnician";
 
-function UnavailableDropdown({ vehicleId, onSuccess }: { vehicleId: number; onSuccess: () => void }) {
+function UnavailableDropdown({ vehicleId, onSuccess, readOnly = false }: { vehicleId: number; onSuccess: () => void; readOnly?: boolean }) {
   const [open, setOpen] = useState(false);
   const supabase = createClient() as any;
   const reasons = ['Repairs', 'Servicing', 'Breakdown'];
 
   const handleSelect = async (reason: string) => {
+    if (readOnly) return;
     const { error } = await supabase
       .from('vehiclesc')
       .update({ vehicle_available: false, vehicle_not_available_reason: reason })
@@ -197,6 +198,7 @@ export default function FleetJobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<WorkshopJob[]>([]);
   const [userRole, setUserRole] = useState<string>("");
+  const officeReadOnly = userRole === "office";
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
@@ -569,6 +571,7 @@ export default function FleetJobsPage() {
     status: string,
     notes?: string
   ) => {
+    if (userRole === "office") return;
     try {
       const { error } = await supabase
         .from("workshop_job")
@@ -625,6 +628,7 @@ export default function FleetJobsPage() {
 
   // Create new workshop job and assign to workshop
   const createWorkshopJob = async () => {
+    if (userRole === "office") return;
     if (
       !createJobForm.registration_number ||
       !createJobForm.job_type ||
@@ -753,6 +757,7 @@ export default function FleetJobsPage() {
   };
 
   const handleDelete = async (job: WorkshopJob) => {
+    if (userRole === "office") return;
     const confirmed = window.confirm(
       `Are you sure you want to delete job for vehicle ${job.registration_no}?`
     );
@@ -934,12 +939,14 @@ export default function FleetJobsPage() {
                 Workshop Jobs
               </h2>
               <div className="flex items-center gap-2">
-                <CreateJobCardDialog onSuccess={() => {
-                  // Refresh jobs list
-                  supabase.from("workshop_job").select("*").order("created_at", { ascending: false }).then(({ data }: { data: any }) => {
-                    if (data) setWorkshopsJob(data as unknown as WorkshopJob[]);
-                  });
-                }} />
+                {!officeReadOnly && (
+                  <CreateJobCardDialog onSuccess={() => {
+                    // Refresh jobs list
+                    supabase.from("workshop_job").select("*").order("created_at", { ascending: false }).then(({ data }: { data: any }) => {
+                      if (data) setWorkshopsJob(data as unknown as WorkshopJob[]);
+                    });
+                  }} />
+                )}
                 <FileText className="h-5 w-5 text-gray-500" />
               </div>
             </div>
@@ -1081,12 +1088,13 @@ export default function FleetJobsPage() {
                     </CardContent>
                     <CardFooter className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-200">
                       {/* Accept/Reject buttons for assigned jobs */}
-                      {((job as any).workflow_status === "mechanic_assigned" || (job as any).workflow_status === "subcontractor_assigned") && (
+                      {!officeReadOnly && ((job as any).workflow_status === "mechanic_assigned" || (job as any).workflow_status === "subcontractor_assigned") && (
                         <>
                           <Button
                             size="sm"
                             className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
                             onClick={async () => {
+                              if (userRole === "office") return;
                               const { error } = await supabase
                                 .from("workshop_job")
                                 .update({
@@ -1111,6 +1119,7 @@ export default function FleetJobsPage() {
                             variant="destructive"
                             className="w-full sm:w-auto"
                             onClick={async () => {
+                              if (userRole === "office") return;
                               const { error } = await supabase
                                 .from("workshop_job")
                                 .update({
@@ -1134,8 +1143,7 @@ export default function FleetJobsPage() {
                         </>
                       )}
 
-                      {/* View Details - only show after job is accepted */}
-                      {["mechanic_accepted", "job_in_progress", "parts_outstanding", "parts_received", "returned_to_office", "job_completed", "quality_check_done"].includes((job as any).workflow_status) && (
+                      {(officeReadOnly || ["mechanic_accepted", "job_in_progress", "parts_outstanding", "parts_received", "returned_to_office", "job_completed", "quality_check_done"].includes((job as any).workflow_status)) && (
                         <Link href={`/workshop/jobWorkShop/${job.id}`} className="w-full sm:w-auto">
                           <Button variant="outline" size="sm" className="w-full sm:w-auto">
                             <Eye className="h-4 w-4 mr-2" />
@@ -1151,7 +1159,7 @@ export default function FleetJobsPage() {
           </div>
         </TabsContent>
         <TabsContent value="fleetJobs" className="space-y-6 p-6 bg-gray-50 min-h-screen">
-          <FleetJobsForAdmin supabase={supabase} onJobUpdated={() => {
+          <FleetJobsForAdmin readOnly={officeReadOnly} supabase={supabase} onJobUpdated={() => {
             supabase.from("workshop_job").select("*").order("created_at", { ascending: false }).then(({ data }: { data: any }) => {
               if (data) setWorkshopsJob(data as unknown as WorkshopJob[]);
             });
@@ -1214,7 +1222,9 @@ export default function FleetJobsPage() {
                           : '-'}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        {vehicle.vehicle_available !== false ? (
+                        {officeReadOnly ? (
+                          <span className="text-xs text-gray-400">View only</span>
+                        ) : vehicle.vehicle_available !== false ? (
                           <UnavailableDropdown
                             vehicleId={vehicle.id}
                             onSuccess={async () => {
@@ -1231,6 +1241,7 @@ export default function FleetJobsPage() {
                             variant="outline"
                             className="h-7 text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50"
                             onClick={async () => {
+                              if (userRole === "office") return;
                               const { error } = await supabase
                                 .from('vehiclesc')
                                 .update({ vehicle_available: true, vehicle_not_available_reason: '--' })
@@ -1551,9 +1562,11 @@ export default function FleetJobsPage() {
                         <strong>Capabilities:</strong> {workshop.capabilities}
                       </p>
                     </div>
+                    {!officeReadOnly && (
                     <Button
                       size="sm"
                       onClick={async () => {
+                        if (userRole === "office") return;
                         if (!selectedJobForWorkshop) return;
 
                         const { error } = await supabase
@@ -1575,6 +1588,7 @@ export default function FleetJobsPage() {
                     >
                       Assign
                     </Button>
+                    )}
                   </div>
                 ))}
             </div>

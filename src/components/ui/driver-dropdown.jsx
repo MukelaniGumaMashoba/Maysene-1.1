@@ -17,9 +17,13 @@ export function DriverDropdown({
   const dropdownRef = useRef(null)
   const searchInputRef = useRef(null)
 
-  // Filter drivers by availability and search term
+  const availabilityLabel = (driver) => {
+    if (driver.available === true) return { text: 'Available', className: 'bg-green-100 text-green-800' }
+    if (driver.available === false) return { text: 'On Trip', className: 'bg-blue-100 text-blue-800' }
+    return { text: 'Not set', className: 'bg-slate-100 text-slate-700' }
+  }
+
   const filteredDrivers = drivers
-    .filter(driver => driver.available === true) // Only show available drivers
     .filter(driver =>
       `${driver.first_name} ${driver.surname}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
       driver.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -152,7 +156,7 @@ export function DriverDropdown({
           <div className="max-h-60 overflow-auto p-1">
             {filteredDrivers.length === 0 ? (
               <div className="py-6 text-center text-sm text-muted-foreground">
-                {searchTerm ? 'No available drivers match your search.' : 'No available drivers found.'}
+                {searchTerm ? 'No drivers match your search.' : 'No drivers found.'}
               </div>
             ) : (
               filteredDrivers.map((driver, index) => (
@@ -167,8 +171,8 @@ export function DriverDropdown({
                   <div className="flex items-center justify-between w-full">
                     <div className="flex items-center gap-2">
                       <span>{driver.first_name} {driver.surname}/{getDriverPlate(driver)}</span>
-                      <span className="text-xs px-2 py-1 rounded bg-green-100 text-green-800">
-                        Available
+                      <span className={`text-xs px-2 py-1 rounded ${availabilityLabel(driver).className}`}>
+                        {availabilityLabel(driver).text}
                       </span>
                     </div>
                     {driver.distance !== null && (

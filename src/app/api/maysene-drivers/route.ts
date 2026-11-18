@@ -7,8 +7,7 @@ export async function GET() {
     const { data: dbDrivers, error } = await supabase
       .from('drivers')
       .select('*')
-      .eq('available', true)
-      .neq('deleted', true);
+      .or('deleted.is.null,deleted.eq.false');
 
     if (error) {
       console.error('Supabase error:', error);

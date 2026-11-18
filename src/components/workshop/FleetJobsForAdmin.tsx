@@ -28,9 +28,10 @@ interface WorkshopJob {
 interface Props {
   supabase: ReturnType<typeof createClient>;
   onJobUpdated: () => void;
+  readOnly?: boolean;
 }
 
-export default function FleetJobsForAdmin({ supabase, onJobUpdated }: Props) {
+export default function FleetJobsForAdmin({ supabase, onJobUpdated, readOnly = false }: Props) {
   const [fleetJobs, setFleetJobs] = useState<WorkshopJob[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -51,6 +52,7 @@ export default function FleetJobsForAdmin({ supabase, onJobUpdated }: Props) {
   }, []);
 
   const handleAccept = async (job: WorkshopJob) => {
+    if (readOnly) return;
     const { error } = await supabase
       .from("workshop_job")
       .update({ workflow_status: "mechanic_assigned", assigned_at: new Date().toISOString() })
@@ -153,17 +155,19 @@ export default function FleetJobsForAdmin({ supabase, onJobUpdated }: Props) {
             <Link href={`/workshop/jobWorkShop/${job.id}`}>
               <Button variant="outline" size="sm">
                 <Eye className="h-4 w-4 mr-2" />
-                View & Process
+                {readOnly ? "View" : "View & Process"}
               </Button>
             </Link>
-            <Button
-              size="sm"
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-              onClick={() => handleAccept(job)}
-            >
-              <Wrench className="h-4 w-4 mr-2" />
-              Accept & Start Processing
-            </Button>
+            {!readOnly && (
+              <Button
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={() => handleAccept(job)}
+              >
+                <Wrench className="h-4 w-4 mr-2" />
+                Accept & Start Processing
+              </Button>
+            )}
           </CardFooter>
         </Card>
       ))}

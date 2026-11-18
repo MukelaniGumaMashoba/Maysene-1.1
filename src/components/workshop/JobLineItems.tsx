@@ -54,16 +54,18 @@ interface LineItem {
 interface Props {
   jobId: number;
   isMechanic?: boolean;
+  readOnly?: boolean;
   onUpdate?: () => void;
 }
 
-export default function JobLineItems({ jobId, isMechanic = false, onUpdate }: Props) {
+export default function JobLineItems({ jobId, isMechanic = false, readOnly = false, onUpdate }: Props) {
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [newItem, setNewItem] = useState("");
   const [newSection, setNewSection] = useState("Additional");
   const supabase = createClient() as any;
+  const canEdit = isMechanic && !readOnly;
 
   // Completion modal state
   const [completionModal, setCompletionModal] = useState<{
@@ -142,6 +144,7 @@ export default function JobLineItems({ jobId, isMechanic = false, onUpdate }: Pr
   };
 
   const submitCompletion = async () => {
+    if (!canEdit) return;
     if (completionModal.status === "Faulty" && !completionNotes.trim()) {
       toast.error("Notes are mandatory when marking as Faulty");
       return;
@@ -196,6 +199,7 @@ export default function JobLineItems({ jobId, isMechanic = false, onUpdate }: Pr
   };
 
   const updateNotes = async (itemId: number) => {
+    if (!canEdit) return;
     const { error } = await supabase
       .from("job_line_items")
       .update({ notes: notesValue })
@@ -213,7 +217,7 @@ export default function JobLineItems({ jobId, isMechanic = false, onUpdate }: Pr
   };
 
   const addLineItem = async () => {
-    if (!newItem.trim()) return;
+    if (!canEdit || !newItem.trim()) return;
     setAdding(true);
 
     const { data, error } = await supabase
@@ -237,6 +241,7 @@ export default function JobLineItems({ jobId, isMechanic = false, onUpdate }: Pr
   };
 
   const removeLineItem = async (itemId: number) => {
+    if (!canEdit) return;
     const { error } = await supabase
       .from("job_line_items")
       .delete()
@@ -282,7 +287,7 @@ export default function JobLineItems({ jobId, isMechanic = false, onUpdate }: Pr
                 className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
               >
                 <div className="flex gap-1">
-                  {isMechanic && item.status === "Pending" ? (
+                  {canEdit && item.status === "Pending" ? (
                     <>
                       <Button
                         size="sm"
@@ -348,7 +353,7 @@ export default function JobLineItems({ jobId, isMechanic = false, onUpdate }: Pr
                   {item.category}
                 </Badge>
 
-                {isMechanic && (
+                {canEdit && (
                   <div className="flex gap-1">
                     <Button
                       size="sm"
@@ -378,7 +383,7 @@ export default function JobLineItems({ jobId, isMechanic = false, onUpdate }: Pr
       ))}
 
       {/* Add Custom Line Item */}
-      {isMechanic && (
+      {canEdit && (
         <div className="border rounded-lg p-4">
           <h4 className="font-medium text-sm text-gray-700 mb-3">
             Add Custom Line Item

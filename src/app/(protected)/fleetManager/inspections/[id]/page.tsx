@@ -13,6 +13,9 @@ export default function InspectionDetail() {
   const params = useParams();
   const id = params?.id;
   const [inspection, setInspection] = useState<any>(null);
+  const [jobCard, setJobCard] = useState<{ id: number; jobid_workshop: string | null } | null>(null);
+  const [jobCardChecked, setJobCardChecked] = useState(false);
+  const [creatingCard, setCreatingCard] = useState(false);
   const supabase = createClient();
 
   const contentRef = useRef<HTMLDivElement>(null);
@@ -32,6 +35,14 @@ export default function InspectionDetail() {
         .single();
 
       if (!error && data) {
+        const { data: existingCard, error: cardError } = await supabase
+          .from("workshop_job")
+          .select("id, jobid_workshop")
+          .eq("inspection_id", data.id)
+          .maybeSingle();
+        if (!cardError) setJobCard(existingCard);
+        setJobCardChecked(true);
+
         const inspectionData =
           typeof data === "object" && data !== null
             ? (data as Record<string, any>)
@@ -49,61 +60,39 @@ export default function InspectionDetail() {
 
   if (!inspection) return <div className="p-6">Loading inspection...</div>;
 
-  const hasFaults = inspection.checklist?.some((section: any) =>
-    section.items?.some((item: any) => item.status === "Faulty")
-  );
+  const hasFaults =
+    inspection.overall_status === "Faulty" ||
+    inspection.checklist?.some((section: any) =>
+      section.items?.some((item: any) => item.status === "Faulty")
+    );
 
-  const faultyItems = inspection.checklist?.flatMap((section: any) =>
-    (section.items || []).filter((item: any) => item.status === "Faulty").map((item: any) => item.label)
-  ) || [];
-
-  const handleSendToAdmin = async () => {
-    // 1. Create a fleet job (job_assignments) with Breakdown Request status
-    const { data: jobData, error: jobError } = await supabase.from('job_assignments').insert({
-      description: `Inspection #${inspection.id} faults: ${faultyItems.join(', ')}`,
-      status: 'Breakdown Request',
-      priority: 'medium',
-      breakdown_req: true,
-      inspected: true,
-      service: 'inspection-fault',
-      vehicle_id: inspection.vehicle_id,
-      driver_id: inspection.driver_id,
-      location: inspection.location || '',
-      notes: JSON.stringify({ inspection_id: inspection.id }),
-    }).select('id').single();
-
-    if (jobError) {
-      alert('Failed to create job request: ' + jobError.message);
-      return;
-    }
-
-    // 2. Create individual defect records for each faulty item (linked to inspection, not yet to workshop_job)
-    const defectiveItems = inspection.checklist?.flatMap((section: any) =>
-      (section.items || [])
-        .filter((item: any) => item.status === "Faulty")
-        .map((item: any) => ({
-          inspection_id: inspection.id,
-          vehicle_id: inspection.vehicle_id,
-          driver_id: inspection.driver_id,
-          defect_name: item.label,
-          defect_category: item.category || null,
-          defect_description: `${item.label} - flagged as Faulty during Inspection #${inspection.id}`,
-          defect_status: 'Logged',
-          priority: 'medium',
-          logged_at: new Date().toISOString(),
-        }))
-    ) || [];
-
-    if (defectiveItems.length > 0) {
-      const { error: defectError } = await supabase.from('defects').insert(defectiveItems);
-      if (defectError) {
-        console.error('Failed to create defect records:', defectError);
-        alert(`Job request created but failed to log defects: ${defectError.message}`);
+  const handleCreateJobCard = async () => {
+    if (!inspection || creatingCard) return;
+    setCreatingCard(true);
+    try {
+      const { data, error } = await (supabase as any).rpc("create_job_card_from_inspection", {
+        p_inspection_id: inspection.id,
+      });
+      if (error) {
+        alert("Failed to create workshop job card: " + error.message);
         return;
       }
+      if (!data) {
+        alert("No workshop job card was created. This inspection is not marked faulty.");
+        return;
+      }
+      const { data: card } = await supabase
+        .from("workshop_job")
+        .select("id, jobid_workshop")
+        .eq("id", data)
+        .maybeSingle();
+      setJobCard(card);
+    } catch (err) {
+      console.error("Failed to create workshop job card:", err);
+      alert("Failed to create workshop job card");
+    } finally {
+      setCreatingCard(false);
     }
-
-    alert(`Job request created! ${defectiveItems.length} defect(s) logged. Fleet manager will review and send to workshop.`);
   };
 
   const handleDownloadPdf = () => {
@@ -157,12 +146,18 @@ export default function InspectionDetail() {
           Download PDF
         </Button>
 
-        {hasFaults && (
+        {hasFaults && jobCard && (
+          <p className="mb-6 ml-2 text-sm text-emerald-800">
+            Workshop job card {jobCard.jobid_workshop || `#${jobCard.id}`} is on the Job List.
+          </p>
+        )}
+        {hasFaults && jobCardChecked && !jobCard && (
           <Button
-            onClick={handleSendToAdmin}
+            onClick={handleCreateJobCard}
+            disabled={creatingCard}
             className="mb-6 ml-2 bg-red-600 text-white hover:bg-red-700"
           >
-⚠️ Create Inspection Job Request
+            {creatingCard ? "Creating job card..." : "Retry workshop job card"}
           </Button>
         )}
 

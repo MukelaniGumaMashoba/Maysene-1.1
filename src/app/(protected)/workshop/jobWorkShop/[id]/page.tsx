@@ -120,6 +120,7 @@ export default function WorkshopJobDetailPage() {
   const [technician, setTechnician] = useState<Technician | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [userRole, setUserRole] = useState<string>("");
+  const readOnly = userRole === "office";
   const [allTechnicians, setAllTechnicians] = useState<any[]>([]);
   const [reassignTechId, setReassignTechId] = useState("");
   const [isReassigning, setIsReassigning] = useState(false);
@@ -160,6 +161,7 @@ export default function WorkshopJobDetailPage() {
   };
 
   const handleReassign = async () => {
+    if (readOnly) return;
     if (!reassignTechId || !job) return;
     const tech = allTechnicians.find((t) => t.id === reassignTechId);
     if (!tech) return;
@@ -270,7 +272,7 @@ export default function WorkshopJobDetailPage() {
   };
 
   const handleSaveNotes = async () => {
-    if (!job) return;
+    if (readOnly || !job) return;
     setIsSavingNotes(true);
     const { error } = await supabase
       .from("workshop_job")
@@ -287,6 +289,7 @@ export default function WorkshopJobDetailPage() {
   };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (readOnly) return;
     const files = Array.from(e.target.files || []);
     if (!files.length || !job) return;
 
@@ -323,6 +326,7 @@ export default function WorkshopJobDetailPage() {
   };
 
   const handleInvoiceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (readOnly) return;
     const file = e.target.files?.[0];
     if (!file || !job) return;
 
@@ -356,7 +360,7 @@ export default function WorkshopJobDetailPage() {
   };
 
   const removePhoto = async (index: number) => {
-    if (!job) return;
+    if (readOnly || !job) return;
     const updatedPhotos = jobPhotos.filter((_, i) => i !== index);
     await supabase
       .from("workshop_job")
@@ -367,7 +371,7 @@ export default function WorkshopJobDetailPage() {
   };
 
   const handleCloseJob = async () => {
-    if (!job) return;
+    if (readOnly || !job) return;
     const { error } = await supabase
       .from("workshop_job")
       .update({
@@ -492,6 +496,7 @@ export default function WorkshopJobDetailPage() {
                   currentStatus={workflowStatus}
                   registrationNo={job.registration_no}
                   isOffice={isOfficeRole}
+                  readOnly={readOnly}
                   onSuccess={handleRefresh}
                 />
               </div>
@@ -561,6 +566,7 @@ export default function WorkshopJobDetailPage() {
               currentStatus={workflowStatus}
               registrationNo={job.registration_no}
               isOffice={isOfficeRole}
+              readOnly={readOnly}
               onSuccess={handleRefresh}
             />
           </CardContent>
@@ -787,7 +793,7 @@ export default function WorkshopJobDetailPage() {
                   )}
 
                   {/* Reassign section — visible to office at any time */}
-                  {(userRole === "office" || userRole === "fleet-manager" || userRole === "fleet_manager" || userRole === "fleet manager") && (
+                  {!readOnly && (userRole === "office" || userRole === "fleet-manager" || userRole === "fleet_manager" || userRole === "fleet manager") && (
                     <div className="border-t pt-3 mt-3">
                       <Label className="text-sm font-semibold text-gray-700">Reassign Technician</Label>
                       <div className="flex gap-2 mt-2">
@@ -860,7 +866,7 @@ export default function WorkshopJobDetailPage() {
                   </div>
 
                   {/* Notes Section */}
-                  {!["job_completed", "quality_check_done", "job_cancelled"].includes(workflowStatus) && (
+                  {!readOnly && !["job_completed", "quality_check_done", "job_cancelled"].includes(workflowStatus) && (
                     <div className="border-t pt-4">
                       <Label className="text-sm font-semibold text-gray-700">Job Notes</Label>
                       <Textarea
@@ -924,20 +930,22 @@ export default function WorkshopJobDetailPage() {
                 {/* Job Photos */}
                 <div>
                   <Label className="text-sm font-semibold text-gray-700">Job Photos</Label>
-                  <label className="mt-2 flex items-center gap-2 px-4 py-3 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                    <Camera className="h-5 w-5 text-gray-400" />
-                    <span className="text-sm text-gray-600">
-                      {isUploadingPhoto ? "Uploading..." : "Click to upload photos"}
-                    </span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      className="hidden"
-                      onChange={handlePhotoUpload}
-                      disabled={isUploadingPhoto}
-                    />
-                  </label>
+                  {!readOnly && (
+                    <label className="mt-2 flex items-center gap-2 px-4 py-3 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                      <Camera className="h-5 w-5 text-gray-400" />
+                      <span className="text-sm text-gray-600">
+                        {isUploadingPhoto ? "Uploading..." : "Click to upload photos"}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={handlePhotoUpload}
+                        disabled={isUploadingPhoto}
+                      />
+                    </label>
+                  )}
                   {jobPhotos.length > 0 && (
                     <div className="flex gap-3 mt-3 flex-wrap">
                       {jobPhotos.map((url, i) => (
@@ -949,12 +957,14 @@ export default function WorkshopJobDetailPage() {
                               className="h-24 w-24 object-cover rounded border"
                             />
                           </a>
-                          <button
-                            onClick={() => removePhoto(i)}
-                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
+                          {!readOnly && (
+                            <button
+                              onClick={() => removePhoto(i)}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -977,6 +987,8 @@ export default function WorkshopJobDetailPage() {
                           View Invoice
                         </a>
                       </div>
+                    ) : readOnly ? (
+                      <p className="mt-2 text-sm text-gray-500">No invoice uploaded</p>
                     ) : (
                       <label className="mt-2 flex items-center gap-2 px-4 py-3 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                         <FileText className="h-5 w-5 text-gray-400" />
@@ -1005,6 +1017,7 @@ export default function WorkshopJobDetailPage() {
                 <JobLineItems
                   jobId={job.id}
                   isMechanic={true}
+                  readOnly={readOnly}
                   onUpdate={handleRefresh}
                 />
               </CardContent>

@@ -538,7 +538,7 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
 
   // Sort trips to put unauthorized stops at the top
   const tripsList = trips
-    .filter(trip => !['delivered', 'offloading'].includes(trip.status?.toLowerCase()))
+    .filter(trip => !['delivered', 'end-trip-after-offloading', 'cancelled'].includes(trip.status?.toLowerCase()))
     .filter(trip => {
       if (!searchTerm.trim()) return true;
       const term = searchTerm.toLowerCase();
@@ -602,6 +602,7 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
     { label: "Loading", value: "loading" },
     { label: "On Trip", value: "on-trip" },
     { label: "Offloading", value: "offloading" },
+    { label: "End Trip After Offloading", value: "end-trip-after-offloading" },
   ]
 
   const getWaypointsWithStops = (trip: any) => {
@@ -887,6 +888,29 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
                     <Clock className="w-3 h-3 mr-1" />
                     {(trip.dropoff_locations?.[0]?.scheduled_time || trip.dropofflocations?.[0]?.scheduled_time) ? 'Update Drop-off' : 'Set Drop-off'}
                   </Button>
+                  {trip.status?.toLowerCase() === 'offloading' && (
+                    <Button
+                      size="sm"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white h-7 text-xs"
+                      onClick={async () => {
+                        try {
+                          const supabase = createClient();
+                          const { error } = await supabase
+                            .from('trips')
+                            .update({ status: 'end-trip-after-offloading' })
+                            .eq('id', trip.id);
+                          if (error) throw error;
+                          setRefreshTrigger((prev: number) => prev + 1);
+                        } catch (err) {
+                          console.error('Failed to end trip:', err);
+                          alert('Failed to end trip');
+                        }
+                      }}
+                    >
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                      End Trip
+                    </Button>
+                  )}
                   <Button 
                     size="sm" 
                     className="bg-blue-600 hover:bg-blue-700 text-white h-7 text-xs ml-auto"
@@ -950,6 +974,18 @@ function RoutingSection({ userRole, handleViewMap, setCurrentTripForNote, setNot
   )
 }
 
+
+// update the driver availability
+const updateDriverAvailability = async (driverId: string | number, availability: boolean) => {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('drivers')
+    .update({ available: availability })
+    .eq('id', driverId);
+  if (error) throw error;
+  return data;
+}
+
 export default function Dashboard() {
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_TOKEN || '',
@@ -985,6 +1021,7 @@ export default function Dashboard() {
   const [currentTripPhotos, setCurrentTripPhotos] = useState<any>(null);
   const [vehicleAvailability, setVehicleAvailability] = useState<any[]>([]);
   const [driverAvailability, setDriverAvailability] = useState<any[]>([]);
+  const [availabilityRefresh, setAvailabilityRefresh] = useState(0);
   const [loadingPhotos, setLoadingPhotos] = useState(false);
   const [gpsData, setGpsData] = useState<any[]>([]);
 
@@ -1104,7 +1141,7 @@ export default function Dashboard() {
     const supabase = createClient();
     supabase.from('vehiclesc').select('id, registration_number, make, model, vehicle_type, vehicle_available, vehicle_not_available_reason, status').then(({ data }) => setVehicleAvailability(data || []));
     supabase.from('drivers').select('id, first_name, surname, license_number, license_expiry_date, available, status, cell_number').then(({ data }) => setDriverAvailability(data || []));
-  }, [activeTab]);
+  }, [activeTab, availabilityRefresh]);
 
   return (
     <>
@@ -1432,6 +1469,7 @@ export default function Dashboard() {
                           <TableHead>Type</TableHead>
                           <TableHead>Reason</TableHead>
                           <TableHead>Status</TableHead>
+                          <TableHead>Action</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1447,6 +1485,11 @@ export default function Dashboard() {
                               )}>
                                 {vehicle.vehicle_available !== false ? "Available" : "Unavailable"}
                               </span>
+                            </TableCell>
+                            <TableCell>
+                              <Button variant="outline" size="sm" onClick={() => updateDriverAvailability(vehicle.id, !vehicle.vehicle_available)}>
+                                {vehicle.vehicle_available !== false ? "Make Unavailable" : "Make Available"}
+                              </Button>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -1473,6 +1516,7 @@ export default function Dashboard() {
                           <TableHead>Driver Name</TableHead>
                           <TableHead>Phone</TableHead>
                           <TableHead>Status</TableHead>
+                          <TableHead>Action</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1483,16 +1527,56 @@ export default function Dashboard() {
                             <TableCell>
                               <span className={cn(
                                 "px-2 py-1 rounded-full text-xs font-medium",
-                                driver.available !== false ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"
+                                driver.available === true ? "bg-green-100 text-green-800" :
+                                driver.available === false ? "bg-blue-100 text-blue-800" :
+                                "bg-slate-100 text-slate-700"
                               )}>
-                                {driver.available !== false ? "Available" : "On Trip"}
+                                {driver.available === true ? "Available" : driver.available === false ? "On Trip" : "Not set"}
                               </span>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-wrap gap-2">
+                                {driver.available !== true && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={async () => {
+                                      try {
+                                        await updateDriverAvailability(driver.id, true);
+                                        setAvailabilityRefresh((n) => n + 1);
+                                      } catch (err) {
+                                        console.error('Failed to mark driver available:', err);
+                                        alert('Failed to update driver availability');
+                                      }
+                                    }}
+                                  >
+                                    Mark available
+                                  </Button>
+                                )}
+                                {driver.available !== false && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={async () => {
+                                      try {
+                                        await updateDriverAvailability(driver.id, false);
+                                        setAvailabilityRefresh((n) => n + 1);
+                                      } catch (err) {
+                                        console.error('Failed to mark driver on trip:', err);
+                                        alert('Failed to update driver availability');
+                                      }
+                                    }}
+                                  >
+                                    Mark on trip
+                                  </Button>
+                                )}
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
                         {driverAvailability.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={3} className="text-center text-muted-foreground py-4">No drivers found</TableCell>
+                            <TableCell colSpan={4} className="text-center text-muted-foreground py-4">No drivers found</TableCell>
                           </TableRow>
                         )}
                       </TableBody>
