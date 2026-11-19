@@ -1,3 +1,7 @@
+-- DEPRECATED for new installs: use create_fleet_job_from_inspection.sql instead.
+-- That migration creates job_assignments (Job List) and disables this workshop_job path.
+-- Kept for history / environments that already applied it.
+--
 -- Run this in the Supabase SQL Editor.
 -- One workshop job card per failed inspection, plus a defect per Faulty checklist item.
 -- Safe to re-run: the function does nothing when a card already exists.
