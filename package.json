@@ -2,6 +2,7 @@
   "name": "breakdown-dashboard",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.32.1",
   "scripts": {
     "dev": "next dev --webpack",
     "build": "NODE_OPTIONS='--max-old-space-size=1536' next build",
