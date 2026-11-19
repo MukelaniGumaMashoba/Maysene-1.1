@@ -324,11 +324,18 @@ export default function FleetJobsPage() {
     }
   }, [selectedJobForTech]);
 
-  // Fetch workshop jobs (new workflow system)
+  // Job List tab uses fleet jobs (job_assignments), not workshop_job.
   const getJobs = async () => {
-    const { data: workshopJobsData, error } = await supabase
-      .from("workshop_job")
-      .select("*")
+    const { data: jobsData, error } = await supabase
+      .from("job_assignments")
+      .select(
+        `
+          *,
+          drivers (*),
+          vehiclesc (*),
+          technicians:technician_id(*)
+        `,
+      )
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -336,22 +343,23 @@ export default function FleetJobsPage() {
       return;
     }
 
-    const allJobs = (workshopJobsData || []) as unknown as WorkshopJob[];
+    const all = (jobsData || []) as unknown as Job[];
+    setAllJobs(all);
 
-    // Office sees jobs that are NOT assigned to a mechanic yet
-    // Exclude cancelled jobs and jobs that have been shifted to workshop (assigned_mechanic_id set)
-    const officeJobs = allJobs.filter((j) => {
-      const ws = (j as any).workflow_status;
-      const hasMechanic = !!(j as any).assigned_mechanic_id;
-      // Exclude cancelled jobs
-      if (ws === "job_cancelled") return false;
-      // Exclude jobs that have been shifted (mechanic assigned, accepted, in progress, etc.)
-      if (hasMechanic) return false;
-      return true;
+    // Active jobs for the List tab (exclude completed, cancelled, and rejected)
+    const active = all.filter((j) => {
+      const statusLower = j.status?.toLowerCase?.() ?? "";
+      const isCompleted = statusLower === "completed" || statusLower === "closed";
+      const isCancelled = statusLower === "cancelled";
+      const isRejected = j.created === 1;
+
+      return !isCompleted && !isCancelled && !isRejected;
     });
+    setJobs(active);
+    setFilteredJobs(active);
 
-    setJobs(officeJobs as any);
-    setFilteredJobs(officeJobs as any);
+    const completedJobs = all.filter((j) => j.status === "completed");
+    setCompleted(completedJobs);
   };
 
   // Fetch technicians from Supabase
@@ -530,7 +538,7 @@ export default function FleetJobsPage() {
     }
 
     setFilteredJobs(filtered);
-  }, [jobs, searchTerm, statusFilter, priorityFilter]);
+  }, [jobs, searchTerm, statusFilter, serviceFilter, priorityFilter]);
 
   const handleRefreshClick = () => {
     getJobs();
@@ -613,17 +621,13 @@ export default function FleetJobsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="awaiting_assignment">Awaiting Assignment</SelectItem>
-                <SelectItem value="mechanic_assigned">Mechanic Assigned</SelectItem>
-                <SelectItem value="subcontractor_assigned">Subcontractor Assigned</SelectItem>
-                <SelectItem value="mechanic_accepted">Mechanic Accepted</SelectItem>
-                <SelectItem value="job_in_progress">Job In Progress</SelectItem>
-                <SelectItem value="parts_outstanding">Parts Outstanding</SelectItem>
-                <SelectItem value="parts_received">Parts Received</SelectItem>
-                <SelectItem value="returned_to_office">Returned to Office</SelectItem>
-                <SelectItem value="job_completed">Job Completed</SelectItem>
-                <SelectItem value="quality_check_done">Quality Check Done</SelectItem>
-                <SelectItem value="job_cancelled">Cancelled</SelectItem>
+                <SelectItem value="Breakdown Request">Breakdown Request</SelectItem>
+                <SelectItem value="assigned">Assigned</SelectItem>
+                <SelectItem value="Approved">Approved</SelectItem>
+                <SelectItem value="awaiting-approval">Awaiting Approval</SelectItem>
+                <SelectItem value="inprogress">In Progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
             <Select value={serviceFilter} onValueChange={setServiceFilter}>
@@ -639,6 +643,7 @@ export default function FleetJobsPage() {
                   Electrical Issue
                 </SelectItem>
                 <SelectItem value="Bodywork Repair">Bodywork Repair</SelectItem>
+                <SelectItem value="inspection-fault">From Inspection</SelectItem>
               </SelectContent>
             </Select>
 
@@ -1136,7 +1141,7 @@ export default function FleetJobsPage() {
 
                       <div className="flex justify-between items-center">
                         <div className="flex gap-2">
-                          <Link href={`/workshop/jobWorkShop/${job.id}`}>
+                          <Link href={`/jobsFleet/${job.id}`}>
                             <Button variant="outline" size="sm">
                               <Eye className="h-4 w-4 mr-2" />
                               View Details
