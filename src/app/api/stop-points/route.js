@@ -1,12 +1,26 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!url || !key) {
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      return createSupabaseClient(
+        'https://placeholder.supabase.co',
+        'public-anon-key',
+      )
+    }
+    throw new Error('Missing Supabase environment variables')
+  }
+  return createSupabaseClient(url, key)
+}
 
 // *****************************
 // fetch stop points
 // *****************************
 export async function GET(request) {
+  const supabase = getSupabase()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
   if (authError || !user) {
@@ -31,6 +45,7 @@ export async function GET(request) {
 // add stop point  
 // *****************************
 export async function POST(request) {
+  const supabase = getSupabase()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
   if (authError || !user) {
